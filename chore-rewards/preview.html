@@ -1,0 +1,1487 @@
+<title>Chore Reward Animations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grandstander:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Andika:wght@400;700&display=swap">
+<style>
+/* Layout: preview stage on the left, pickers on the right; stacks on phones. */
+:root {
+  --bg: #F6F3FB; --panel: #FFFFFF; --ink: #2D2A4A; --muted: #6E6A8C; --line: #E3DEF0;
+  --accent: #5B4BD6; --accent-ink: #FFFFFF; --chip: #EFEBFA;
+  --display: "Fredoka", "Comic Sans MS", system-ui, sans-serif;
+  --body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #17152A; --panel: #221F3A; --ink: #EDEAFB; --muted: #A9A4C8; --line: #36325A;
+  --accent: #9C8CFF; --accent-ink: #17152A; --chip: #2C2850; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #17152A; --panel: #221F3A; --ink: #EDEAFB; --muted: #A9A4C8; --line: #36325A;
+  --accent: #9C8CFF; --accent-ink: #17152A; --chip: #2C2850; color-scheme: dark }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+header h1 { font: 600 clamp(28px, 4vw, 40px)/1.1 var(--display); margin: 0 0 6px; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); max-width: 64ch; }
+.main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.stagecol { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; }
+@media (max-width: 860px) { .stagecol { position: static; } }
+.stage { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 14px; display: grid; place-items: center; }
+.stage canvas { display: block; max-width: 100%; height: auto; border-radius: 12px; cursor: pointer; }
+.stage canvas.phone { max-height: 640px; width: auto; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.now { font: 600 20px/1.2 var(--display); margin-right: auto; }
+.now small { display: block; font: 400 13px/1.4 var(--body); color: var(--muted); }
+button { font: 600 14px var(--body); color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, .rcard:focus-visible, .swatch:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg { display: inline-flex; gap: 4px; }
+section h2 { font: 600 13px/1 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.panel { display: grid; gap: 22px; }
+.rgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .rgrid { grid-template-columns: minmax(0, 1fr); } }
+.rcard { text-align: left; border-radius: 14px; padding: 10px 12px; background: var(--panel); display: grid; gap: 2px; min-width: 0; }
+.rcard b { font: 600 16px/1.2 var(--display); }
+.rcard span { font: 400 12.5px/1.35 var(--body); color: var(--muted); }
+.rcard em { font: 500 11.5px var(--mono); font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rcard[aria-pressed="true"] { background: var(--panel); color: var(--ink); border: 2px solid var(--accent); padding: 9px 11px; }
+.tier { grid-column: 1 / -1; font: 600 12px var(--body); color: var(--muted); margin-top: 6px; }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.swatch { min-width: 0; overflow-wrap: anywhere; display: flex; align-items: center; gap: 10px; border-radius: 14px; padding: 8px 10px; background: var(--panel); text-align: left; }
+.swatch i { display: flex; width: 44px; height: 26px; border-radius: 8px; overflow: hidden; flex: none; border: 1px solid var(--line); }
+.swatch i u { flex: 1; }
+.swatch[aria-pressed="true"] { background: var(--panel); color: var(--ink); border: 2px solid var(--accent); padding: 7px 9px; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.fields label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.fields input { font: 500 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; width: 100%; }
+pre { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px; overflow-x: auto; font: 13px/1.55 var(--mono); }
+.note { color: var(--muted); font-size: 13.5px; max-width: 70ch; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Chore reward animations</h1>
+    <p>Twelve celebrations for when a kid finishes a chore, from a quick check mark to fireworks for a full week. Each one restyles itself for the app's 12 themes: colors, font, background, confetti and the thing kids earn (stars, shells, planets, dino eggs). Tap the preview to replay.</p>
+  </header>
+
+  <div class="main">
+    <div class="stagecol">
+      <div class="stage"><canvas id="cv" width="720" height="720" aria-label="Reward animation preview"></canvas></div>
+      <div class="bar">
+        <div class="now" id="now"></div>
+        <button class="primary" id="replay">Replay</button>
+        <button id="sound" aria-pressed="false">Sound off</button>
+      </div>
+      <div class="bar">
+        <span class="note">Frame</span>
+        <div class="seg" role="group" aria-label="Frame shape">
+          <button data-frame="square" aria-pressed="true">Square</button>
+          <button data-frame="phone" aria-pressed="false">Phone</button>
+          <button data-frame="wide" aria-pressed="false">Video 16:9</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <section>
+        <h2>Theme</h2>
+        <div class="swatches" id="themes"></div>
+        <p class="note">These are the app's themes from <code>themes/themes.json</code>, read as-is by <code>Rewards.adaptTheme()</code>.</p>
+      </section>
+      <section>
+        <h2>Reward</h2>
+        <div class="rgrid" id="rewards"></div>
+      </section>
+      <section>
+        <h2>Text on screen</h2>
+        <div class="fields" id="fields"></div>
+      </section>
+    </div>
+  </div>
+
+  <section>
+    <h2>Using it in the app</h2>
+    <pre id="code"></pre>
+  </section>
+</div>
+
+<script>window.APP_THEMES = [{"id":"sunny-room","name":"Sunny Room","vibe":"Warm bedroom morning. The default look, matching the Make Your Bed video.","mode":"light","fonts":{"display":"Fredoka","body":"Nunito","displayStack":"'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#FFF4E0","pattern":"#FFE6BF","surface":"#FFFFFF","ink":"#2D2A4A","inkSoft":"#6B6788","primary":"#4673D1","secondary":"#FF7AA2","accent":"#FFC93C","success":"#2FA877","reward":"#FFC93C","rewardStroke":"#E0A400","track":"#F1E3C8","onPrimary":"#FFFFFF","onSecondary":"#2D2A4A","onAccent":"#2D2A4A","onSuccess":"#2D2A4A","onSurface":"#2D2A4A","headline":"#4673D1"},"confetti":["#FF7AA2","#FFC93C","#3CC48B","#5B8DEF","#B28DFF"],"shape":{"radius":22,"border":0},"pattern":{"kind":"dots","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\">\u003ccircle cx=\"10\" cy=\"10\" r=\"3.5\" fill=\"#FFE6BF\"/>\u003ccircle cx=\"30\" cy=\"30\" r=\"3.5\" fill=\"#FFE6BF\"/>\u003c/svg>"},"reward":{"token":"star","tokenName":"stars","cheer":"Great job!","particles":"confetti","count":90,"gravity":0.35,"rise":false,"sway":0.6,"duration":2.2,"sound":"bright chime + party pop"},"mascot":"Kid in green star tee and navy pants (as in the video)."},{"id":"ocean-explorer","name":"Ocean Explorer","vibe":"Underwater dive with bubbles, coral and pearls.","mode":"light","fonts":{"display":"Baloo 2","body":"Nunito","displayStack":"'Baloo 2', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#DFF4F7","pattern":"#BFE6EC","surface":"#FFFFFF","ink":"#0E3B4F","inkSoft":"#4C7385","primary":"#0B7A8A","secondary":"#FF7F6B","accent":"#FFD166","success":"#188457","reward":"#FFE3EC","rewardStroke":"#E88AA6","track":"#CDEBEF","onPrimary":"#FFFFFF","onSecondary":"#0E3B4F","onAccent":"#0E3B4F","onSuccess":"#FFFFFF","onSurface":"#0E3B4F","headline":"#0B7A8A"},"confetti":["#7FDBE6","#FF7F6B","#FFD166","#FFFFFF","#5BC0EB"],"shape":{"radius":24,"border":0},"pattern":{"kind":"bubbles","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\">\u003ccircle cx=\"14\" cy=\"16\" r=\"7\" fill=\"none\" stroke=\"#BFE6EC\" stroke-width=\"2.5\"/>\u003ccircle cx=\"40\" cy=\"40\" r=\"4\" fill=\"none\" stroke=\"#BFE6EC\" stroke-width=\"2\"/>\u003ccircle cx=\"44\" cy=\"12\" r=\"2.5\" fill=\"#BFE6EC\"/>\u003c/svg>"},"reward":{"token":"shell","tokenName":"shells","cheer":"Splash-tastic!","particles":"bubbles","count":45,"gravity":-0.12,"rise":true,"sway":1.2,"duration":2.6,"sound":"bubbly blips + whale whoop"},"mascot":"Kid in a snorkel mask and teal swim shirt; a little orange fish buddy."},{"id":"space-mission","name":"Space Mission","vibe":"Night-sky launch pad with planets and shooting stars.","mode":"dark","fonts":{"display":"Righteous","body":"Nunito","displayStack":"'Righteous', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#14163A","pattern":"#2E3172","surface":"#232663","ink":"#F4F3FF","inkSoft":"#B4B3E3","primary":"#8B6CFF","secondary":"#39D5FF","accent":"#FF6FB5","success":"#3EE6A0","reward":"#FFB84D","rewardStroke":"#FF7A45","track":"#33377A","onPrimary":"#14163A","onSecondary":"#14163A","onAccent":"#14163A","onSuccess":"#14163A","onSurface":"#FFFFFF","headline":"#8B6CFF"},"confetti":["#FFD84D","#39D5FF","#FF6FB5","#8B6CFF","#FFFFFF"],"shape":{"radius":20,"border":0},"pattern":{"kind":"stars","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">\u003cpath d=\"M16 8 L18 14 L24 16 L18 18 L16 24 L14 18 L8 16 L14 14Z\" fill=\"#2E3172\"/>\u003ccircle cx=\"46\" cy=\"44\" r=\"2\" fill=\"#2E3172\"/>\u003ccircle cx=\"52\" cy=\"14\" r=\"1.4\" fill=\"#2E3172\"/>\u003ccircle cx=\"20\" cy=\"50\" r=\"1.4\" fill=\"#2E3172\"/>\u003c/svg>"},"reward":{"token":"planet","tokenName":"planets","cheer":"Mission complete!","particles":"starburst","count":70,"gravity":0,"rise":false,"sway":0,"duration":2,"sound":"rocket whoosh + twinkle"},"mascot":"Kid in a white space suit with a round helmet visor flipped up."},{"id":"dino-valley","name":"Dino Valley","vibe":"Leafy prehistoric valley with friendly dinos.","mode":"light","fonts":{"display":"Lilita One","body":"Nunito","displayStack":"'Lilita One', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#EEF6DA","pattern":"#D8E9B2","surface":"#FFFFFF","ink":"#2F3B1E","inkSoft":"#66724F","primary":"#3F8526","secondary":"#F28C28","accent":"#F6C445","success":"#22814F","reward":"#FFF3D1","rewardStroke":"#8CC63F","track":"#E0EBC4","onPrimary":"#FFFFFF","onSecondary":"#2F3B1E","onAccent":"#2F3B1E","onSuccess":"#FFFFFF","onSurface":"#2F3B1E","headline":"#3F8526"},"confetti":["#8CC63F","#F28C28","#F6C445","#4E9A2F","#C0E57A"],"shape":{"radius":18,"border":0},"pattern":{"kind":"leaves","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"60\">\u003cellipse cx=\"16\" cy=\"18\" rx=\"9\" ry=\"4.5\" transform=\"rotate(-35 16 18)\" fill=\"#D8E9B2\"/>\u003cellipse cx=\"44\" cy=\"44\" rx=\"9\" ry=\"4.5\" transform=\"rotate(30 44 44)\" fill=\"#D8E9B2\"/>\u003ccircle cx=\"46\" cy=\"14\" r=\"2.5\" fill=\"#D8E9B2\"/>\u003c/svg>"},"reward":{"token":"egg","tokenName":"dino eggs","cheer":"Roar-some!","particles":"leaves","count":50,"gravity":0.18,"rise":false,"sway":1.6,"duration":2.4,"sound":"friendly roar + stomp"},"mascot":"Kid in a green dino hoodie with soft spikes on the hood."},{"id":"candy-shop","name":"Candy Shop","vibe":"Sweet shop with sprinkles, gumdrops and pastel stripes.","mode":"light","fonts":{"display":"Chewy","body":"Nunito","displayStack":"'Chewy', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#FFF0F5","pattern":"#FFD1E0","surface":"#FFFFFF","ink":"#4A2340","inkSoft":"#8A5A7E","primary":"#C42F6C","secondary":"#3FC1A8","accent":"#FFC93C","success":"#167A56","reward":"#FF8FB8","rewardStroke":"#D63B79","track":"#FBDCE7","onPrimary":"#FFFFFF","onSecondary":"#4A2340","onAccent":"#4A2340","onSuccess":"#FFFFFF","onSurface":"#4A2340","headline":"#C42F6C"},"confetti":["#FF8FB8","#3FC1A8","#FFC93C","#9B7BFF","#7FD6FF"],"shape":{"radius":26,"border":0},"pattern":{"kind":"sprinkles","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\">\u003crect x=\"6\" y=\"8\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(30 12 10)\" fill=\"#FF8FB8\" opacity=\".55\"/>\u003crect x=\"34\" y=\"14\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(-40 40 16)\" fill=\"#3FC1A8\" opacity=\".55\"/>\u003crect x=\"14\" y=\"36\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(-15 20 38)\" fill=\"#FFC93C\" opacity=\".55\"/>\u003crect x=\"38\" y=\"42\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(60 44 44)\" fill=\"#9B7BFF\" opacity=\".55\"/>\u003c/svg>"},"reward":{"token":"candy","tokenName":"candies","cheer":"Sweet!","particles":"sprinkles","count":110,"gravity":0.38,"rise":false,"sway":0.4,"duration":2,"sound":"pop pop + sparkle"},"mascot":"Kid in a striped apron and a tiny chef hat with a cherry on top."},{"id":"fairy-garden","name":"Fairy Garden","vibe":"Lavender garden with flowers, petals and sparkles.","mode":"light","fonts":{"display":"Sniglet","body":"Nunito","displayStack":"'Sniglet', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#F4EEFF","pattern":"#E3D6FF","surface":"#FFFFFF","ink":"#3A2A5C","inkSoft":"#776A96","primary":"#7448E8","secondary":"#2FB28A","accent":"#FFB3D1","success":"#187A56","reward":"#FF9BCB","rewardStroke":"#D9579A","track":"#E8DFFA","onPrimary":"#FFFFFF","onSecondary":"#3A2A5C","onAccent":"#3A2A5C","onSuccess":"#FFFFFF","onSurface":"#3A2A5C","headline":"#7448E8"},"confetti":["#FFB3D1","#C7A8FF","#9BE8C8","#FFE08A","#FFFFFF"],"shape":{"radius":26,"border":0},"pattern":{"kind":"flowers","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\">\u003ccircle cx=\"21\" cy=\"16\" r=\"3.6\" fill=\"#E3D6FF\"/>\u003ccircle cx=\"11\" cy=\"16\" r=\"3.6\" fill=\"#E3D6FF\"/>\u003ccircle cx=\"16\" cy=\"21\" r=\"3.6\" fill=\"#E3D6FF\"/>\u003ccircle cx=\"16\" cy=\"11\" r=\"3.6\" fill=\"#E3D6FF\"/>\u003ccircle cx=\"16\" cy=\"16\" r=\"2.4\" fill=\"#FFB3D1\" opacity=\".6\"/>\u003ccircle cx=\"46\" cy=\"46\" r=\"2.5\" fill=\"#E3D6FF\"/>\u003c/svg>"},"reward":{"token":"flower","tokenName":"flowers","cheer":"Magical!","particles":"petals","count":55,"gravity":-0.05,"rise":true,"sway":1.4,"duration":2.8,"sound":"wand twinkle + harp"},"mascot":"Kid with sparkly wings and a flower crown."},{"id":"pixel-arcade","name":"Pixel Arcade","vibe":"Retro game screen with coins, pixels and level-ups.","mode":"dark","fonts":{"display":"Silkscreen","body":"Nunito","displayStack":"'Silkscreen', monospace","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#101626","pattern":"#1E2842","surface":"#1A2238","ink":"#F2F5FF","inkSoft":"#9AA6C8","primary":"#36E27B","secondary":"#FF4D9D","accent":"#4DC3FF","success":"#36E27B","reward":"#FFD23F","rewardStroke":"#E09A00","track":"#2A3554","onPrimary":"#101626","onSecondary":"#101626","onAccent":"#101626","onSuccess":"#101626","onSurface":"#FFFFFF","headline":"#36E27B"},"confetti":["#36E27B","#FF4D9D","#FFD23F","#4DC3FF","#FFFFFF"],"shape":{"radius":4,"border":3},"pattern":{"kind":"pixels","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\">\u003cpath d=\"M0 .5 H32 M.5 0 V32\" stroke=\"#1E2842\" stroke-width=\"1\"/>\u003crect x=\"12\" y=\"12\" width=\"4\" height=\"4\" fill=\"#1E2842\"/>\u003c/svg>"},"reward":{"token":"coin","tokenName":"coins","cheer":"LEVEL UP!","particles":"pixels","count":80,"gravity":0.3,"rise":false,"sway":0,"duration":1.8,"sound":"8-bit coin + level-up arpeggio"},"mascot":"Pixel-art kid sprite with a backwards cap."},{"id":"superhero-city","name":"Superhero City","vibe":"Comic-book city with bold outlines and POW bursts.","mode":"light","fonts":{"display":"Bangers","body":"Nunito","displayStack":"'Bangers', Impact, sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#EAF2FF","pattern":"#D2E1FF","surface":"#FFFFFF","ink":"#1A1F3D","inkSoft":"#525A80","primary":"#D62839","secondary":"#1D4ED8","accent":"#FFD60A","success":"#1A7F45","reward":"#FFD60A","rewardStroke":"#1A1F3D","track":"#DCE6FA","onPrimary":"#FFFFFF","onSecondary":"#FFFFFF","onAccent":"#1A1F3D","onSuccess":"#FFFFFF","onSurface":"#1A1F3D","headline":"#D62839"},"confetti":["#D62839","#1D4ED8","#FFD60A","#FFFFFF","#1A1F3D"],"shape":{"radius":14,"border":3},"pattern":{"kind":"halftone","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\">\u003ccircle cx=\"6\" cy=\"6\" r=\"3\" fill=\"#D2E1FF\"/>\u003ccircle cx=\"18\" cy=\"18\" r=\"3\" fill=\"#D2E1FF\"/>\u003c/svg>"},"reward":{"token":"bolt","tokenName":"power bolts","cheer":"POW! Chore defeated!","particles":"bursts","count":26,"gravity":0,"rise":false,"sway":0,"duration":1.8,"sound":"comic whoosh + POW"},"mascot":"Kid in a red cape and a blue domino mask."},{"id":"rainbow-sky","name":"Rainbow Sky","vibe":"Fluffy clouds, rainbows and hearts.","mode":"light","fonts":{"display":"Grandstander","body":"Nunito","displayStack":"'Grandstander', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Grandstander:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#EEF5FF","pattern":"#DCE9FF","surface":"#FFFFFF","ink":"#33305A","inkSoft":"#6E6B94","primary":"#CF2F58","secondary":"#4DA3FF","accent":"#FFC93C","success":"#187A56","reward":"#FF5E7E","rewardStroke":"#D63B5E","track":"#DFE8F7","onPrimary":"#FFFFFF","onSecondary":"#33305A","onAccent":"#33305A","onSuccess":"#FFFFFF","onSurface":"#33305A","headline":"#CF2F58"},"confetti":["#FF5E7E","#FF9F43","#FFD43B","#4CD97B","#4DA3FF","#9B7BFF"],"shape":{"radius":28,"border":0},"pattern":{"kind":"clouds","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\">\u003cg fill=\"#DCE9FF\">\u003ccircle cx=\"24\" cy=\"30\" r=\"9\"/>\u003ccircle cx=\"36\" cy=\"26\" r=\"12\"/>\u003ccircle cx=\"48\" cy=\"31\" r=\"8\"/>\u003crect x=\"24\" y=\"31\" width=\"24\" height=\"8\" rx=\"4\"/>\u003c/g>\u003ccircle cx=\"76\" cy=\"72\" r=\"3\" fill=\"#DCE9FF\"/>\u003c/svg>"},"reward":{"token":"heart","tokenName":"hearts","cheer":"You shine!","particles":"hearts","count":70,"gravity":0.22,"rise":false,"sway":0.9,"duration":2.4,"sound":"rising rainbow glissando"},"mascot":"Kid in rainbow overalls with a cloud-shaped backpack."},{"id":"construction-zone","name":"Construction Zone","vibe":"Hard hats, diggers and hazard stripes.","mode":"light","fonts":{"display":"Bowlby One","body":"Nunito","displayStack":"'Bowlby One', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#FFF8E1","pattern":"#FBEAB8","surface":"#FFFFFF","ink":"#26221A","inkSoft":"#6A6252","primary":"#F2A000","secondary":"#3F4A5A","accent":"#E8641A","success":"#22804A","reward":"#C9CED6","rewardStroke":"#5B6573","track":"#F3E6C2","onPrimary":"#26221A","onSecondary":"#FFFFFF","onAccent":"#26221A","onSuccess":"#FFFFFF","onSurface":"#26221A","headline":"#26221A"},"confetti":["#F2A000","#E8641A","#3F4A5A","#C9CED6","#FFD43B"],"shape":{"radius":10,"border":0},"pattern":{"kind":"hazard","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\">\u003cpath d=\"M-10 50 L50 -10 M10 50 L50 10 M-10 30 L30 -10\" stroke=\"#FBEAB8\" stroke-width=\"7\"/>\u003c/svg>"},"reward":{"token":"nut","tokenName":"bolts","cheer":"Built it!","particles":"nuts","count":40,"gravity":0.5,"rise":false,"sway":0.2,"duration":2,"sound":"ratchet click + truck horn"},"mascot":"Kid in a yellow hard hat and orange safety vest."},{"id":"arctic-friends","name":"Arctic Friends","vibe":"Snowy ice world with penguins and snowflakes.","mode":"light","fonts":{"display":"Quicksand","body":"Nunito","displayStack":"'Quicksand', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Nunito', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap"},"colors":{"bg":"#EAF5FF","pattern":"#CFE5F8","surface":"#FFFFFF","ink":"#12304A","inkSoft":"#4D6A82","primary":"#1F6FD1","secondary":"#2BB0D4","accent":"#FFA94D","success":"#1A8467","reward":"#BDE6FF","rewardStroke":"#1F6FD1","track":"#D7E8F6","onPrimary":"#FFFFFF","onSecondary":"#12304A","onAccent":"#12304A","onSuccess":"#FFFFFF","onSurface":"#12304A","headline":"#1F6FD1"},"confetti":["#FFFFFF","#BDE6FF","#7CC4F5","#FFA94D","#1F6FD1"],"shape":{"radius":24,"border":0},"pattern":{"kind":"snow","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"60\">\u003cg stroke=\"#CFE5F8\" stroke-width=\"2\" stroke-linecap=\"round\">\u003cpath d=\"M18 10 V26 M10 18 H26 M12.5 12.5 L23.5 23.5 M23.5 12.5 L12.5 23.5\"/>\u003c/g>\u003ccircle cx=\"44\" cy=\"44\" r=\"2.5\" fill=\"#CFE5F8\"/>\u003c/svg>"},"reward":{"token":"snowflake","tokenName":"snowflakes","cheer":"Ice work!","particles":"snowflakes","count":55,"gravity":0.06,"rise":false,"sway":1,"duration":3,"sound":"sleigh bells + penguin squeak"},"mascot":"Kid in a puffy blue parka with a penguin beanie."},{"id":"calm-night","name":"Calm Night","vibe":"Soft and low-stimulation. Muted colors and gentle motion.","mode":"dark","fonts":{"display":"Nunito","body":"Andika","displayStack":"'Nunito', ui-rounded, 'Arial Rounded MT Bold', sans-serif","bodyStack":"'Andika', ui-rounded, system-ui, sans-serif","googleFontsUrl":"https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Andika:wght@400;700&display=swap"},"colors":{"bg":"#1C2238","pattern":"#323B5E","surface":"#262E4A","ink":"#EDEAF6","inkSoft":"#A9AECB","primary":"#9DB4FF","secondary":"#C7B6FF","accent":"#FFE7A3","success":"#8FD6B4","reward":"#FFE7A3","rewardStroke":"#D9BE6E","track":"#343D60","onPrimary":"#1C2238","onSecondary":"#1C2238","onAccent":"#1C2238","onSuccess":"#1C2238","onSurface":"#FFFFFF","headline":"#9DB4FF"},"confetti":["#FFE7A3","#C7B6FF","#9DB4FF"],"shape":{"radius":20,"border":0},"pattern":{"kind":"nightsky","svg":"\u003csvg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"80\">\u003ccircle cx=\"14\" cy=\"18\" r=\"1.6\" fill=\"#323B5E\"/>\u003ccircle cx=\"58\" cy=\"52\" r=\"1.2\" fill=\"#323B5E\"/>\u003ccircle cx=\"40\" cy=\"12\" r=\"1\" fill=\"#323B5E\"/>\u003c/svg>"},"reward":{"token":"moon","tokenName":"moons","cheer":"Nicely done.","particles":"glow","count":14,"gravity":-0.03,"rise":true,"sway":0.4,"duration":2.6,"sound":"soft single chime, no fanfare"},"mascot":"Kid in cozy pajamas holding a small star nightlight.","notes":"Good for bedtime routines and kids who get overwhelmed by big celebrations. No screen shake, no flashing."}];</script>
+<script>
+/*
+ * Chore reward animations: a small, dependency-free canvas library.
+ *
+ *   Rewards.play(canvas, 'trophy', { theme: Rewards.themes.space, text: { title: 'All done!' } })
+ *   Rewards.render(ctx, 'trophy', t, { width, height, theme })   // deterministic single frame
+ *   Rewards.list            // [{ id, name, use, duration, defaults }]
+ *   Rewards.sfx('trophy')   // sound cues [[seconds, 'type'], ...] (matching WAVs live in sounds/)
+ *   Rewards.adaptTheme(obj) // fills any missing theme keys from the default theme
+ *
+ * Every animation is drawn on a virtual 720x720 "stage" centred in the canvas, so it
+ * works at any size or aspect ratio (phone portrait, tablet, 16:9 video). Backgrounds
+ * and confetti fill the whole canvas. Pass { transparent: true } to draw over your app.
+ */
+(function (root) {
+'use strict';
+const TAU = Math.PI * 2;
+
+// ---------- math ----------
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const prog = (t, s, e) => clamp((t - s) / (e - s));
+const easeInOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const easeIn = x => x * x * x;
+const easeOutBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const bounce = x => {
+  const n1 = 7.5625, d1 = 2.75;
+  if (x < 1 / d1) return n1 * x * x;
+  if (x < 2 / d1) return n1 * (x -= 1.5 / d1) * x + 0.75;
+  if (x < 2.5 / d1) return n1 * (x -= 2.25 / d1) * x + 0.9375;
+  return n1 * (x -= 2.625 / d1) * x + 0.984375;
+};
+const rand = (i, k = 0) => { const s = Math.sin(i * 12.9898 + k * 78.233) * 43758.5453; return s - Math.floor(s); };
+
+// ---------- colour ----------
+function hexRgb(h) {
+  h = h.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function alpha(hex, a) { const [r, g, b] = hexRgb(hex); return `rgba(${r},${g},${b},${a})`; }
+function mix(a, b, t) {
+  const A = hexRgb(a), B = hexRgb(b);
+  return '#' + A.map((v, i) => Math.round(lerp(v, B[i], t)).toString(16).padStart(2, '0')).join('');
+}
+
+// ---------- themes ----------
+const DEFAULT_THEME = {
+  id: 'sunny', name: 'Sunny Day', font: 'Fredoka',
+  bg: '#FFF4E0', bg2: '#FFE9C7', ink: '#2D2A4A', surface: '#FFFFFF',
+  primary: '#5B8DEF', secondary: '#FF7AA2', accent: '#FF8A3D', success: '#3CC48B',
+  gold: '#FFC93C', goldDark: '#E0A400',
+  confetti: ['#FF7AA2', '#FFC93C', '#3CC48B', '#5B8DEF', '#B28DFF'],
+  mascot: { skin: '#A96E4E', hair: '#2D2A4A', shirt: '#3CC48B', pants: '#3B4A8C', shoes: '#FF6B6B' },
+  pattern: 'dots',      // dots | stars | bubbles | leaves | none
+  shape: 'confetti',    // confetti | star | heart | bubble | leaf | circle
+  flame: ['#FF6B3D', '#FFC93C', '#FFF6D0'],
+  night: '#1E1B3A',
+  drawMascot: null,     // optional (ctx, pose) => void to swap in a theme's own character
+};
+
+const THEMES = {
+  sunny: DEFAULT_THEME,
+  space: {
+    id: 'space', name: 'Outer Space', bg: '#1B1F4B', bg2: '#3A4090', ink: '#1E1B3A',
+    primary: '#7B5CFF', secondary: '#36D6E7', accent: '#FF5CA8', success: '#2FD39A',
+    gold: '#FFD84D', goldDark: '#E3A700',
+    confetti: ['#36D6E7', '#FFD84D', '#FF5CA8', '#7B5CFF', '#FFFFFF'],
+    mascot: { skin: '#F2C7A5', hair: '#C0522E', shirt: '#7B5CFF', pants: '#2A2F6B', shoes: '#36D6E7' },
+    pattern: 'stars', shape: 'star', flame: ['#36A2FF', '#7FE6FF', '#FFFFFF'], night: '#0B0D2A',
+  },
+  ocean: {
+    id: 'ocean', name: 'Under the Sea', bg: '#DFF6FA', bg2: '#BFE8F1', ink: '#14385C',
+    primary: '#1E88C9', secondary: '#FF8C69', accent: '#FFB547', success: '#27B59A',
+    gold: '#FFCF4A', goldDark: '#E0A21A',
+    confetti: ['#1E88C9', '#FF8C69', '#FFCF4A', '#27B59A', '#7FD6F0'],
+    mascot: { skin: '#7A4A32', hair: '#1A1A2E', shirt: '#FF8C69', pants: '#1E5F8C', shoes: '#FFCF4A' },
+    pattern: 'bubbles', shape: 'bubble', night: '#0E2A48',
+  },
+  jungle: {
+    id: 'jungle', name: 'Jungle Explorer', bg: '#EAF7DC', bg2: '#D2ECBA', ink: '#24361F',
+    primary: '#3E9E4F', secondary: '#FF9F1C', accent: '#E5484D', success: '#2E9B57',
+    gold: '#FFC83D', goldDark: '#D99A00',
+    confetti: ['#3E9E4F', '#FF9F1C', '#FFC83D', '#E5484D', '#8BD06B'],
+    mascot: { skin: '#E8B48F', hair: '#6B3E1F', shirt: '#FF9F1C', pants: '#3E5A2B', shoes: '#E5484D' },
+    pattern: 'leaves', shape: 'leaf', night: '#152414',
+  },
+};
+
+// Accepts a theme from anywhere and fills in what's missing. Understands the app's
+// themes.json format directly (colors.*, fonts.display, pattern.kind/svg, reward.*),
+// plus common alternative names (background, text, card).
+const PARTICLES = {
+  confetti: 'confetti', bubbles: 'bubble', starburst: 'star', leaves: 'leaf', sprinkles: 'sprinkle',
+  petals: 'petal', pixels: 'pixel', bursts: 'star', hearts: 'heart', nuts: 'hex', snowflakes: 'snowflake', glow: 'glow',
+};
+function adaptTheme(src) {
+  if (!src) return THEMES.sunny;
+  if (typeof src === 'string') return adaptTheme(THEMES[src]);
+  if (src.__adapted) return src;
+  const c = src.colors || {}, rw = src.reward || {}, fonts = src.fonts || {};
+  const pick = (...keys) => { for (const k of keys) { if (src[k] != null && typeof src[k] !== 'object') return src[k]; if (c[k] != null) return c[k]; } };
+  const th = Object.assign({}, DEFAULT_THEME, {
+    id: pick('id', 'slug') || 'custom', name: pick('name', 'label') || 'Custom',
+    font: fonts.display || pick('font', 'fontFamily') || DEFAULT_THEME.font,
+    bg: pick('bg', 'background') || DEFAULT_THEME.bg,
+    ink: pick('ink', 'text', 'textColor', 'foreground') || DEFAULT_THEME.ink,
+    surface: pick('surface', 'card', 'cardBackground') || DEFAULT_THEME.surface,
+    primary: pick('primary', 'brand', 'main') || DEFAULT_THEME.primary,
+    secondary: pick('secondary') || DEFAULT_THEME.secondary,
+    accent: pick('accent', 'highlight') || DEFAULT_THEME.accent,
+    success: pick('success', 'done', 'complete') || DEFAULT_THEME.success,
+    gold: pick('gold') || DEFAULT_THEME.gold,
+  });
+  th.goldDark = pick('goldDark') || (th.gold === DEFAULT_THEME.gold ? DEFAULT_THEME.goldDark : mix(th.gold, '#000000', 0.18));
+  th.onPrimary = c.onPrimary || '#FFFFFF';
+  th.onSuccess = c.onSuccess || '#FFFFFF';
+  th.onSecondary = c.onSecondary || '#FFFFFF';
+  th.onAccent = c.onAccent || '#FFFFFF';
+  // background texture: a colour string, or { kind, svg } from themes.json
+  const pat = src.pattern;
+  th.bg2 = pick('bg2', 'backgroundAlt') || (typeof c.pattern === 'string' ? c.pattern : null) || mix(th.bg, th.ink, 0.06);
+  th.pattern = typeof pat === 'string' ? pat : (pat && pat.kind) || DEFAULT_THEME.pattern;
+  th.patternSvg = (pat && pat.svg) || null;
+  th.confetti = (Array.isArray(src.confetti) && src.confetti) || pick('palette') || [th.secondary, th.gold, th.success, th.primary, th.accent];
+  th.shape = typeof src.shape === 'string' ? src.shape : PARTICLES[rw.particles] || DEFAULT_THEME.shape;
+  // what kids earn in this theme (star, shell, planet, egg, ...)
+  th.token = Object.assign({ kind: 'star', name: 'stars', fill: th.gold, stroke: th.goldDark },
+    src.token || {}, rw.token ? { kind: rw.token, name: rw.tokenName || rw.token + 's', fill: c.reward || th.gold, stroke: c.rewardStroke || th.goldDark } : {});
+  th.cheer = rw.cheer || src.cheer || null;
+  th.rise = !!(rw.rise || src.rise);
+  th.density = rw.count ? clamp(rw.count / 50, 0.25, 1.2) : (src.density || 1);
+  th.calm = th.density < 0.5;
+  const dark = src.mode === 'dark';
+  th.mascot = Object.assign({}, DEFAULT_THEME.mascot,
+    src.colors ? { shirt: th.primary, pants: mix(th.primary, '#000000', 0.45), shoes: th.secondary } : { shirt: th.success },
+    typeof src.mascot === 'object' ? src.mascot : {});
+  ['flame', 'drawMascot'].forEach(k => { if (src[k] != null) th[k] = src[k]; });
+  th.night = src.night || (dark ? th.bg : mix(th.ink, '#000000', 0.25));
+  th.outline = src.outline || (dark ? '#1C1A33' : th.ink); // outlines on objects (chest, jar, rocket)
+  th.__adapted = true;
+  loadPattern(th);
+  return th;
+}
+
+// themes.json ships an SVG tile per theme; draw it as a canvas pattern once it has loaded.
+const patternImages = {};
+function loadPattern(th) {
+  if (!th.patternSvg || typeof Image === 'undefined') return Promise.resolve();
+  let e = patternImages[th.patternSvg];
+  if (!e) {
+    const img = new Image();
+    e = patternImages[th.patternSvg] = { img, ready: new Promise(res => { img.onload = res; img.onerror = res; }) };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(th.patternSvg);
+  }
+  return e.ready;
+}
+Object.keys(THEMES).forEach(k => { THEMES[k] = adaptTheme(THEMES[k]); });
+
+// ---------- drawing primitives ----------
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function star(ctx, cx, cy, r, rot = 0, inner = 0.45, points = 5) {
+  ctx.beginPath();
+  for (let i = 0; i < points * 2; i++) {
+    const a = rot - Math.PI / 2 + i * Math.PI / points;
+    const rad = i % 2 ? r * inner : r;
+    ctx.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad);
+  }
+  ctx.closePath();
+}
+function heart(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.9);
+  ctx.bezierCurveTo(cx - r * 1.6, cy - r * 0.2, cx - r * 0.7, cy - r * 1.3, cx, cy - r * 0.45);
+  ctx.bezierCurveTo(cx + r * 0.7, cy - r * 1.3, cx + r * 1.6, cy - r * 0.2, cx, cy + r * 0.9);
+  ctx.closePath();
+}
+function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); }
+function leaf(ctx, cx, cy, r) {
+  ctx.beginPath();
+  ctx.moveTo(cx - r, cy);
+  ctx.quadraticCurveTo(cx, cy - r * 0.9, cx + r, cy);
+  ctx.quadraticCurveTo(cx, cy + r * 0.9, cx - r, cy);
+  ctx.closePath();
+}
+function font(th, size, weight = 600) { return `${weight} ${size}px "${th.font}", Fredoka, "Comic Sans MS", sans-serif`; }
+
+// One themed particle (confetti piece, star, heart, bubble or leaf).
+function particle(g, x, y, r, rot, color, i) {
+  const { ctx, th } = g;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = color;
+  let shape = th.shape;
+  if (shape === 'confetti') shape = ['rect', 'star', 'rect', 'circle'][i % 4];
+  switch (shape) {
+    case 'star': star(ctx, 0, 0, r * 1.1, 0); ctx.fill(); break;
+    case 'heart': heart(ctx, 0, 0, r * 0.9); ctx.fill(); break;
+    case 'circle': circle(ctx, 0, 0, r * 0.7); ctx.fill(); break;
+    case 'leaf':
+      leaf(ctx, 0, 0, r * 1.1); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke(); break;
+    case 'bubble':
+      circle(ctx, 0, 0, r * 0.8); ctx.fillStyle = alpha(color, 0.35); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.8)'; circle(ctx, -r * 0.3, -r * 0.3, r * 0.2); ctx.fill(); break;
+    case 'petal': ctx.scale(1, 0.7); leaf(ctx, 0, 0, r); ctx.fill(); break;
+    case 'sprinkle': rr(ctx, -r, -r * 0.25, r * 2, r * 0.5, r * 0.25); ctx.fill(); break;
+    case 'pixel': ctx.rotate(-rot); ctx.fillRect(-r * 0.6, -r * 0.6, r * 1.2, r * 1.2); break;
+    case 'hex':
+      ctx.beginPath(); for (let k = 0; k < 6; k++) ctx.lineTo(Math.cos(k * TAU / 6) * r * 0.8, Math.sin(k * TAU / 6) * r * 0.8);
+      ctx.closePath(); ctx.fill(); ctx.fillStyle = 'rgba(0,0,0,0.25)'; circle(ctx, 0, 0, r * 0.3); ctx.fill(); break;
+    case 'snowflake':
+      ctx.strokeStyle = color; ctx.lineWidth = Math.max(2, r * 0.18); ctx.lineCap = 'round';
+      for (let k = 0; k < 6; k++) { ctx.rotate(TAU / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -r); ctx.moveTo(0, -r * 0.55); ctx.lineTo(r * 0.3, -r * 0.8); ctx.moveTo(0, -r * 0.55); ctx.lineTo(-r * 0.3, -r * 0.8); ctx.stroke(); }
+      break;
+    case 'glow': {
+      const gr = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.3);
+      gr.addColorStop(0, color); gr.addColorStop(1, alpha(color, 0));
+      ctx.fillStyle = gr; circle(ctx, 0, 0, r * 1.3); ctx.fill(); break;
+    }
+    default: ctx.fillRect(-r, -r * 0.5, r * 2, r); // rect
+  }
+  ctx.restore();
+}
+
+function background(g) {
+  const { ctx, th, hw, hh, o } = g;
+  if (o.transparent) {
+    if (o.scrim) { ctx.fillStyle = alpha(th.ink, o.scrim); ctx.fillRect(-hw, -hh, hw * 2, hh * 2); }
+    return;
+  }
+  ctx.fillStyle = th.bg; ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
+  const svgTile = th.patternSvg && patternImages[th.patternSvg];
+  if (svgTile && svgTile.img.complete && svgTile.img.naturalWidth) {
+    ctx.save(); ctx.scale(1.5, 1.5);
+    ctx.fillStyle = ctx.createPattern(svgTile.img, 'repeat');
+    ctx.fillRect(-hw / 1.5, -hh / 1.5, hw * 2 / 1.5, hh * 2 / 1.5);
+    ctx.restore();
+  } else drawPattern(g);
+  // soft spotlight behind the stage
+  const grd = ctx.createRadialGradient(0, 0, 40, 0, 0, 460);
+  grd.addColorStop(0, alpha(th.surface, 0.55)); grd.addColorStop(1, alpha(th.surface, 0));
+  ctx.fillStyle = grd; ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
+}
+
+function drawPattern(g) {
+  const { ctx, th, hw, hh } = g;
+  ctx.fillStyle = th.bg2; ctx.strokeStyle = th.bg2; ctx.lineWidth = 4;
+  let k = 0;
+  for (let y = -hh - 30; y < hh + 60; y += 70) for (let x = -hw - 30 + (k++ % 2) * 35; x < hw + 60; x += 70) {
+    const j = Math.round(x * 3 + y * 7);
+    switch (th.pattern) {
+      case 'dots': circle(ctx, x, y, 7); ctx.fill(); break;
+      case 'stars': if (rand(j) < 0.55) { star(ctx, x + rand(j, 1) * 20, y, 4 + rand(j, 2) * 6, 0, 0.35, 4); ctx.fill(); } break;
+      case 'bubbles': if (rand(j) < 0.5) { circle(ctx, x, y + rand(j, 1) * 20, 6 + rand(j, 2) * 10); ctx.stroke(); } break;
+      case 'leaves': if (rand(j) < 0.5) { ctx.save(); ctx.translate(x, y); ctx.rotate(rand(j, 3) * TAU); leaf(ctx, 0, 0, 14); ctx.fill(); ctx.restore(); } break;
+      case 'none': break;
+      default: circle(ctx, x, y, 6); ctx.fill();
+    }
+  }
+}
+
+// Title card (same look as the how-to videos' captions).
+function title(g, text, y, appear, size = 52) {
+  if (!text || appear <= 0) return;
+  const { ctx, th, t } = g;
+  const a = easeOutBack(clamp(appear));
+  ctx.save();
+  ctx.translate(0, y + Math.sin(t * 2.4) * 3); ctx.scale(a, a);
+  ctx.font = font(th, size);
+  const bw = Math.max(ctx.measureText(text).width + size * 1.6, 260), bh = size * 1.7;
+  ctx.fillStyle = alpha(th.ink, 0.15); rr(ctx, -bw / 2 + 5, -bh / 2 + 7, bw, bh, bh / 2.6); ctx.fill();
+  ctx.fillStyle = th.surface; rr(ctx, -bw / 2, -bh / 2, bw, bh, bh / 2.6); ctx.fill();
+  ctx.lineWidth = 5; ctx.strokeStyle = th.ink; ctx.stroke();
+  ctx.fillStyle = th.ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, size * 0.06);
+  ctx.restore();
+}
+
+function pill(g, text, x, y, appear, bg, fg, size = 36) {
+  if (!text || appear <= 0) return;
+  const { ctx, th } = g;
+  const a = easeOutBack(clamp(appear));
+  ctx.save(); ctx.translate(x, y); ctx.scale(a, a);
+  ctx.font = font(th, size);
+  const bw = ctx.measureText(text).width + size * 1.4, bh = size * 1.8;
+  ctx.fillStyle = bg; rr(ctx, -bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
+  ctx.lineWidth = 5; ctx.strokeStyle = th.surface; ctx.stroke();
+  ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, size * 0.06);
+  ctx.restore();
+}
+
+function rays(g, cx, cy, r, n, rot, color, a) {
+  if (a <= 0) return;
+  const { ctx } = g;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot);
+  const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  grd.addColorStop(0, alpha(color, a)); grd.addColorStop(1, alpha(color, 0));
+  ctx.fillStyle = grd;
+  for (let i = 0; i < n; i++) {
+    const a0 = i * TAU / n, a1 = a0 + TAU / n / 2;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.lineTo(Math.cos(a0) * r, Math.sin(a0) * r); ctx.lineTo(Math.cos(a1) * r, Math.sin(a1) * r);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Ring of sparkle stars flying outward; life runs 0 -> 1.
+function burst(g, cx, cy, life, n = 10, spread = 160, seed = 0) {
+  if (life <= 0 || life >= 1) return;
+  const { ctx, th, t } = g;
+  for (let i = 0; i < n; i++) {
+    const a = i * TAU / n + rand(i, seed) * 0.5;
+    const r = spread * (0.5 + rand(i, seed + 1) * 0.6) * easeOut(life);
+    ctx.globalAlpha = Math.sin(life * Math.PI);
+    ctx.fillStyle = i % 2 ? th.gold : th.surface;
+    star(ctx, cx + Math.cos(a) * r, cy + Math.sin(a) * r, 9 + (i % 3) * 5, t * 4 + i); ctx.fill();
+    ctx.strokeStyle = th.goldDark; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function twinkles(g, pts, start) {
+  const { ctx, th, t } = g;
+  pts.forEach(([x, y, s], i) => {
+    const a = prog(t, start + i * 0.12, start + i * 0.12 + 0.3) * (0.55 + 0.45 * Math.sin(t * 5 + i * 2));
+    if (a <= 0) return;
+    ctx.globalAlpha = a; ctx.fillStyle = th.gold;
+    star(ctx, x, y, s, 0, 0.3, 4); ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+// Confetti falling from the top of the whole canvas.
+function confettiRain(g, start, n = 80) {
+  const life = g.t - start;
+  if (life < 0) return;
+  const { hw, hh, th } = g;
+  n = Math.round(n * th.density);
+  for (let i = 0; i < n; i++) {
+    const x = -hw + rand(i, 3) * hw * 2;
+    let y = -hh - 40 + life * (190 + rand(i, 4) * 160) - rand(i, 5) * 260;
+    if (th.rise) y = -y; // bubbles, petals and glow float up from the bottom
+    if (y > hh + 60 || y < -hh - 60) continue;
+    particle(g, x + Math.sin(life * 3 + i) * 22, y, 11, life * 4 + i, th.confetti[i % th.confetti.length], i);
+  }
+}
+
+// Ballistic motion with air drag (y down). Deterministic in t.
+function fly(x0, y0, vx, vy, age, k = 2.2, vt = 260) {
+  const e = (1 - Math.exp(-k * age)) / k;
+  return [x0 + vx * e, y0 + vt * age + (vy - vt) * e];
+}
+
+function flamePath(ctx, h, tip) {
+  h = Math.max(h, 2);
+  const w = h * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(tip, -h);
+  ctx.bezierCurveTo(w * 0.15 + tip * 0.5, -h * 0.55, w, -h * 0.45, w, -h * 0.15);
+  ctx.arc(0, -h * 0.15, w, 0, Math.PI);
+  ctx.bezierCurveTo(-w, -h * 0.45, -w * 0.15 + tip * 0.5, -h * 0.55, tip, -h);
+  ctx.closePath();
+}
+
+function coin(g, x, y, r, spin) {
+  const { ctx, th } = g;
+  ctx.save(); ctx.translate(x, y); ctx.scale(Math.max(0.12, Math.abs(spin)), 1);
+  circle(ctx, 0, 0, r); ctx.fillStyle = th.gold; ctx.fill();
+  ctx.lineWidth = r * 0.16; ctx.strokeStyle = th.goldDark; ctx.stroke();
+  circle(ctx, 0, 0, r * 0.68); ctx.lineWidth = r * 0.08; ctx.stroke();
+  star(ctx, 0, 0, r * 0.42, 0); ctx.fillStyle = th.goldDark; ctx.fill();
+  ctx.restore();
+}
+
+function gem(g, x, y, r, color, rot) {
+  const { ctx } = g;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.beginPath(); ctx.moveTo(-r, -r * 0.3); ctx.lineTo(-r * 0.5, -r * 0.8); ctx.lineTo(r * 0.5, -r * 0.8);
+  ctx.lineTo(r, -r * 0.3); ctx.lineTo(0, r); ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.8); ctx.lineTo(0, -r * 0.3); ctx.lineTo(-r, -r * 0.3); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// The theme's reward token: what kids earn (star, shell, planet, egg, candy, flower,
+// coin, bolt, heart, nut, snowflake, moon). Drawn centred at x, y with radius r.
+function token(g, x, y, r, rot = 0, tk = g.th.token) {
+  const { ctx } = g;
+  const fill = tk.fill, stroke = tk.stroke;
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+  ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = Math.max(2, r * 0.1);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  const shine = () => { ctx.fillStyle = 'rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.ellipse(-r * 0.25, -r * 0.3, r * 0.15, r * 0.09, -0.6, 0, TAU); ctx.fill(); };
+  switch (tk.kind) {
+    case 'shell':
+      ctx.beginPath(); ctx.moveTo(-r * 0.28, r * 0.72); ctx.lineTo(-r * 0.95, -r * 0.05);
+      ctx.quadraticCurveTo(0, -r * 1.45, r * 0.95, -r * 0.05); ctx.lineTo(r * 0.28, r * 0.72); ctx.closePath();
+      ctx.fill(); ctx.stroke();
+      for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(0, r * 0.68); ctx.lineTo(k * r * 0.36, -r * 0.62 + Math.abs(k) * r * 0.2); ctx.stroke(); }
+      rr(ctx, -r * 0.4, r * 0.62, r * 0.8, r * 0.26, r * 0.1); ctx.fill(); ctx.stroke(); break;
+    case 'planet':
+      circle(ctx, 0, 0, r * 0.66); ctx.fill(); ctx.stroke(); shine();
+      ctx.save(); ctx.rotate(-0.35); ctx.lineWidth = r * 0.14;
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.08, r * 0.3, 0, 0.12 * Math.PI, 0.88 * Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0, r * 1.08, r * 0.3, 0, 1.0 * Math.PI, 2.0 * Math.PI); ctx.globalAlpha = 0.6; ctx.stroke();
+      ctx.restore(); break;
+    case 'egg':
+      ctx.beginPath(); ctx.ellipse(0, r * 0.06, r * 0.68, r * 0.9, 0, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = stroke; [[-0.25, -0.3, 0.13], [0.28, 0.05, 0.16], [-0.12, 0.45, 0.11]].forEach(([a, b, c]) => { circle(ctx, a * r, b * r, c * r); ctx.fill(); });
+      break;
+    case 'candy':
+      ctx.beginPath(); ctx.moveTo(-r * 0.45, 0); ctx.lineTo(-r * 1.05, -r * 0.45); ctx.lineTo(-r * 1.05, r * 0.45); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r * 0.45, 0); ctx.lineTo(r * 1.05, -r * 0.45); ctx.lineTo(r * 1.05, r * 0.45); ctx.closePath(); ctx.fill(); ctx.stroke();
+      circle(ctx, 0, 0, r * 0.58); ctx.fill(); ctx.stroke();
+      ctx.save(); circle(ctx, 0, 0, r * 0.58); ctx.clip(); ctx.strokeStyle = 'rgba(255,255,255,0.75)'; ctx.lineWidth = r * 0.14;
+      for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(k * r * 0.35 - r, -r); ctx.lineTo(k * r * 0.35 + r, r); ctx.stroke(); }
+      ctx.restore(); break;
+    case 'flower':
+      for (let k = 0; k < 5; k++) { const a = k * TAU / 5 - Math.PI / 2; circle(ctx, Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5, r * 0.4); ctx.fill(); ctx.stroke(); }
+      circle(ctx, 0, 0, r * 0.3); ctx.fillStyle = '#FFD84D'; ctx.fill(); ctx.stroke(); break;
+    case 'coin':
+      circle(ctx, 0, 0, r * 0.85); ctx.fill(); ctx.stroke();
+      circle(ctx, 0, 0, r * 0.6); ctx.stroke();
+      star(ctx, 0, 0, r * 0.36, 0); ctx.fillStyle = stroke; ctx.fill(); break;
+    case 'bolt':
+      ctx.beginPath(); ctx.moveTo(r * 0.2, -r); ctx.lineTo(-r * 0.55, r * 0.12); ctx.lineTo(-r * 0.02, r * 0.12);
+      ctx.lineTo(-r * 0.25, r); ctx.lineTo(r * 0.6, -r * 0.18); ctx.lineTo(r * 0.06, -r * 0.18); ctx.closePath();
+      ctx.fill(); ctx.stroke(); break;
+    case 'heart': heart(ctx, 0, r * 0.05, r * 0.85); ctx.fill(); ctx.stroke(); shine(); break;
+    case 'nut':
+      ctx.beginPath(); for (let k = 0; k < 6; k++) ctx.lineTo(Math.cos(k * TAU / 6) * r * 0.85, Math.sin(k * TAU / 6) * r * 0.85);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      circle(ctx, 0, 0, r * 0.34); ctx.fillStyle = stroke; ctx.fill(); break;
+    case 'snowflake':
+      for (const [col, lw] of [[stroke, r * 0.26], [fill, r * 0.14]]) {
+        ctx.strokeStyle = col; ctx.lineWidth = lw;
+        for (let k = 0; k < 6; k++) {
+          ctx.save(); ctx.rotate(k * TAU / 6); ctx.beginPath();
+          ctx.moveTo(0, 0); ctx.lineTo(0, -r * 0.95); ctx.moveTo(0, -r * 0.55); ctx.lineTo(r * 0.28, -r * 0.8); ctx.moveTo(0, -r * 0.55); ctx.lineTo(-r * 0.28, -r * 0.8);
+          ctx.stroke(); ctx.restore();
+        }
+      }
+      break;
+    case 'moon':
+      ctx.rotate(-0.35); ctx.beginPath(); ctx.moveTo(0, -r * 0.9);
+      ctx.arc(0, 0, r * 0.9, -Math.PI / 2, Math.PI / 2, true);
+      ctx.bezierCurveTo(-r * 0.5, r * 0.55, -r * 0.5, -r * 0.55, 0, -r * 0.9);
+      ctx.closePath(); ctx.fill(); ctx.stroke(); break;
+    default:
+      star(ctx, 0, 0, r, 0); ctx.fill(); ctx.lineWidth = Math.max(2, r * 0.09); ctx.stroke(); shine();
+  }
+  ctx.restore();
+}
+
+// ---------- mascot (same kid as the how-to videos, recoloured by theme) ----------
+// pose: { armL, armR } angles (0 = hanging down; armR negative / armL positive raise them),
+//       { jump, squash, look, mouth: 'smile' | 'open' }
+function mascot(g, x, y, s, pose) {
+  const { ctx, th, t } = g;
+  const m = th.mascot;
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const jump = pose.jump || 0, sq = pose.squash || 0;
+  ctx.fillStyle = alpha('#000000', 0.15);
+  ctx.beginPath(); ctx.ellipse(0, 150, 60 - jump * 0.25, 12, 0, 0, TAU); ctx.fill();
+  if (th.drawMascot) { ctx.translate(0, -jump); th.drawMascot(ctx, pose, t); ctx.restore(); return; }
+  ctx.translate(0, 150 - jump); ctx.scale(1 + sq * 0.12, 1 - sq * 0.12); ctx.translate(0, -150);
+  ctx.strokeStyle = m.pants; ctx.lineWidth = 20; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-16, 90); ctx.lineTo(-18, 140); ctx.moveTo(16, 90); ctx.lineTo(18, 140); ctx.stroke();
+  ctx.fillStyle = m.shoes;
+  ctx.beginPath(); ctx.ellipse(-22, 146, 16, 9, 0, 0, TAU); ctx.ellipse(22, 146, 16, 9, 0, 0, TAU); ctx.fill();
+  const arm = (sx, ang) => {
+    ctx.save(); ctx.translate(sx, 22); ctx.rotate(ang);
+    ctx.strokeStyle = m.skin; ctx.lineWidth = 15; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 56); ctx.stroke();
+    circle(ctx, 0, 60, 10); ctx.fillStyle = m.skin; ctx.fill();
+    ctx.restore();
+  };
+  arm(34, pose.armR != null ? pose.armR : -0.35);
+  arm(-34, pose.armL != null ? pose.armL : 0.35);
+  rr(ctx, -42, 5, 84, 95, 28); ctx.fillStyle = m.shirt; ctx.fill();
+  ctx.fillStyle = '#FFFFFF'; star(ctx, 0, 48, 18, 0); ctx.fill();
+  ctx.fillStyle = m.skin; circle(ctx, 0, -40, 52); ctx.fill();
+  ctx.fillStyle = m.hair;
+  ctx.beginPath(); ctx.arc(0, -52, 50, Math.PI * 1.02, Math.PI * 1.98); ctx.fill();
+  ctx.beginPath(); ctx.arc(-30, -82, 16, 0, TAU); ctx.arc(0, -92, 18, 0, TAU); ctx.arc(30, -82, 16, 0, TAU); ctx.fill();
+  const blink = (t % 3.3) > 3.15 ? 0.15 : 1;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath(); ctx.ellipse(-18, -40, 11, 13 * blink, 0, 0, TAU); ctx.ellipse(18, -40, 11, 13 * blink, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#2D2A4A';
+  const lk = pose.look || 0;
+  ctx.beginPath(); ctx.ellipse(-18 + lk, -38, 6, 7 * blink, 0, 0, TAU); ctx.ellipse(18 + lk, -38, 6, 7 * blink, 0, 0, TAU); ctx.fill();
+  ctx.fillStyle = 'rgba(255,122,162,0.55)';
+  circle(ctx, -32, -20, 8); ctx.fill(); circle(ctx, 32, -20, 8); ctx.fill();
+  if (pose.mouth === 'open') {
+    ctx.fillStyle = '#2D2A4A';
+    ctx.beginPath(); ctx.arc(0, -22, 14, 0, Math.PI); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#FF7A8A'; ctx.beginPath(); ctx.ellipse(0, -13, 7, 4, 0, 0, TAU); ctx.fill();
+  } else {
+    ctx.strokeStyle = '#2D2A4A'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, -22, 14, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ---------- the rewards ----------
+const REWARDS = [];
+const def = r => REWARDS.push(r);
+
+def({
+  id: 'check-pop', name: 'Check Pop', duration: 2.2,
+  use: 'Quick confirmation when a chore is ticked off. Short enough to play every time.',
+  defaults: { title: 'Done!' },
+  sfx: [[0.05, 'pop'], [0.45, 'note:4'], [0.55, 'sparkle']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    const ring = prog(t, 0.25, 0.9);
+    if (ring > 0 && ring < 1) {
+      ctx.strokeStyle = alpha(th.success, 1 - ring); ctx.lineWidth = 18 * (1 - ring) + 2;
+      circle(ctx, 0, -30, 135 + easeOut(ring) * 190); ctx.stroke();
+    }
+    const db = prog(t, 0.3, 1.0);
+    if (db > 0 && db < 1) for (let i = 0; i < 14; i++) {
+      const a = i / 14 * TAU, r = 160 + easeOut(db) * 150;
+      particle(g, Math.cos(a) * r, -30 + Math.sin(a) * r, 13 * (1 - db) + 4, a + db * 3, th.confetti[i % 5], i);
+    }
+    const p = easeOutBack(prog(t, 0, 0.45));
+    if (p > 0) {
+      ctx.save(); ctx.translate(0, -30); ctx.scale(p, p);
+      ctx.fillStyle = alpha(th.ink, 0.15); circle(ctx, 6, 10, 135); ctx.fill();
+      ctx.fillStyle = th.success; circle(ctx, 0, 0, 135); ctx.fill();
+      ctx.lineWidth = 12; ctx.strokeStyle = th.surface; ctx.stroke();
+      const pts = [[-58, 4], [-16, 46], [62, -42]];
+      const L1 = Math.hypot(42, 42), L2 = Math.hypot(78, 88), c = easeInOut(prog(t, 0.28, 0.65)) * (L1 + L2);
+      if (c > 0) {
+        ctx.strokeStyle = th.surface; ctx.lineWidth = 30; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(...pts[0]);
+        if (c <= L1) ctx.lineTo(lerp(pts[0][0], pts[1][0], c / L1), lerp(pts[0][1], pts[1][1], c / L1));
+        else { ctx.lineTo(...pts[1]); const u = (c - L1) / L2; ctx.lineTo(lerp(pts[1][0], pts[2][0], u), lerp(pts[1][1], pts[2][1], u)); }
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+    title(g, o.title, 215, prog(t, 0.5, 0.85), 64);
+  },
+});
+
+def({
+  id: 'star-shower', name: 'Star Shower', duration: 3.6,
+  use: 'A single chore completed. Matches the ending of the how-to videos.',
+  defaults: { title: th => th.cheer || 'Great job!', subtitle: (th, o) => `+${o.stars} ${th.token.name}`, stars: 3 },
+  sfx: [[0.12, 'pop'], [0.85, 'note:0'], [1.15, 'note:2'], [1.45, 'note:4'], [1.75, 'sparkle']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    rays(g, 0, 50, 520, 14, t * 0.3, th.gold, 0.35 * easeOut(prog(t, 0.6, 1.4)));
+    const n = clamp(Math.round(o.stars), 1, 5);
+    for (let i = 0; i < n; i++) {
+      const off = i - (n - 1) / 2, tx = off * 170, ty = 50 + Math.abs(off) * 34;
+      const st = 0.45 + i * 0.3, p = prog(t, st, st + 0.45);
+      if (p <= 0) continue;
+      const e = easeOutBack(p), x = lerp(tx * 0.3, tx, easeOut(p)), y = lerp(420, ty, easeOut(p));
+      const pulse = 1 + 0.06 * Math.sin((t - st) * 6) * prog(t, st + 0.5, st + 0.8);
+      const big = Math.abs(off) < 0.5 ? 92 : 74;
+      ctx.save(); ctx.translate(x, y); ctx.rotate((1 - easeOut(p)) * -3); ctx.scale(e * pulse, e * pulse);
+      token(g, 5, 8, big, 0, { kind: th.token.kind, fill: alpha(th.ink, 0.15), stroke: alpha(th.ink, 0) });
+      token(g, 0, 0, big);
+      ctx.restore();
+      burst(g, tx, ty, prog(t, st + 0.38, st + 1.1), 10, 150, i);
+    }
+    title(g, o.title, -215, prog(t, 0.08, 0.55));
+    pill(g, o.subtitle, 0, 255, prog(t, 1.7, 2.1), th.success, th.onSuccess, 40);
+  },
+});
+
+def({
+  id: 'confetti-cannon', name: 'Party Poppers', duration: 3.8,
+  use: 'Bigger celebration, e.g. finishing a tricky chore or a whole morning routine.',
+  defaults: { title: 'Woo-hoo!', subtitle: 'Chore done!' },
+  sfx: [[0.3, 'pop'], [0.36, 'pop'], [0.33, 'whoosh'], [0.9, 'sparkle'], [1.0, 'note:4']],
+  draw(g) {
+    const { ctx, t, th, o, hw, hh } = g;
+    const fire = 0.3;
+    [-1, 1].forEach(side => {
+      // popper cone in the bottom corner, pointing up and inward
+      const bx = side * (hw - 100), by = hh - 120, ang = side * -0.55;
+      const recoil = Math.sin(clamp((t - fire) / 0.25) * Math.PI) * 26;
+      const appear = easeOutBack(prog(t, 0, 0.25));
+      ctx.save(); ctx.translate(bx, by); ctx.rotate(ang); ctx.translate(0, recoil); ctx.scale(appear, appear);
+      ctx.beginPath(); ctx.moveTo(-48, -70); ctx.lineTo(48, -70); ctx.lineTo(10, 70); ctx.lineTo(-10, 70); ctx.closePath();
+      ctx.fillStyle = th.primary; ctx.fill(); ctx.save(); ctx.clip();
+      ctx.fillStyle = th.gold;
+      for (let k = -2; k < 4; k++) { ctx.beginPath(); ctx.moveTo(-60, k * 40 - 30); ctx.lineTo(60, k * 40 - 70); ctx.lineTo(60, k * 40 - 52); ctx.lineTo(-60, k * 40 - 12); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+      ctx.beginPath(); ctx.moveTo(-48, -70); ctx.lineTo(48, -70); ctx.lineTo(10, 70); ctx.lineTo(-10, 70); ctx.closePath();
+      ctx.lineWidth = 5; ctx.strokeStyle = th.outline; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, -70, 48, 12, 0, 0, TAU); ctx.fillStyle = th.secondary; ctx.fill(); ctx.stroke();
+      ctx.restore();
+      // particles
+      const mx = bx + Math.sin(ang) * 70, my = by - Math.cos(ang) * 70;
+      for (let i = 0; i < Math.round(75 * th.density); i++) {
+        const st = fire + rand(i, side) * 0.07, age = t - st;
+        if (age < 0) continue;
+        const a = -Math.PI / 2 + ang + (rand(i, side + 7) - 0.5) * 0.9;
+        const sp = 1000 + rand(i, side + 9) * 900;
+        let [x, y] = fly(mx, my, Math.cos(a) * sp, Math.sin(a) * sp, age, 2.4, 230);
+        x += Math.sin(age * 5 + i) * 18 * clamp(age);
+        if (y > hh + 40) continue;
+        particle(g, x, y, 10 + rand(i, 2) * 6, age * (4 + rand(i) * 4) + i, th.confetti[i % th.confetti.length], i);
+      }
+      // puff
+      const pf = prog(t, fire, fire + 0.5);
+      if (pf > 0 && pf < 1) { ctx.fillStyle = alpha(th.surface, 0.8 * (1 - pf)); circle(ctx, mx, my, 30 + pf * 70); ctx.fill(); }
+    });
+    title(g, o.title, -40, prog(t, 0.5, 0.9), 70);
+    pill(g, o.subtitle, 0, 80, prog(t, 0.9, 1.25), th.success, th.onSuccess, 34);
+  },
+});
+
+def({
+  id: 'coin-jar', name: 'Coin Jar', duration: 4.2,
+  use: 'Points or allowance earned. Counts up to the number of points.',
+  defaults: { title: 'Points earned!', points: 10, coins: 10 },
+  sfx: null, // generated from the coin timings below
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    const N = clamp(Math.round(o.coins), 1, 20);
+    const jx = 0, top = 50, bottom = 300, jw = 270;
+    const landT = i => 0.35 + i * (1.6 / N) + 0.5;
+    const custom = !['star', 'coin'].includes(th.token.kind);
+    // jar back
+    ctx.fillStyle = alpha(th.primary, 0.12);
+    rr(ctx, jx - jw / 2, top, jw, bottom - top, 46); ctx.fill();
+    // coins
+    let landed = 0, lastLand = -9;
+    ctx.save(); rr(ctx, jx - jw / 2 + 8, top - 400, jw - 16, bottom - top + 392, 40); ctx.clip();
+    for (let i = 0; i < N; i++) {
+      const st = landT(i) - 0.5, lt = landT(i);
+      const sx = (rand(i, 1) - 0.5) * 120, ly = bottom - 40 - Math.floor(i / 3) * (custom ? 48 : 30), lx = ((i % 3) - 1) * 72 + (rand(i, 2) - 0.5) * 16;
+      if (t < st) continue;
+      if (t < lt) {
+        const p = easeIn(prog(t, st, lt));
+        if (custom) token(g, lerp(sx, lx, p), lerp(-470, ly, p), 40, t * 3 + i);
+        else coin(g, lerp(sx, lx, p), lerp(-470, ly, p), 40, Math.cos(t * 9 + i));
+      } else if (custom) {
+        landed++; lastLand = lt;
+        token(g, lx, ly - 8, 40, (rand(i, 4) - 0.5) * 0.8);
+      } else {
+        landed++; lastLand = lt;
+        ctx.save(); ctx.translate(lx, ly); ctx.scale(1, 0.38);
+        circle(ctx, 0, 0, 40); ctx.fillStyle = th.goldDark; ctx.fill();
+        circle(ctx, 0, -14, 40); ctx.fillStyle = th.gold; ctx.fill();
+        ctx.lineWidth = 6; ctx.strokeStyle = th.goldDark; ctx.stroke();
+        ctx.restore();
+      }
+    }
+    ctx.restore();
+    // jar front glass + lid
+    ctx.lineWidth = 8; ctx.strokeStyle = th.outline;
+    rr(ctx, jx - jw / 2, top, jw, bottom - top, 46); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'; rr(ctx, jx - jw / 2 + 22, top + 30, 22, bottom - top - 80, 11); ctx.fill();
+    rr(ctx, jx - jw / 2 - 14, top - 26, jw + 28, 38, 14); ctx.fillStyle = th.secondary; ctx.fill(); ctx.stroke();
+    // counter
+    const val = Math.round(o.points * landed / N);
+    const bump = 1 + 0.18 * Math.exp(-(t - lastLand) * 9);
+    if (t > 0.6) {
+      ctx.save(); ctx.translate(0, -60); ctx.scale(bump * easeOutBack(prog(t, 0.6, 0.9)), bump * easeOutBack(prog(t, 0.6, 0.9)));
+      pill(g, '+' + val, 0, 0, 1, th.gold, th.outline, 46);
+      ctx.restore();
+    }
+    const end = landT(N - 1);
+    burst(g, 0, 60, prog(t, end, end + 0.8), 12, 220, 3);
+    title(g, o.title, -235, prog(t, 0.05, 0.5));
+  },
+});
+
+def({
+  id: 'badge-unlock', name: 'Badge Unlock', duration: 4.2,
+  use: 'A new badge or achievement (first week, 10 beds made, etc.).',
+  defaults: { label: 'NEW BADGE!', title: 'Bed Boss', icon: 'token' },
+  sfx: [[0.2, 'whoosh'], [0.49, 'thud'], [1.1, 'fanfare'], [1.35, 'shimmer']],
+  draw(g) {
+    const { ctx, t, th, o, hh } = g;
+    rays(g, 0, 10, 560, 16, t * 0.25, th.gold, 0.4 * easeOut(prog(t, 0.8, 1.5)));
+    const my = lerp(-hh - 260, 10, bounce(prog(t, 0.2, 1.0)));
+    // ribbon
+    [[-1, th.primary], [1, th.secondary]].forEach(([s, col]) => {
+      ctx.beginPath();
+      ctx.moveTo(s * 30, -hh - 20); ctx.lineTo(s * 110, -hh - 20);
+      ctx.lineTo(s * 30, my - 90); ctx.lineTo(s * -40, my - 90); ctx.closePath();
+      ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = alpha(th.ink, 0.35); ctx.stroke();
+    });
+    ctx.save(); ctx.translate(0, my);
+    ctx.rotate(Math.sin(t * 2) * 0.04 * prog(t, 1, 1.4));
+    // scalloped gold rim
+    ctx.beginPath();
+    for (let i = 0; i <= 96; i++) { const a = i / 96 * TAU, r = 150 + Math.cos(a * 24) * 7; ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+    ctx.closePath(); ctx.fillStyle = th.gold; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = th.goldDark; ctx.stroke();
+    circle(ctx, 0, 0, 112); ctx.fillStyle = th.primary; ctx.fill();
+    ctx.lineWidth = 8; ctx.strokeStyle = th.surface; ctx.stroke();
+    ctx.fillStyle = th.surface;
+    if (o.icon === 'heart') { heart(ctx, 0, 5, 58); ctx.fill(); }
+    else if (o.icon === 'check') { ctx.strokeStyle = th.surface; ctx.lineWidth = 26; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); ctx.moveTo(-45, 2); ctx.lineTo(-12, 35); ctx.lineTo(48, -32); ctx.stroke(); }
+    else if (o.icon === 'token' && th.token.kind !== 'star') token(g, 0, 4, 66);
+    else { star(ctx, 0, 4, 70, 0); ctx.fill(); }
+    // shine
+    const sh = prog(t, 1.3, 1.9);
+    if (sh > 0 && sh < 1) {
+      ctx.save(); circle(ctx, 0, 0, 157); ctx.clip();
+      const sx = lerp(-260, 260, sh);
+      ctx.translate(sx, 0); ctx.rotate(0.5);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillRect(-28, -300, 56, 600);
+      ctx.restore();
+    }
+    ctx.restore();
+    twinkles(g, [[-230, -90, 22], [220, -140, 18], [250, 60, 26], [-250, 110, 16], [-160, -190, 14], [170, 170, 18]], 1.5);
+    pill(g, o.label, 0, -240, prog(t, 1.0, 1.35), th.accent, th.onAccent, 34);
+    title(g, o.title, 250, prog(t, 1.35, 1.75), 54);
+  },
+});
+
+def({
+  id: 'streak-flame', name: 'Streak Flame', duration: 4.2,
+  use: 'Doing chores several days in a row. Fills in today on the week tracker.',
+  defaults: { streak: 5, title: null },
+  sfx: [[0.2, 'whoosh'], [1.0, 'pop'], [1.65, 'pop'], [1.7, 'note:4'], [1.95, 'fanfare']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    const streak = Math.max(1, Math.round(o.streak));
+    const p = easeOutBack(prog(t, 0.2, 1.0));
+    if (p > 0) {
+      const h = 270 * p, fl = th.flame;
+      ctx.save(); ctx.translate(0, 70);
+      const glow = ctx.createRadialGradient(0, -80, 10, 0, -80, 260);
+      glow.addColorStop(0, alpha(fl[1], 0.45)); glow.addColorStop(1, alpha(fl[1], 0));
+      ctx.fillStyle = glow; circle(ctx, 0, -80, 260); ctx.fill();
+      [[1, fl[0], 0], [0.72, fl[1], 1.7], [0.42, fl[2], 3.1]].forEach(([k, col, ph]) => {
+        const tip = Math.sin(t * 7 + ph) * 16 + Math.sin(t * 11.3 + ph) * 8;
+        ctx.save(); ctx.scale(1 + Math.sin(t * 9 + ph) * 0.03, 1);
+        ctx.translate(0, (1 - k) * h * 0.25);
+        flamePath(ctx, h * k, tip * k); ctx.fillStyle = col; ctx.fill();
+        ctx.restore();
+      });
+      // embers
+      for (let i = 0; i < 10; i++) {
+        const life = ((t * 0.9 + rand(i)) % 1);
+        ctx.globalAlpha = (1 - life) * p;
+        ctx.fillStyle = fl[i % 2];
+        circle(ctx, (rand(i, 1) - 0.5) * 160 + Math.sin(t * 3 + i) * 12, -life * 330, 5 + rand(i, 2) * 4); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+    // number
+    const np = easeOutBack(prog(t, 0.95, 1.3));
+    if (np > 0) {
+      ctx.save(); ctx.translate(0, 40); ctx.scale(np, np);
+      ctx.font = font(th, 130, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = 14; ctx.strokeStyle = th.ink; ctx.lineJoin = 'round'; ctx.strokeText(String(streak), 0, 0);
+      ctx.fillStyle = th.surface; ctx.fillText(String(streak), 0, 0);
+      ctx.restore();
+    }
+    // week tracker
+    const filled = ((streak - 1) % 7) + 1;
+    for (let d = 0; d < 7; d++) {
+      const x = (d - 3) * 78, y = 235;
+      const ap = easeOutBack(prog(t, 0.3 + d * 0.06, 0.6 + d * 0.06));
+      if (ap <= 0) continue;
+      const today = d === filled - 1, on = d < filled - 1 || (today && t > 1.65);
+      const pop = today ? 1 + 0.35 * Math.sin(prog(t, 1.65, 2.0) * Math.PI) : 1;
+      ctx.save(); ctx.translate(x, y); ctx.scale(ap * pop, ap * pop);
+      circle(ctx, 0, 0, 28); ctx.fillStyle = on ? th.success : alpha(th.ink, 0.12); ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = th.surface; ctx.stroke();
+      if (on) {
+        ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.beginPath(); ctx.moveTo(-11, 1); ctx.lineTo(-3, 9); ctx.lineTo(12, -8); ctx.stroke();
+      }
+      ctx.restore();
+      if (today) burst(g, x, y, prog(t, 1.65, 2.3), 8, 90, 4);
+    }
+    title(g, o.title || `${streak} day streak!`, -250, prog(t, 1.9, 2.3));
+  },
+});
+
+def({
+  id: 'trophy', name: 'Trophy', duration: 4.6,
+  use: 'All of today\'s chores finished.',
+  defaults: { title: 'All chores done!', subtitle: 'Champion!' },
+  sfx: [[0.2, 'whoosh'], [0.95, 'fanfare'], [1.3, 'shimmer'], [1.05, 'sparkle']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    rays(g, 0, -40, 600, 18, t * 0.25, th.gold, 0.45 * easeOut(prog(t, 0.5, 1.3)));
+    confettiRain(g, 1.0, 70);
+    const ty = lerp(560, 40, easeOutBack(prog(t, 0.2, 1.0)));
+    ctx.save(); ctx.translate(0, ty);
+    // base
+    ctx.fillStyle = th.primary; rr(ctx, -120, 150, 240, 56, 14); ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = th.outline; ctx.stroke();
+    ctx.fillStyle = th.gold; rr(ctx, -60, 164, 120, 28, 8); ctx.fill();
+    // stem
+    ctx.fillStyle = th.goldDark; rr(ctx, -26, 60, 52, 92, 10); ctx.fill();
+    ctx.fillStyle = th.gold; rr(ctx, -70, 128, 140, 28, 10); ctx.fill(); ctx.stroke();
+    // handles
+    ctx.lineWidth = 24; ctx.strokeStyle = th.goldDark; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(-128, -88, 52, Math.PI * 0.45, Math.PI * 1.6); ctx.stroke();
+    ctx.beginPath(); ctx.arc(128, -88, 52, -Math.PI * 0.6, Math.PI * 0.55); ctx.stroke();
+    // cup
+    ctx.beginPath();
+    ctx.moveTo(-140, -160); ctx.lineTo(140, -160);
+    ctx.bezierCurveTo(140, -20, 80, 60, 0, 70);
+    ctx.bezierCurveTo(-80, 60, -140, -20, -140, -160);
+    ctx.closePath();
+    ctx.fillStyle = th.gold; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = th.goldDark; ctx.stroke();
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillRect(-110, -160, 34, 220);
+    const sh = prog(t, 1.2, 1.8);
+    if (sh > 0 && sh < 1) { ctx.save(); ctx.translate(lerp(-260, 260, sh), 0); ctx.rotate(0.45); ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.fillRect(-30, -300, 60, 600); ctx.restore(); }
+    ctx.restore();
+    ctx.beginPath(); ctx.ellipse(0, -160, 140, 22, 0, 0, TAU); ctx.fillStyle = th.goldDark; ctx.fill();
+    star(ctx, 0, -60, 46, 0); ctx.fillStyle = th.surface; ctx.fill();
+    ctx.restore();
+    twinkles(g, [[-230, -120, 22], [240, -170, 18], [210, 40, 24], [-220, 60, 16]], 1.3);
+    title(g, o.title, -250, prog(t, 0.95, 1.35));
+    pill(g, o.subtitle, 0, 290, prog(t, 1.5, 1.85), th.secondary, th.onSecondary, 32);
+  },
+});
+
+def({
+  id: 'treasure-chest', name: 'Treasure Chest', duration: 4.8,
+  use: 'A surprise prize or unlocking a real-world reward the parent set up.',
+  defaults: { title: 'Treasure!', subtitle: 'You unlocked a prize!' },
+  sfx: [[0.29, 'thud'], [0.85, 'tick'], [1.0, 'tick'], [1.15, 'tick'], [1.3, 'tick'], [1.45, 'tick'], [1.7, 'creak'], [1.85, 'sparkle'], [2.2, 'fanfare']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    const wood = th.chest || '#B97A4B', woodDark = mix(wood, '#000000', 0.25);
+    const open = easeOutBack(prog(t, 1.7, 2.05));
+    const shake = t > 0.8 && t < 1.65 ? Math.sin(t * 42) * 0.06 * prog(t, 0.8, 1.6) : 0;
+    const cy = lerp(-560, 130, bounce(prog(t, 0.05, 0.7)));
+    rays(g, 0, cy - 40, 620, 16, t * 0.3, th.gold, 0.5 * open);
+    // light beam
+    if (open > 0) {
+      const gr = ctx.createLinearGradient(0, cy - 20, 0, cy - 420);
+      gr.addColorStop(0, alpha(th.gold, 0.75 * clamp(open))); gr.addColorStop(1, alpha(th.gold, 0));
+      ctx.fillStyle = gr; ctx.beginPath();
+      ctx.moveTo(-150, cy - 20); ctx.lineTo(150, cy - 20); ctx.lineTo(260, cy - 440); ctx.lineTo(-260, cy - 440); ctx.closePath(); ctx.fill();
+    }
+    ctx.save(); ctx.translate(0, cy + 160); ctx.rotate(shake); ctx.translate(0, -160);
+    // inside (visible when open)
+    if (open > 0) { ctx.fillStyle = mix(woodDark, '#000000', 0.35); rr(ctx, -160, -40, 320, 50, 12); ctx.fill(); }
+    // body
+    rr(ctx, -175, -20, 350, 180, 22); ctx.fillStyle = wood; ctx.fill();
+    ctx.lineWidth = 7; ctx.strokeStyle = th.outline; ctx.stroke();
+    ctx.fillStyle = woodDark; for (let k = 0; k < 3; k++) ctx.fillRect(-165, 30 + k * 40, 330, 5);
+    ctx.fillStyle = th.gold; ctx.fillRect(-140, -20, 34, 180); ctx.fillRect(106, -20, 34, 180);
+    // lid: lifts and tilts back as it opens
+    const lift = clamp(open, 0, 1.2);
+    ctx.save(); ctx.translate(0, -20 - lift * 70); ctx.scale(1, lerp(1, 0.5, clamp(open)));
+    ctx.beginPath(); ctx.moveTo(-180, 0); ctx.lineTo(-180, -60); ctx.quadraticCurveTo(0, -150, 180, -60); ctx.lineTo(180, 0); ctx.closePath();
+    ctx.fillStyle = wood; ctx.fill(); ctx.lineWidth = 7; ctx.strokeStyle = th.outline; ctx.stroke();
+    ctx.fillStyle = th.gold; ctx.fillRect(-140, -95, 34, 95); ctx.fillRect(106, -95, 34, 95);
+    ctx.restore();
+    // lock
+    if (open < 0.3) { ctx.fillStyle = th.gold; rr(ctx, -30, -40, 60, 66, 12); ctx.fill(); ctx.lineWidth = 5; ctx.strokeStyle = th.goldDark; ctx.stroke(); ctx.fillStyle = th.outline; circle(ctx, 0, -12, 8); ctx.fill(); ctx.fillRect(-4, -10, 8, 20); }
+    ctx.restore();
+    // loot
+    for (let i = 0; i < 16; i++) {
+      const st = 1.85 + i * 0.05, age = t - st;
+      if (age < 0) continue;
+      const vx = (rand(i, 1) - 0.5) * 620, vy = -820 - rand(i, 2) * 330;
+      let x = cy * 0 + vx * age, y = cy - 30 + vy * age + 0.5 * 2400 * age * age;
+      const ground = 300 + rand(i, 3) * 40;
+      if (y > ground && age > 0.3) y = ground;
+      x = clamp(x, -340, 340);
+      const kind = i % 3;
+      if (kind === 0) coin(g, x, y, 24, y >= ground ? 1 : Math.cos(age * 12 + i));
+      else if (kind === 1) gem(g, x, y, 24, th.confetti[i % th.confetti.length], y >= ground ? 0 : age * 5);
+      else token(g, x, y, 24, y >= ground ? 0 : age * 4);
+    }
+    title(g, o.title, -250, prog(t, 2.2, 2.6), 58);
+    pill(g, o.subtitle, 0, -150, prog(t, 2.6, 2.95), th.primary, th.onPrimary, 30);
+  },
+});
+
+def({
+  id: 'balloons', name: 'Balloon Party', duration: 4.4,
+  use: 'A fun, gentle celebration for younger kids.',
+  defaults: { title: 'Hooray!', subtitle: 'Chore done!' },
+  sfx: [[0.2, 'whoosh'], [0.9, 'note:2'], [1.1, 'note:4'], [2.5, 'pop'], [2.8, 'pop'], [3.1, 'pop'], [2.55, 'sparkle']],
+  draw(g) {
+    const { ctx, t, th, o, hh } = g;
+    const spots = [[-235, -70], [-140, -200], [-40, -80], [70, -215], [170, -75], [255, -190], [-10, -280]];
+    const pops = { 1: 2.5, 3: 2.8, 5: 3.1 };
+    [...spots.keys()].sort((a, b) => spots[a][1] - spots[b][1]).forEach(i => {
+      const [bx, by] = spots[i];
+      const st = 0.1 + i * 0.12, p = easeOut(prog(t, st, st + 1.5));
+      const pt = pops[i];
+      const x = bx + Math.sin(t * 1.6 + i) * 14, y = lerp(hh + 200, by, p) + Math.sin(t * 2.1 + i * 1.3) * 8;
+      if (pt && t >= pt) { burst(g, x, y, prog(t, pt, pt + 0.7), 10, 130, i); return; }
+      const col = i === 6 ? th.primary : th.confetti[i % th.confetti.length];
+      // string
+      ctx.strokeStyle = alpha(th.ink, 0.5); ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x, y + 72);
+      ctx.bezierCurveTo(x + 18, y + 120, x - 18, y + 160, x + Math.sin(t * 2 + i) * 10, y + 220); ctx.stroke();
+      ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t * 1.6 + i) * 0.06);
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.ellipse(0, 0, 56, 70, 0, 0, TAU); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-9, 76); ctx.lineTo(9, 76); ctx.lineTo(0, 66); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.beginPath(); ctx.ellipse(-20, -26, 12, 20, -0.5, 0, TAU); ctx.fill();
+      ctx.restore();
+    });
+    title(g, o.title, 185, prog(t, 0.9, 1.3), 64);
+    pill(g, o.subtitle, 0, 285, prog(t, 1.25, 1.6), th.success, th.onSuccess, 32);
+  },
+});
+
+def({
+  id: 'rocket-level-up', name: 'Rocket Level Up', duration: 4.6,
+  use: 'Reaching a new level or a big points milestone.',
+  defaults: { title: 'LEVEL UP!', level: 4 },
+  sfx: [[0.1, 'rumble'], [0.9, 'whoosh'], [1.75, 'fanfare'], [2.05, 'pop'], [2.15, 'sparkle']],
+  draw(g) {
+    const { ctx, t, th, o, hw, hh } = g;
+    // speed lines
+    const sl = prog(t, 0.9, 1.1) * (1 - prog(t, 1.8, 2.3));
+    if (sl > 0) {
+      ctx.strokeStyle = alpha(th.surface, 0.7 * sl); ctx.lineWidth = 5; ctx.lineCap = 'round';
+      for (let i = 0; i < 18; i++) {
+        const x = -hw + rand(i, 1) * hw * 2, y = ((rand(i, 2) * 2 * hh + t * 1600) % (2 * hh + 200)) - hh - 100;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + 80); ctx.stroke();
+      }
+    }
+    // smoke puffs
+    for (let i = 0; i < 14; i++) {
+      const st = 0.15 + i * 0.09, age = t - st;
+      if (age < 0 || age > 1.6) continue;
+      const ry = i < 8 ? 300 : lerp(300, -hh - 300, easeIn(prog(st, 0.9, 1.7)));
+      const x = (rand(i, 4) - 0.5) * 120 + (rand(i, 5) - 0.5) * age * 260;
+      ctx.fillStyle = alpha(th.surface, 0.85 * (1 - age / 1.6));
+      circle(ctx, x, ry + age * 30, 26 + age * 50); ctx.fill();
+    }
+    // rocket
+    const launch = easeIn(prog(t, 0.9, 1.7));
+    if (launch < 1) {
+      const shake = t < 0.9 ? Math.sin(t * 60) * 3 * prog(t, 0.1, 0.5) : 0;
+      ctx.save(); ctx.translate(shake, lerp(130, -hh - 320, launch));
+      const fl = (th.flame || DEFAULT_THEME.flame), fh = (t < 0.9 ? 60 * prog(t, 0.1, 0.8) : 150) + Math.sin(t * 30) * 10;
+      ctx.save(); ctx.translate(0, 110); ctx.rotate(Math.PI);
+      flamePath(ctx, fh, Math.sin(t * 25) * 6); ctx.fillStyle = fl[0]; ctx.fill();
+      ctx.scale(0.6, 0.6); flamePath(ctx, fh, 0); ctx.fillStyle = fl[1]; ctx.fill();
+      ctx.restore();
+      // fins
+      ctx.fillStyle = th.accent; ctx.lineWidth = 6; ctx.strokeStyle = th.outline;
+      [-1, 1].forEach(s => { ctx.beginPath(); ctx.moveTo(s * 50, 20); ctx.lineTo(s * 95, 105); ctx.lineTo(s * 40, 95); ctx.closePath(); ctx.fill(); ctx.stroke(); });
+      // body
+      ctx.beginPath(); ctx.moveTo(0, -170);
+      ctx.bezierCurveTo(70, -110, 66, 40, 50, 105); ctx.lineTo(-50, 105); ctx.bezierCurveTo(-66, 40, -70, -110, 0, -170); ctx.closePath();
+      ctx.fillStyle = th.surface; ctx.fill(); ctx.stroke();
+      ctx.save(); ctx.clip(); ctx.fillStyle = th.primary; ctx.fillRect(-80, -180, 160, 70); ctx.fillRect(-80, 70, 160, 40); ctx.restore();
+      ctx.beginPath(); ctx.moveTo(0, -170); ctx.bezierCurveTo(70, -110, 66, 40, 50, 105); ctx.lineTo(-50, 105); ctx.bezierCurveTo(-66, 40, -70, -110, 0, -170); ctx.stroke();
+      circle(ctx, 0, -30, 30); ctx.fillStyle = th.secondary; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = th.gold; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.6)'; circle(ctx, -9, -39, 9); ctx.fill();
+      ctx.restore();
+    }
+    // level badge
+    const bp = easeOutBack(prog(t, 2.0, 2.4));
+    if (bp > 0) {
+      ctx.save(); ctx.translate(0, 50); ctx.scale(bp, bp);
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * TAU + t * 0.8;
+        ctx.fillStyle = th.gold; star(ctx, Math.cos(a) * 200, Math.sin(a) * 200, 20, t * 2); ctx.fill();
+      }
+      circle(ctx, 0, 0, 150); ctx.fillStyle = th.gold; ctx.fill();
+      circle(ctx, 0, 0, 124); ctx.fillStyle = th.primary; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = th.surface; ctx.stroke();
+      ctx.font = font(th, 30); ctx.fillStyle = th.surface; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('LEVEL', 0, -62);
+      ctx.font = font(th, 140, 700); ctx.fillText(String(o.level), 0, 22);
+      ctx.restore();
+    }
+    burst(g, 0, 50, prog(t, 2.05, 2.8), 14, 260, 5);
+    title(g, o.title, -255, prog(t, 1.75, 2.1), 58);
+  },
+});
+
+def({
+  id: 'fireworks', name: 'Fireworks', duration: 4.8,
+  use: 'The biggest moments: a full week of chores, a month-long streak.',
+  defaults: { title: 'Amazing!', subtitle: 'A whole week of chores!' },
+  sfx: null, // generated from the firework timings below
+  shows: [[0.15, -220, -150, 0], [0.55, 200, -210, 1], [1.0, 20, -60, 2], [1.5, -150, -240, 3], [1.9, 270, -30, 4], [2.4, -280, 10, 1], [2.8, 80, -230, 0]],
+  draw(g) {
+    const { ctx, t, th, o, hw, hh } = g;
+    ctx.fillStyle = alpha(th.night, 0.93 * prog(t, 0, 0.35));
+    ctx.fillRect(-hw, -hh, hw * 2, hh * 2);
+    for (let i = 0; i < 40; i++) {
+      ctx.globalAlpha = prog(t, 0.1, 0.5) * (0.4 + 0.6 * Math.abs(Math.sin(t * 2 + i)));
+      ctx.fillStyle = '#FFFFFF'; circle(ctx, -hw + rand(i, 1) * hw * 2, -hh + rand(i, 2) * hh * 1.6, 1.5 + rand(i, 3) * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    this.shows.forEach(([st, x, y, c], j) => {
+      const col = th.confetti[c % th.confetti.length];
+      const up = prog(t, st, st + 0.5);
+      if (up > 0 && up < 1) {
+        const lx = lerp(x * 0.6, x, easeOut(up)), ly = lerp(hh + 20, y, easeOut(up));
+        ctx.strokeStyle = alpha(th.gold, 0.8); ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lerp(x * 0.6, x, easeOut(Math.max(0, up - 0.12))), lerp(hh + 20, y, easeOut(Math.max(0, up - 0.12)))); ctx.stroke();
+        ctx.fillStyle = '#FFFFFF'; circle(ctx, lx, ly, 5); ctx.fill();
+      }
+      const age = t - st - 0.5;
+      if (age < 0 || age > 1.6) return;
+      const fade = 1 - Math.pow(age / 1.6, 2);
+      if (age < 0.12) { ctx.fillStyle = alpha('#FFFFFF', 0.9 * (1 - age / 0.12)); circle(ctx, x, y, 18 + age * 160); ctx.fill(); }
+      for (let i = 0; i < 36; i++) {
+        const a = i / 36 * TAU, sp = 330 * (0.85 + rand(i, j) * 0.3);
+        const [px, py] = fly(x, y, Math.cos(a) * sp, Math.sin(a) * sp, age, 2.2, 110);
+        const [qx, qy] = fly(x, y, Math.cos(a) * sp, Math.sin(a) * sp, Math.max(0, age - 0.14), 2.2, 110);
+        ctx.strokeStyle = alpha(i % 3 === 0 ? '#FFFFFF' : col, fade); ctx.lineWidth = 7; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(qx, qy); ctx.lineTo(px, py); ctx.stroke();
+        if (age > 0.8 && (i + Math.floor(t * 12)) % 3 === 0) { ctx.fillStyle = alpha(th.gold, fade); circle(ctx, px, py, 3); ctx.fill(); }
+      }
+    });
+    title(g, o.title, 170, prog(t, 1.0, 1.4), 66);
+    pill(g, o.subtitle, 0, 275, prog(t, 1.4, 1.75), th.primary, th.onPrimary, 30);
+  },
+});
+
+def({
+  id: 'mascot-dance', name: 'Happy Dance', duration: 4.2,
+  use: 'The app\'s buddy character cheers the kid on. Swap the character per theme.',
+  defaults: { title: 'You did it!', subtitle: 'Chore done!' },
+  sfx: [[0.1, 'pop'], [0.6, 'boing'], [1.3, 'boing'], [2.0, 'boing'], [2.65, 'fanfare']],
+  draw(g) {
+    const { ctx, t, th, o } = g;
+    // hearts floating up
+    for (let i = 0; i < 12; i++) {
+      const st = 0.7 + i * 0.22, age = t - st;
+      if (age < 0 || age > 2.2) continue;
+      const x = (rand(i, 1) - 0.5) * 520 + Math.sin(age * 3 + i) * 20, y = 200 - age * 210;
+      ctx.globalAlpha = Math.sin(age / 2.2 * Math.PI);
+      ctx.fillStyle = th.confetti[i % th.confetti.length];
+      if (th.shape === 'confetti' || th.shape === 'heart') { heart(ctx, x, y, 18 + rand(i, 2) * 10); ctx.fill(); }
+      else particle(g, x, y, 16 + rand(i, 2) * 8, age, ctx.fillStyle, i);
+    }
+    ctx.globalAlpha = 1;
+    const enter = easeOutBack(prog(t, 0, 0.4));
+    let jump = 0, squash = 0;
+    [0.6, 1.3, 2.0].forEach(j => {
+      const p = prog(t, j, j + 0.5);
+      if (p > 0 && p < 1) jump = Math.sin(p * Math.PI) * 110;
+      squash += Math.max(0, 1 - Math.abs(t - j) / 0.1) * 0.8 + Math.max(0, 1 - Math.abs(t - j - 0.5) / 0.1) * 0.8;
+    });
+    const beat = Math.floor(t / 0.35) % 2, cheer = t > 2.55;
+    const wave = Math.sin(t * 12) * 0.3;
+    const pose = {
+      armR: cheer ? -2.6 + wave : beat ? -2.4 + wave : -0.6,
+      armL: cheer ? 2.6 - wave : beat ? 0.6 : 2.4 - wave,
+      jump, squash, mouth: jump > 20 || cheer ? 'open' : 'smile', look: Math.sin(t * 3) * 3,
+    };
+    if (enter > 0) mascot(g, 0, -10, 1.35 * enter, pose);
+    title(g, o.title, -255, prog(t, 0.4, 0.8), 58);
+    pill(g, o.subtitle, 0, 285, prog(t, 2.55, 2.9), th.success, th.onSuccess, 32);
+  },
+});
+
+// Sound cues for rewards whose sounds follow their own timings.
+REWARDS.find(r => r.id === 'coin-jar').sfx = (() => {
+  const cues = [[0.1, 'pop']];
+  for (let i = 0; i < 10; i++) cues.push([0.35 + i * 0.16 + 0.5, 'coin']);
+  cues.push([0.35 + 9 * 0.16 + 0.5, 'sparkle']);
+  return cues;
+})();
+(r => { r.sfx = []; r.shows.forEach(([st]) => { r.sfx.push([st, 'whoosh'], [st + 0.5, 'boom'], [st + 0.8, 'sparkle']); }); r.sfx.push([1.0, 'fanfare']); })(REWARDS.find(r => r.id === 'fireworks'));
+
+const byId = {};
+REWARDS.forEach(r => { byId[r.id] = r; });
+
+// ---------- public API ----------
+const FADE = 0.35;
+let buffer = null;
+
+function render(ctx, id, t, opts = {}) {
+  const r = byId[id];
+  if (!r) throw new Error('Unknown reward: ' + id);
+  const w = opts.width || ctx.canvas.width, h = opts.height || ctx.canvas.height;
+  const th = adaptTheme(opts.theme);
+  const o = Object.assign({}, r.defaults, opts.text || {}, { transparent: opts.transparent, scrim: opts.scrim });
+  Object.keys(o).forEach(k => { if (typeof o[k] === 'function') o[k] = o[k](th, o); });
+  const fade = 1 - prog(t, r.duration - FADE, r.duration);
+  let target = ctx;
+  if (fade < 1) {
+    if (!buffer) buffer = (typeof OffscreenCanvas !== 'undefined') ? new OffscreenCanvas(w, h) : document.createElement('canvas');
+    if (buffer.width !== w || buffer.height !== h) { buffer.width = w; buffer.height = h; }
+    target = buffer.getContext('2d');
+  }
+  const S = Math.min(w, h) / 720;
+  target.save();
+  target.setTransform(1, 0, 0, 1, 0, 0);
+  target.clearRect(0, 0, w, h);
+  target.translate(w / 2, h / 2); target.scale(S, S);
+  const g = { ctx: target, t, th, o, S, hw: w / 2 / S, hh: h / 2 / S };
+  background(g);
+  r.draw(g);
+  target.restore();
+  if (target !== ctx) {
+    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (!opts.transparent) {
+      // fade toward the background colour rather than to nothing
+      ctx.fillStyle = th.bg; ctx.fillRect(0, 0, w, h);
+    }
+    ctx.globalAlpha = fade; ctx.drawImage(buffer, 0, 0);
+    ctx.restore();
+  }
+}
+
+// Plays a reward on a canvas in real time. Returns a stop() function.
+function play(canvas, id, opts = {}) {
+  const r = byId[id], ctx = canvas.getContext('2d');
+  let raf = 0, start = null, stopped = false;
+  const tick = now => {
+    if (stopped) return;
+    if (start === null) start = now;
+    let t = (now - start) / 1000;
+    if (t >= r.duration) {
+      if (opts.loop) { start = now; t = 0; }
+      else { render(ctx, id, r.duration, opts); if (opts.onDone) opts.onDone(); return; }
+    }
+    render(ctx, id, t, opts);
+    raf = requestAnimationFrame(tick);
+  };
+  const go = () => { if (!stopped) raf = requestAnimationFrame(tick); };
+  Rewards.ready(opts.theme).then(go, go);
+  return () => { stopped = true; cancelAnimationFrame(raf); };
+}
+
+const Rewards = {
+  render, play, adaptTheme,
+  // resolves once a theme's background pattern (and fonts, in a browser) are ready to draw
+  ready: theme => { const th = adaptTheme(theme); const fonts = (typeof document !== 'undefined' && document.fonts) ? document.fonts.load(`600 40px "${th.font}"`).catch(() => {}) : null; return Promise.all([loadPattern(th), fonts]); },
+  themes: THEMES,
+  list: REWARDS.map(r => ({ id: r.id, name: r.name, use: r.use, duration: r.duration, defaults: r.defaults })),
+  sfx: id => byId[id].sfx.slice().sort((a, b) => a[0] - b[0]),
+  duration: id => byId[id].duration,
+};
+if (typeof module !== 'undefined' && module.exports) module.exports = Rewards;
+root.Rewards = Rewards;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/*
+ * Reward sound effects, synthesized in code (no audio files needed).
+ *   RewardSounds.render('trophy')  -> { sampleRate, samples: Float32Array }
+ *   RewardSounds.play('trophy')    -> plays it in the browser via Web Audio (call after a tap)
+ * Needs rewards.js loaded first (it holds each reward's sound cues).
+ */
+(function (root) {
+'use strict';
+const Rewards = root.Rewards || (typeof require !== 'undefined' ? require('./rewards.js') : null);
+const SR = 44100;
+
+let seed = 1;
+const noise = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2147483648 - 1; };
+const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+const hz = semis => 523.25 * Math.pow(2, semis / 12); // from C5
+
+function add(buf, start, len, fn) {
+  const s0 = Math.floor(start * SR), n = Math.floor(len * SR);
+  for (let i = 0; i < n && s0 + i < buf.length; i++) if (s0 + i >= 0) buf[s0 + i] += fn(i / SR);
+}
+function bell(buf, t, f, vol = 0.35, dur = 0.9) {
+  add(buf, t, dur, x => vol * Math.exp(-x * 5) * Math.min(1, x * 400) *
+    (Math.sin(2 * Math.PI * f * x) + 0.3 * Math.sin(4 * Math.PI * f * x) + 0.12 * Math.sin(6 * Math.PI * f * x)));
+}
+function filteredNoise(buf, t, dur, vol, cutoff /* fn(x)->0..1 */, env) {
+  let y = 0;
+  add(buf, t, dur, x => { const a = cutoff(x); y += a * (noise() - y); return vol * env(x) * y; });
+}
+
+const SOUNDS = {
+  pop(b, t) {
+    let ph = 0;
+    add(b, t, 0.09, x => { ph += 2 * Math.PI * (900 - 6500 * x) / SR; return 0.5 * Math.exp(-x * 40) * Math.sin(ph); });
+  },
+  note(b, t, k) { bell(b, t, hz(PENTA[k] || 0)); },
+  sparkle(b, t) { for (let i = 0; i < 7; i++) bell(b, t + i * 0.05, hz(PENTA[5 + ((i * 3) % 6)] + 12), 0.12, 0.35); },
+  shimmer(b, t) { for (let i = 0; i < 10; i++) bell(b, t + i * 0.045, hz(PENTA[(i * 2) % 10] + 12), 0.09, 0.5); },
+  whoosh(b, t) { filteredNoise(b, t, 0.45, 0.5, x => 0.05 + 0.4 * Math.sin(Math.PI * x / 0.45), x => Math.sin(Math.PI * x / 0.45)); },
+  boom(b, t) {
+    let ph = 0;
+    add(b, t, 0.6, x => { ph += 2 * Math.PI * (90 - 60 * x) / SR; return 0.6 * Math.exp(-x * 6) * Math.sin(ph); });
+    filteredNoise(b, t, 0.5, 0.6, () => 0.08, x => Math.exp(-x * 8));
+  },
+  thud(b, t) { let ph = 0; add(b, t, 0.2, x => { ph += 2 * Math.PI * (130 - 300 * x) / SR; return 0.7 * Math.exp(-x * 20) * Math.sin(ph); }); },
+  coin(b, t) { bell(b, t, 1318.5, 0.2, 0.25); bell(b, t + 0.06, 1975.5, 0.2, 0.35); },
+  fanfare(b, t) {
+    [0, 4, 7, 12].forEach((s, i) => bell(b, t + i * 0.09, hz(s), 0.22, 0.5));
+    [0, 4, 7, 12].forEach(s => add(b, t + 0.36, 0.7, x => {
+      const f = hz(s), e = Math.min(1, x * 30) * Math.exp(-x * 3);
+      return 0.07 * e * (Math.sin(2 * Math.PI * f * x) + 0.4 * Math.sin(4 * Math.PI * f * x) + 0.2 * Math.sin(6 * Math.PI * f * x));
+    }));
+  },
+  boing(b, t) {
+    let ph = 0;
+    add(b, t, 0.3, x => { ph += 2 * Math.PI * (180 + 500 * x / 0.3 + 30 * Math.sin(x * 70)) / SR; return 0.35 * Math.sin(Math.PI * x / 0.3) * Math.sin(ph); });
+  },
+  rumble(b, t) { filteredNoise(b, t, 0.85, 0.8, () => 0.03, x => Math.min(1, x * 5) * Math.min(1, (0.85 - x) * 6)); },
+  tick(b, t) { add(b, t, 0.03, x => 0.3 * Math.exp(-x * 150) * Math.sin(2 * Math.PI * 1500 * x)); },
+  creak(b, t) {
+    let ph = 0;
+    add(b, t, 0.3, x => { ph += 2 * Math.PI * (170 + 300 * x) / SR; const saw = (ph / (2 * Math.PI)) % 1 * 2 - 1; return 0.12 * Math.sin(Math.PI * x / 0.3) * saw; });
+  },
+};
+
+
+function render(id) {
+  seed = 1;
+  const dur = Rewards.duration(id);
+  const buf = new Float32Array(Math.ceil((dur + 0.6) * SR));
+  Rewards.sfx(id).forEach(([t, type]) => { const [name, arg] = type.split(':'); SOUNDS[name](buf, t, +arg); });
+  let peak = 0; for (const v of buf) peak = Math.max(peak, Math.abs(v));
+  const gain = peak > 0.89 ? 0.89 / peak : 1;
+  for (let i = 0; i < buf.length; i++) buf[i] = Math.tanh(buf[i] * gain * 1.1);
+  return { sampleRate: SR, samples: buf };
+}
+let ac = null;
+const cache = {};
+function play(id) {
+  if (typeof AudioContext === 'undefined') return null;
+  ac = ac || new AudioContext();
+  if (ac.state === 'suspended') ac.resume();
+  if (!cache[id]) {
+    const { samples } = render(id);
+    const ab = ac.createBuffer(1, samples.length, SR); ab.copyToChannel(samples, 0); cache[id] = ab;
+  }
+  const src = ac.createBufferSource(); src.buffer = cache[id]; src.connect(ac.destination); src.start();
+  return src;
+}
+const RewardSounds = { render, play, sampleRate: SR };
+if (typeof module !== 'undefined' && module.exports) module.exports = RewardSounds;
+root.RewardSounds = RewardSounds;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+(() => {
+  const TIERS = [
+    ['Every chore', ['check-pop', 'star-shower', 'balloons', 'mascot-dance']],
+    ['Points and prizes', ['coin-jar', 'treasure-chest', 'confetti-cannon']],
+    ['Milestones', ['streak-flame', 'badge-unlock', 'trophy', 'rocket-level-up', 'fireworks']],
+  ];
+  const FRAMES = { square: [720, 720], phone: [390, 760], wide: [1280, 720] };
+  const cv = document.getElementById('cv');
+  const meta = Object.fromEntries(Rewards.list.map(r => [r.id, r]));
+  const THEMES = {};
+  (window.APP_THEMES || Object.values(Rewards.themes)).forEach(t => { const a = Rewards.adaptTheme(t); THEMES[a.id] = a; });
+  const state = { id: 'star-shower', theme: Object.keys(THEMES)[0], frame: 'square', sound: false, text: {} };
+  try { const s = JSON.parse(localStorage.getItem('rewards-gallery') || '{}'); if (meta[s.id]) state.id = s.id; if (THEMES[s.theme]) state.theme = s.theme; } catch (e) {}
+  let stop = null;
+
+  function save() { try { localStorage.setItem('rewards-gallery', JSON.stringify({ id: state.id, theme: state.theme })); } catch (e) {} }
+
+  function play() {
+    if (stop) stop();
+    const [w, h] = FRAMES[state.frame];
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = w * dpr; cv.height = h * dpr;
+    cv.style.aspectRatio = w + ' / ' + h;
+    cv.className = state.frame === 'phone' ? 'phone' : '';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const opts = { theme: THEMES[state.theme], text: state.text };
+    if (reduce) { Rewards.render(cv.getContext('2d'), state.id, meta[state.id].duration - 0.4, opts); return; }
+    if (state.sound && window.RewardSounds) RewardSounds.play(state.id);
+    stop = Rewards.play(cv, state.id, opts);
+    document.getElementById('now').innerHTML = `${meta[state.id].name}<small>${meta[state.id].duration.toFixed(1)} s · ${THEMES[state.theme].name}</small>`;
+    renderCode();
+  }
+
+  function pressed(container, attr, val) {
+    container.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset[attr] === val)));
+  }
+
+  const rg = document.getElementById('rewards');
+  TIERS.forEach(([label, ids]) => {
+    const t = document.createElement('div'); t.className = 'tier'; t.textContent = label; rg.appendChild(t);
+    ids.forEach(id => {
+      const r = meta[id], b = document.createElement('button');
+      b.className = 'rcard'; b.dataset.id = id;
+      b.innerHTML = `<b>${r.name}</b><span>${r.use}</span><em>${r.duration.toFixed(1)} s</em>`;
+      b.onclick = () => { state.id = id; state.text = {}; pressed(rg, 'id', id); buildFields(); save(); play(); };
+      rg.appendChild(b);
+    });
+  });
+
+  const tg = document.getElementById('themes');
+  Object.values(THEMES).forEach(th => {
+    const b = document.createElement('button');
+    b.className = 'swatch'; b.dataset.theme = th.id;
+    b.innerHTML = `<i>${[th.bg, th.primary, th.secondary, th.token.fill, th.success].map(c => `<u style="background:${c}"></u>`).join('')}</i>${th.name}`;
+    b.onclick = () => { state.theme = th.id; pressed(tg, 'theme', th.id); save(); play(); };
+    tg.appendChild(b);
+  });
+
+  document.querySelectorAll('[data-frame]').forEach(b => b.onclick = () => {
+    state.frame = b.dataset.frame; pressed(b.parentElement, 'frame', state.frame); play();
+  });
+
+  function buildFields() {
+    const f = document.getElementById('fields'); f.innerHTML = '';
+    Object.entries(meta[state.id].defaults).forEach(([k, v]) => {
+      if (k === 'icon') return;
+      const id = 'f-' + k, l = document.createElement('label');
+      l.htmlFor = id; l.textContent = k;
+      const inp = document.createElement('input');
+      const auto = v == null || typeof v === 'function';
+      inp.id = id; inp.value = auto ? '' : v;
+      inp.placeholder = auto ? 'from the theme' : '';
+      inp.type = typeof v === 'number' ? 'number' : 'text';
+      inp.onchange = () => {
+        const val = inp.value.trim();
+        if (val === '') delete state.text[k]; else state.text[k] = inp.type === 'number' ? Number(val) : val;
+        play();
+      };
+      l.appendChild(inp); f.appendChild(l);
+    });
+  }
+
+  function renderCode() {
+    const extra = Object.keys(state.text).length ? `,\n  text: ${JSON.stringify(state.text)}` : '';
+    document.getElementById('code').textContent =
+`<script src="rewards.js"><\/script>
+<script src="sounds.js"><\/script>
+
+// when a chore is marked done:
+RewardSounds.play('${state.id}');
+Rewards.play(canvas, '${state.id}', {
+  theme: Rewards.adaptTheme(currentAppTheme),   // e.g. the '${state.theme}' theme
+  transparent: true, scrim: 0.25${extra},
+  onDone: () => hideOverlay(),
+});`;
+  }
+
+  document.getElementById('replay').onclick = play;
+  cv.onclick = play;
+  const sb = document.getElementById('sound');
+  sb.onclick = () => { state.sound = !state.sound; sb.setAttribute('aria-pressed', String(state.sound)); sb.textContent = state.sound ? 'Sound on' : 'Sound off'; if (state.sound) play(); };
+
+  pressed(rg, 'id', state.id); pressed(tg, 'theme', state.theme); buildFields();
+  (document.fonts ? document.fonts.load('600 40px Fredoka') : Promise.resolve()).catch(() => {}).then(play);
+})();
+</script>

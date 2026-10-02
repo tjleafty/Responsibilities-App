@@ -1,0 +1,738 @@
+{
+  "version": 1,
+  "default": "sunny-room",
+  "themes": [
+    {
+      "id": "sunny-room",
+      "name": "Sunny Room",
+      "vibe": "Warm bedroom morning. The default look, matching the Make Your Bed video.",
+      "mode": "light",
+      "fonts": {
+        "display": "Fredoka",
+        "body": "Nunito",
+        "displayStack": "'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#FFF4E0",
+        "pattern": "#FFE6BF",
+        "surface": "#FFFFFF",
+        "ink": "#2D2A4A",
+        "inkSoft": "#6B6788",
+        "primary": "#4673D1",
+        "secondary": "#FF7AA2",
+        "accent": "#FFC93C",
+        "success": "#2FA877",
+        "reward": "#FFC93C",
+        "rewardStroke": "#E0A400",
+        "track": "#F1E3C8",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#2D2A4A",
+        "onAccent": "#2D2A4A",
+        "onSuccess": "#2D2A4A",
+        "onSurface": "#2D2A4A",
+        "headline": "#4673D1"
+      },
+      "confetti": [
+        "#FF7AA2",
+        "#FFC93C",
+        "#3CC48B",
+        "#5B8DEF",
+        "#B28DFF"
+      ],
+      "shape": {
+        "radius": 22,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "dots",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><circle cx=\"10\" cy=\"10\" r=\"3.5\" fill=\"#FFE6BF\"/><circle cx=\"30\" cy=\"30\" r=\"3.5\" fill=\"#FFE6BF\"/></svg>"
+      },
+      "reward": {
+        "token": "star",
+        "tokenName": "stars",
+        "cheer": "Great job!",
+        "particles": "confetti",
+        "count": 90,
+        "gravity": 0.35,
+        "rise": false,
+        "sway": 0.6,
+        "duration": 2.2,
+        "sound": "bright chime + party pop"
+      },
+      "mascot": "Kid in green star tee and navy pants (as in the video)."
+    },
+    {
+      "id": "ocean-explorer",
+      "name": "Ocean Explorer",
+      "vibe": "Underwater dive with bubbles, coral and pearls.",
+      "mode": "light",
+      "fonts": {
+        "display": "Baloo 2",
+        "body": "Nunito",
+        "displayStack": "'Baloo 2', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#DFF4F7",
+        "pattern": "#BFE6EC",
+        "surface": "#FFFFFF",
+        "ink": "#0E3B4F",
+        "inkSoft": "#4C7385",
+        "primary": "#0B7A8A",
+        "secondary": "#FF7F6B",
+        "accent": "#FFD166",
+        "success": "#188457",
+        "reward": "#FFE3EC",
+        "rewardStroke": "#E88AA6",
+        "track": "#CDEBEF",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#0E3B4F",
+        "onAccent": "#0E3B4F",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#0E3B4F",
+        "headline": "#0B7A8A"
+      },
+      "confetti": [
+        "#7FDBE6",
+        "#FF7F6B",
+        "#FFD166",
+        "#FFFFFF",
+        "#5BC0EB"
+      ],
+      "shape": {
+        "radius": 24,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "bubbles",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\"><circle cx=\"14\" cy=\"16\" r=\"7\" fill=\"none\" stroke=\"#BFE6EC\" stroke-width=\"2.5\"/><circle cx=\"40\" cy=\"40\" r=\"4\" fill=\"none\" stroke=\"#BFE6EC\" stroke-width=\"2\"/><circle cx=\"44\" cy=\"12\" r=\"2.5\" fill=\"#BFE6EC\"/></svg>"
+      },
+      "reward": {
+        "token": "shell",
+        "tokenName": "shells",
+        "cheer": "Splash-tastic!",
+        "particles": "bubbles",
+        "count": 45,
+        "gravity": -0.12,
+        "rise": true,
+        "sway": 1.2,
+        "duration": 2.6,
+        "sound": "bubbly blips + whale whoop"
+      },
+      "mascot": "Kid in a snorkel mask and teal swim shirt; a little orange fish buddy."
+    },
+    {
+      "id": "space-mission",
+      "name": "Space Mission",
+      "vibe": "Night-sky launch pad with planets and shooting stars.",
+      "mode": "dark",
+      "fonts": {
+        "display": "Righteous",
+        "body": "Nunito",
+        "displayStack": "'Righteous', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Righteous&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#14163A",
+        "pattern": "#2E3172",
+        "surface": "#232663",
+        "ink": "#F4F3FF",
+        "inkSoft": "#B4B3E3",
+        "primary": "#8B6CFF",
+        "secondary": "#39D5FF",
+        "accent": "#FF6FB5",
+        "success": "#3EE6A0",
+        "reward": "#FFB84D",
+        "rewardStroke": "#FF7A45",
+        "track": "#33377A",
+        "onPrimary": "#14163A",
+        "onSecondary": "#14163A",
+        "onAccent": "#14163A",
+        "onSuccess": "#14163A",
+        "onSurface": "#FFFFFF",
+        "headline": "#8B6CFF"
+      },
+      "confetti": [
+        "#FFD84D",
+        "#39D5FF",
+        "#FF6FB5",
+        "#8B6CFF",
+        "#FFFFFF"
+      ],
+      "shape": {
+        "radius": 20,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "stars",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><path d=\"M16 8 L18 14 L24 16 L18 18 L16 24 L14 18 L8 16 L14 14Z\" fill=\"#2E3172\"/><circle cx=\"46\" cy=\"44\" r=\"2\" fill=\"#2E3172\"/><circle cx=\"52\" cy=\"14\" r=\"1.4\" fill=\"#2E3172\"/><circle cx=\"20\" cy=\"50\" r=\"1.4\" fill=\"#2E3172\"/></svg>"
+      },
+      "reward": {
+        "token": "planet",
+        "tokenName": "planets",
+        "cheer": "Mission complete!",
+        "particles": "starburst",
+        "count": 70,
+        "gravity": 0.0,
+        "rise": false,
+        "sway": 0.0,
+        "duration": 2.0,
+        "sound": "rocket whoosh + twinkle"
+      },
+      "mascot": "Kid in a white space suit with a round helmet visor flipped up."
+    },
+    {
+      "id": "dino-valley",
+      "name": "Dino Valley",
+      "vibe": "Leafy prehistoric valley with friendly dinos.",
+      "mode": "light",
+      "fonts": {
+        "display": "Lilita One",
+        "body": "Nunito",
+        "displayStack": "'Lilita One', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#EEF6DA",
+        "pattern": "#D8E9B2",
+        "surface": "#FFFFFF",
+        "ink": "#2F3B1E",
+        "inkSoft": "#66724F",
+        "primary": "#3F8526",
+        "secondary": "#F28C28",
+        "accent": "#F6C445",
+        "success": "#22814F",
+        "reward": "#FFF3D1",
+        "rewardStroke": "#8CC63F",
+        "track": "#E0EBC4",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#2F3B1E",
+        "onAccent": "#2F3B1E",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#2F3B1E",
+        "headline": "#3F8526"
+      },
+      "confetti": [
+        "#8CC63F",
+        "#F28C28",
+        "#F6C445",
+        "#4E9A2F",
+        "#C0E57A"
+      ],
+      "shape": {
+        "radius": 18,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "leaves",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"60\"><ellipse cx=\"16\" cy=\"18\" rx=\"9\" ry=\"4.5\" transform=\"rotate(-35 16 18)\" fill=\"#D8E9B2\"/><ellipse cx=\"44\" cy=\"44\" rx=\"9\" ry=\"4.5\" transform=\"rotate(30 44 44)\" fill=\"#D8E9B2\"/><circle cx=\"46\" cy=\"14\" r=\"2.5\" fill=\"#D8E9B2\"/></svg>"
+      },
+      "reward": {
+        "token": "egg",
+        "tokenName": "dino eggs",
+        "cheer": "Roar-some!",
+        "particles": "leaves",
+        "count": 50,
+        "gravity": 0.18,
+        "rise": false,
+        "sway": 1.6,
+        "duration": 2.4,
+        "sound": "friendly roar + stomp"
+      },
+      "mascot": "Kid in a green dino hoodie with soft spikes on the hood."
+    },
+    {
+      "id": "candy-shop",
+      "name": "Candy Shop",
+      "vibe": "Sweet shop with sprinkles, gumdrops and pastel stripes.",
+      "mode": "light",
+      "fonts": {
+        "display": "Chewy",
+        "body": "Nunito",
+        "displayStack": "'Chewy', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Chewy&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#FFF0F5",
+        "pattern": "#FFD1E0",
+        "surface": "#FFFFFF",
+        "ink": "#4A2340",
+        "inkSoft": "#8A5A7E",
+        "primary": "#C42F6C",
+        "secondary": "#3FC1A8",
+        "accent": "#FFC93C",
+        "success": "#167A56",
+        "reward": "#FF8FB8",
+        "rewardStroke": "#D63B79",
+        "track": "#FBDCE7",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#4A2340",
+        "onAccent": "#4A2340",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#4A2340",
+        "headline": "#C42F6C"
+      },
+      "confetti": [
+        "#FF8FB8",
+        "#3FC1A8",
+        "#FFC93C",
+        "#9B7BFF",
+        "#7FD6FF"
+      ],
+      "shape": {
+        "radius": 26,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "sprinkles",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"56\" height=\"56\"><rect x=\"6\" y=\"8\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(30 12 10)\" fill=\"#FF8FB8\" opacity=\".55\"/><rect x=\"34\" y=\"14\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(-40 40 16)\" fill=\"#3FC1A8\" opacity=\".55\"/><rect x=\"14\" y=\"36\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(-15 20 38)\" fill=\"#FFC93C\" opacity=\".55\"/><rect x=\"38\" y=\"42\" width=\"12\" height=\"4\" rx=\"2\" transform=\"rotate(60 44 44)\" fill=\"#9B7BFF\" opacity=\".55\"/></svg>"
+      },
+      "reward": {
+        "token": "candy",
+        "tokenName": "candies",
+        "cheer": "Sweet!",
+        "particles": "sprinkles",
+        "count": 110,
+        "gravity": 0.38,
+        "rise": false,
+        "sway": 0.4,
+        "duration": 2.0,
+        "sound": "pop pop + sparkle"
+      },
+      "mascot": "Kid in a striped apron and a tiny chef hat with a cherry on top."
+    },
+    {
+      "id": "fairy-garden",
+      "name": "Fairy Garden",
+      "vibe": "Lavender garden with flowers, petals and sparkles.",
+      "mode": "light",
+      "fonts": {
+        "display": "Sniglet",
+        "body": "Nunito",
+        "displayStack": "'Sniglet', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Sniglet:wght@400;800&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#F4EEFF",
+        "pattern": "#E3D6FF",
+        "surface": "#FFFFFF",
+        "ink": "#3A2A5C",
+        "inkSoft": "#776A96",
+        "primary": "#7448E8",
+        "secondary": "#2FB28A",
+        "accent": "#FFB3D1",
+        "success": "#187A56",
+        "reward": "#FF9BCB",
+        "rewardStroke": "#D9579A",
+        "track": "#E8DFFA",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#3A2A5C",
+        "onAccent": "#3A2A5C",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#3A2A5C",
+        "headline": "#7448E8"
+      },
+      "confetti": [
+        "#FFB3D1",
+        "#C7A8FF",
+        "#9BE8C8",
+        "#FFE08A",
+        "#FFFFFF"
+      ],
+      "shape": {
+        "radius": 26,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "flowers",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"64\" height=\"64\"><circle cx=\"21\" cy=\"16\" r=\"3.6\" fill=\"#E3D6FF\"/><circle cx=\"11\" cy=\"16\" r=\"3.6\" fill=\"#E3D6FF\"/><circle cx=\"16\" cy=\"21\" r=\"3.6\" fill=\"#E3D6FF\"/><circle cx=\"16\" cy=\"11\" r=\"3.6\" fill=\"#E3D6FF\"/><circle cx=\"16\" cy=\"16\" r=\"2.4\" fill=\"#FFB3D1\" opacity=\".6\"/><circle cx=\"46\" cy=\"46\" r=\"2.5\" fill=\"#E3D6FF\"/></svg>"
+      },
+      "reward": {
+        "token": "flower",
+        "tokenName": "flowers",
+        "cheer": "Magical!",
+        "particles": "petals",
+        "count": 55,
+        "gravity": -0.05,
+        "rise": true,
+        "sway": 1.4,
+        "duration": 2.8,
+        "sound": "wand twinkle + harp"
+      },
+      "mascot": "Kid with sparkly wings and a flower crown."
+    },
+    {
+      "id": "pixel-arcade",
+      "name": "Pixel Arcade",
+      "vibe": "Retro game screen with coins, pixels and level-ups.",
+      "mode": "dark",
+      "fonts": {
+        "display": "Silkscreen",
+        "body": "Nunito",
+        "displayStack": "'Silkscreen', monospace",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#101626",
+        "pattern": "#1E2842",
+        "surface": "#1A2238",
+        "ink": "#F2F5FF",
+        "inkSoft": "#9AA6C8",
+        "primary": "#36E27B",
+        "secondary": "#FF4D9D",
+        "accent": "#4DC3FF",
+        "success": "#36E27B",
+        "reward": "#FFD23F",
+        "rewardStroke": "#E09A00",
+        "track": "#2A3554",
+        "onPrimary": "#101626",
+        "onSecondary": "#101626",
+        "onAccent": "#101626",
+        "onSuccess": "#101626",
+        "onSurface": "#FFFFFF",
+        "headline": "#36E27B"
+      },
+      "confetti": [
+        "#36E27B",
+        "#FF4D9D",
+        "#FFD23F",
+        "#4DC3FF",
+        "#FFFFFF"
+      ],
+      "shape": {
+        "radius": 4,
+        "border": 3
+      },
+      "pattern": {
+        "kind": "pixels",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\"><path d=\"M0 .5 H32 M.5 0 V32\" stroke=\"#1E2842\" stroke-width=\"1\"/><rect x=\"12\" y=\"12\" width=\"4\" height=\"4\" fill=\"#1E2842\"/></svg>"
+      },
+      "reward": {
+        "token": "coin",
+        "tokenName": "coins",
+        "cheer": "LEVEL UP!",
+        "particles": "pixels",
+        "count": 80,
+        "gravity": 0.3,
+        "rise": false,
+        "sway": 0.0,
+        "duration": 1.8,
+        "sound": "8-bit coin + level-up arpeggio"
+      },
+      "mascot": "Pixel-art kid sprite with a backwards cap."
+    },
+    {
+      "id": "superhero-city",
+      "name": "Superhero City",
+      "vibe": "Comic-book city with bold outlines and POW bursts.",
+      "mode": "light",
+      "fonts": {
+        "display": "Bangers",
+        "body": "Nunito",
+        "displayStack": "'Bangers', Impact, sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#EAF2FF",
+        "pattern": "#D2E1FF",
+        "surface": "#FFFFFF",
+        "ink": "#1A1F3D",
+        "inkSoft": "#525A80",
+        "primary": "#D62839",
+        "secondary": "#1D4ED8",
+        "accent": "#FFD60A",
+        "success": "#1A7F45",
+        "reward": "#FFD60A",
+        "rewardStroke": "#1A1F3D",
+        "track": "#DCE6FA",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#FFFFFF",
+        "onAccent": "#1A1F3D",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#1A1F3D",
+        "headline": "#D62839"
+      },
+      "confetti": [
+        "#D62839",
+        "#1D4ED8",
+        "#FFD60A",
+        "#FFFFFF",
+        "#1A1F3D"
+      ],
+      "shape": {
+        "radius": 14,
+        "border": 3
+      },
+      "pattern": {
+        "kind": "halftone",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\"><circle cx=\"6\" cy=\"6\" r=\"3\" fill=\"#D2E1FF\"/><circle cx=\"18\" cy=\"18\" r=\"3\" fill=\"#D2E1FF\"/></svg>"
+      },
+      "reward": {
+        "token": "bolt",
+        "tokenName": "power bolts",
+        "cheer": "POW! Chore defeated!",
+        "particles": "bursts",
+        "count": 26,
+        "gravity": 0.0,
+        "rise": false,
+        "sway": 0.0,
+        "duration": 1.8,
+        "sound": "comic whoosh + POW"
+      },
+      "mascot": "Kid in a red cape and a blue domino mask."
+    },
+    {
+      "id": "rainbow-sky",
+      "name": "Rainbow Sky",
+      "vibe": "Fluffy clouds, rainbows and hearts.",
+      "mode": "light",
+      "fonts": {
+        "display": "Grandstander",
+        "body": "Nunito",
+        "displayStack": "'Grandstander', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Grandstander:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#EEF5FF",
+        "pattern": "#DCE9FF",
+        "surface": "#FFFFFF",
+        "ink": "#33305A",
+        "inkSoft": "#6E6B94",
+        "primary": "#CF2F58",
+        "secondary": "#4DA3FF",
+        "accent": "#FFC93C",
+        "success": "#187A56",
+        "reward": "#FF5E7E",
+        "rewardStroke": "#D63B5E",
+        "track": "#DFE8F7",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#33305A",
+        "onAccent": "#33305A",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#33305A",
+        "headline": "#CF2F58"
+      },
+      "confetti": [
+        "#FF5E7E",
+        "#FF9F43",
+        "#FFD43B",
+        "#4CD97B",
+        "#4DA3FF",
+        "#9B7BFF"
+      ],
+      "shape": {
+        "radius": 28,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "clouds",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"96\" height=\"96\"><g fill=\"#DCE9FF\"><circle cx=\"24\" cy=\"30\" r=\"9\"/><circle cx=\"36\" cy=\"26\" r=\"12\"/><circle cx=\"48\" cy=\"31\" r=\"8\"/><rect x=\"24\" y=\"31\" width=\"24\" height=\"8\" rx=\"4\"/></g><circle cx=\"76\" cy=\"72\" r=\"3\" fill=\"#DCE9FF\"/></svg>"
+      },
+      "reward": {
+        "token": "heart",
+        "tokenName": "hearts",
+        "cheer": "You shine!",
+        "particles": "hearts",
+        "count": 70,
+        "gravity": 0.22,
+        "rise": false,
+        "sway": 0.9,
+        "duration": 2.4,
+        "sound": "rising rainbow glissando"
+      },
+      "mascot": "Kid in rainbow overalls with a cloud-shaped backpack."
+    },
+    {
+      "id": "construction-zone",
+      "name": "Construction Zone",
+      "vibe": "Hard hats, diggers and hazard stripes.",
+      "mode": "light",
+      "fonts": {
+        "display": "Bowlby One",
+        "body": "Nunito",
+        "displayStack": "'Bowlby One', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#FFF8E1",
+        "pattern": "#FBEAB8",
+        "surface": "#FFFFFF",
+        "ink": "#26221A",
+        "inkSoft": "#6A6252",
+        "primary": "#F2A000",
+        "secondary": "#3F4A5A",
+        "accent": "#E8641A",
+        "success": "#22804A",
+        "reward": "#C9CED6",
+        "rewardStroke": "#5B6573",
+        "track": "#F3E6C2",
+        "onPrimary": "#26221A",
+        "onSecondary": "#FFFFFF",
+        "onAccent": "#26221A",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#26221A",
+        "headline": "#26221A"
+      },
+      "confetti": [
+        "#F2A000",
+        "#E8641A",
+        "#3F4A5A",
+        "#C9CED6",
+        "#FFD43B"
+      ],
+      "shape": {
+        "radius": 10,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "hazard",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"40\"><path d=\"M-10 50 L50 -10 M10 50 L50 10 M-10 30 L30 -10\" stroke=\"#FBEAB8\" stroke-width=\"7\"/></svg>"
+      },
+      "reward": {
+        "token": "nut",
+        "tokenName": "bolts",
+        "cheer": "Built it!",
+        "particles": "nuts",
+        "count": 40,
+        "gravity": 0.5,
+        "rise": false,
+        "sway": 0.2,
+        "duration": 2.0,
+        "sound": "ratchet click + truck horn"
+      },
+      "mascot": "Kid in a yellow hard hat and orange safety vest."
+    },
+    {
+      "id": "arctic-friends",
+      "name": "Arctic Friends",
+      "vibe": "Snowy ice world with penguins and snowflakes.",
+      "mode": "light",
+      "fonts": {
+        "display": "Quicksand",
+        "body": "Nunito",
+        "displayStack": "'Quicksand', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      },
+      "colors": {
+        "bg": "#EAF5FF",
+        "pattern": "#CFE5F8",
+        "surface": "#FFFFFF",
+        "ink": "#12304A",
+        "inkSoft": "#4D6A82",
+        "primary": "#1F6FD1",
+        "secondary": "#2BB0D4",
+        "accent": "#FFA94D",
+        "success": "#1A8467",
+        "reward": "#BDE6FF",
+        "rewardStroke": "#1F6FD1",
+        "track": "#D7E8F6",
+        "onPrimary": "#FFFFFF",
+        "onSecondary": "#12304A",
+        "onAccent": "#12304A",
+        "onSuccess": "#FFFFFF",
+        "onSurface": "#12304A",
+        "headline": "#1F6FD1"
+      },
+      "confetti": [
+        "#FFFFFF",
+        "#BDE6FF",
+        "#7CC4F5",
+        "#FFA94D",
+        "#1F6FD1"
+      ],
+      "shape": {
+        "radius": 24,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "snow",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"60\" height=\"60\"><g stroke=\"#CFE5F8\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M18 10 V26 M10 18 H26 M12.5 12.5 L23.5 23.5 M23.5 12.5 L12.5 23.5\"/></g><circle cx=\"44\" cy=\"44\" r=\"2.5\" fill=\"#CFE5F8\"/></svg>"
+      },
+      "reward": {
+        "token": "snowflake",
+        "tokenName": "snowflakes",
+        "cheer": "Ice work!",
+        "particles": "snowflakes",
+        "count": 55,
+        "gravity": 0.06,
+        "rise": false,
+        "sway": 1.0,
+        "duration": 3.0,
+        "sound": "sleigh bells + penguin squeak"
+      },
+      "mascot": "Kid in a puffy blue parka with a penguin beanie."
+    },
+    {
+      "id": "calm-night",
+      "name": "Calm Night",
+      "vibe": "Soft and low-stimulation. Muted colors and gentle motion.",
+      "mode": "dark",
+      "fonts": {
+        "display": "Nunito",
+        "body": "Andika",
+        "displayStack": "'Nunito', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "bodyStack": "'Andika', ui-rounded, system-ui, sans-serif",
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Andika:wght@400;700&display=swap"
+      },
+      "colors": {
+        "bg": "#1C2238",
+        "pattern": "#323B5E",
+        "surface": "#262E4A",
+        "ink": "#EDEAF6",
+        "inkSoft": "#A9AECB",
+        "primary": "#9DB4FF",
+        "secondary": "#C7B6FF",
+        "accent": "#FFE7A3",
+        "success": "#8FD6B4",
+        "reward": "#FFE7A3",
+        "rewardStroke": "#D9BE6E",
+        "track": "#343D60",
+        "onPrimary": "#1C2238",
+        "onSecondary": "#1C2238",
+        "onAccent": "#1C2238",
+        "onSuccess": "#1C2238",
+        "onSurface": "#FFFFFF",
+        "headline": "#9DB4FF"
+      },
+      "confetti": [
+        "#FFE7A3",
+        "#C7B6FF",
+        "#9DB4FF"
+      ],
+      "shape": {
+        "radius": 20,
+        "border": 0
+      },
+      "pattern": {
+        "kind": "nightsky",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"80\"><circle cx=\"14\" cy=\"18\" r=\"1.6\" fill=\"#323B5E\"/><circle cx=\"58\" cy=\"52\" r=\"1.2\" fill=\"#323B5E\"/><circle cx=\"40\" cy=\"12\" r=\"1\" fill=\"#323B5E\"/></svg>"
+      },
+      "reward": {
+        "token": "moon",
+        "tokenName": "moons",
+        "cheer": "Nicely done.",
+        "particles": "glow",
+        "count": 14,
+        "gravity": -0.03,
+        "rise": true,
+        "sway": 0.4,
+        "duration": 2.6,
+        "sound": "soft single chime, no fanfare"
+      },
+      "mascot": "Kid in cozy pajamas holding a small star nightlight.",
+      "notes": "Good for bedtime routines and kids who get overwhelmed by big celebrations. No screen shake, no flashing."
+    }
+  ]
+}
