@@ -1,3 +1,5 @@
+import { getRewardThemeId } from "@/lib/rewardThemes"
+
 export type ProfileType = "parent" | "child"
 export type GoalFrequency = "daily" | "weekly" | "monthly"
 
@@ -66,105 +68,13 @@ export interface ChoreCompletionRecord {
   parent_feedback?: string | null
 }
 
-export interface FamilyThemePalette {
-  background: string
-  pattern: string
-  surface: string
-  ink: string
-  inkSoft: string
-  primary: string
-  primaryForeground: string
-  secondary: string
-  secondaryForeground: string
-  accent: string
-  accentForeground: string
-}
-
 export interface FamilyThemeOption {
   key: string
   label: string
   description?: string
-  image?: string
-  palette?: FamilyThemePalette
 }
 
 export const THEME_OPTIONS: FamilyThemeOption[] = [
-  {
-    key: "sunset",
-    label: "Sunset Sprint",
-    description: "Warm skies for big wins.",
-    image: "/assets/images/theme-sunset.png",
-    palette: {
-      background: "#FBF0DF",
-      pattern: "#F1DDBF",
-      surface: "#FFFAF2",
-      ink: "#283044",
-      inkSoft: "#646D7E",
-      primary: "#D86F52",
-      primaryForeground: "#FFFFFF",
-      secondary: "#F6C95B",
-      secondaryForeground: "#283044",
-      accent: "#5E987A",
-      accentForeground: "#FFFFFF",
-    },
-  },
-  {
-    key: "garden",
-    label: "Garden Glow",
-    description: "A leafy little adventure.",
-    image: "/assets/images/theme-garden.png",
-    palette: {
-      background: "#EEF5E9",
-      pattern: "#DCEAD4",
-      surface: "#FFFFFF",
-      ink: "#26372A",
-      inkSoft: "#5E7062",
-      primary: "#3F8526",
-      primaryForeground: "#FFFFFF",
-      secondary: "#F6C445",
-      secondaryForeground: "#26372A",
-      accent: "#F28C28",
-      accentForeground: "#26372A",
-    },
-  },
-  {
-    key: "starlight",
-    label: "Starlight Crew",
-    description: "Night missions and bright ideas.",
-    image: "/assets/images/theme-starlight.png",
-    palette: {
-      background: "#14163A",
-      pattern: "#2E3172",
-      surface: "#232663",
-      ink: "#F4F3FF",
-      inkSoft: "#B4B3E3",
-      primary: "#8B6CFF",
-      primaryForeground: "#14163A",
-      secondary: "#39D5FF",
-      secondaryForeground: "#14163A",
-      accent: "#FF6FB5",
-      accentForeground: "#14163A",
-    },
-  },
-  {
-    key: "ocean",
-    label: "Ocean Quest",
-    description: "Ride the wave of progress.",
-    image: "/assets/images/theme-ocean.png",
-    palette: {
-      background: "#DFF4F7",
-      pattern: "#BFE6EC",
-      surface: "#FFFFFF",
-      ink: "#0E3B4F",
-      inkSoft: "#4C7385",
-      primary: "#0B7A8A",
-      primaryForeground: "#FFFFFF",
-      secondary: "#FF7F6B",
-      secondaryForeground: "#0E3B4F",
-      accent: "#FFD166",
-      accentForeground: "#0E3B4F",
-    },
-  },
   {
     key: "sunny-room",
     label: "Sunny Room",
@@ -228,7 +138,8 @@ export const THEME_OPTIONS: FamilyThemeOption[] = [
 ]
 
 export function getTheme(themeKey: string) {
-  return THEME_OPTIONS.find((theme) => theme.key === themeKey) ?? THEME_OPTIONS[0]
+  const key = getRewardThemeId(themeKey)
+  return THEME_OPTIONS.find((theme) => theme.key === key) ?? THEME_OPTIONS[0]
 }
 
 export async function hashPin(pin: string) {

@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS family_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   display_name TEXT NOT NULL,
   profile_type TEXT NOT NULL,
-  theme_key TEXT NOT NULL DEFAULT 'sunset',
+  theme_key TEXT NOT NULL DEFAULT 'sunny-room',
   pin_hash TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   overskill_user_id TEXT,

@@ -33,5 +33,3 @@ The app builds on its own, but these still run through Overskill's servers throu
 - Subscriptions through Whop (`useEntitlement`)
 - Push notifications (`overskill.push`, `public/sw-push.js`)
 - The invite and support emails (`docs/overskill-endpoints/`, not yet ported)
-
-The four theme preview images (`/assets/images/theme-*.png`) are hosted by Overskill and still need to be added to `public/assets/images/`.

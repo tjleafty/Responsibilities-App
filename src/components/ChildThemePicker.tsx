@@ -1,5 +1,6 @@
 import { ProfileThemeTile } from "@/components/ProfileThemeTile"
 import { THEME_OPTIONS } from "@/lib/familyTypes"
+import { getRewardThemeId } from "@/lib/rewardThemes"
 
 interface ChildThemePickerProps {
   themeKey: string
@@ -19,7 +20,7 @@ export function ChildThemePicker({ themeKey, saving = false, error, onThemeChang
           <ProfileThemeTile
             key={theme.key}
             themeKey={theme.key}
-            selected={themeKey === theme.key}
+            selected={getRewardThemeId(themeKey) === theme.key}
             onSelect={() => void onThemeChange(theme.key)}
           />
         ))}

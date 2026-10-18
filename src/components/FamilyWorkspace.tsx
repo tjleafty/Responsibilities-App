@@ -30,7 +30,7 @@ export function FamilyWorkspace() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [newName, setNewName] = useState("")
   const [newType, setNewType] = useState<ProfileType>("child")
-  const [newTheme, setNewTheme] = useState("sunset")
+  const [newTheme, setNewTheme] = useState("sunny-room")
   const [newPin, setNewPin] = useState("")
   const [profileSaving, setProfileSaving] = useState(false)
   const [themeSaving, setThemeSaving] = useState(false)
@@ -45,7 +45,7 @@ export function FamilyWorkspace() {
     try {
       let nextProfiles = (await overskill.entities.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
       if (!nextProfiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
-        await overskill.entities.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunset", pin_hash: "", is_active: true })
+        await overskill.entities.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
         nextProfiles = (await overskill.entities.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
       }
       const [nextGoals, nextGoalTotal, nextChores, nextCompletions, nextRewards] = await Promise.all([

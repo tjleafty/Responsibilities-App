@@ -1,4 +1,3 @@
-import OptimizedImage from "@/components/OptimizedImage"
 import { getTheme } from "@/lib/familyTypes"
 import { getRewardTheme } from "@/lib/rewardThemes"
 
@@ -11,7 +10,7 @@ interface ProfileThemeTileProps {
 export function ProfileThemeTile({ themeKey, selected = false, onSelect }: ProfileThemeTileProps) {
   const theme = getTheme(themeKey)
   const uploaded = getRewardTheme(themeKey)
-  const palette = theme.palette ?? {
+  const palette = {
     background: uploaded.colors.bg,
     pattern: uploaded.colors.pattern,
     surface: uploaded.colors.surface,
@@ -27,25 +26,15 @@ export function ProfileThemeTile({ themeKey, selected = false, onSelect }: Profi
   const content = (
     <>
       <div className="overflow-hidden rounded-xl">
-        {theme.image ? (
-          <OptimizedImage
-            src={theme.image}
-            alt={`${theme.label} family theme illustration`}
-            width={320}
-            height={190}
-            className="h-28 w-full object-cover transition-transform duration-200 group-hover:scale-105"
-          />
-        ) : (
-          <div className="relative flex h-28 w-full items-center justify-between overflow-hidden border p-3" style={{ backgroundColor: palette.background, borderColor: palette.pattern }}>
-            <div className="absolute -right-5 -top-7 h-24 w-24 rounded-full opacity-45" style={{ backgroundColor: palette.pattern }} />
-            <div className="relative flex items-center gap-2" aria-hidden="true">
-              <span className="h-8 w-8 rounded-full" style={{ backgroundColor: palette.primary }} />
-              <span className="h-5 w-5 rounded-full" style={{ backgroundColor: palette.secondary }} />
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: palette.accent }} />
-            </div>
-            <span className="relative max-w-[55%] text-right font-display text-sm font-bold" style={{ color: palette.ink }}>{theme.label}</span>
+        <div className="relative flex h-28 w-full items-center justify-between overflow-hidden border p-3" style={{ backgroundColor: palette.background, borderColor: palette.pattern }}>
+          <div className="absolute -right-5 -top-7 h-24 w-24 rounded-full opacity-45" style={{ backgroundColor: palette.pattern }} />
+          <div className="relative flex items-center gap-2" aria-hidden="true">
+            <span className="h-8 w-8 rounded-full" style={{ backgroundColor: palette.primary }} />
+            <span className="h-5 w-5 rounded-full" style={{ backgroundColor: palette.secondary }} />
+            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: palette.accent }} />
           </div>
-        )}
+          <span className="relative max-w-[55%] text-right font-display text-sm font-bold" style={{ color: palette.ink }}>{theme.label}</span>
+        </div>
       </div>
       <div className="mt-3 text-left">
         <p className="font-display text-base font-bold text-card-foreground">{theme.label}</p>

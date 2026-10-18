@@ -3,6 +3,7 @@ import { Check, Image, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProfileThemeTile } from "@/components/ProfileThemeTile"
 import { THEME_OPTIONS, type FamilyProfile } from "@/lib/familyTypes"
+import { getRewardThemeId } from "@/lib/rewardThemes"
 import { overskill } from "@/lib/auth"
 
 interface FamilyThemeLibraryProps {
@@ -41,7 +42,7 @@ export function FamilyThemeLibrary({ profiles, onRefresh }: FamilyThemeLibraryPr
       <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6" aria-labelledby="free-themes-heading">
         <div className="flex items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Included</p><h3 id="free-themes-heading" className="mt-1 font-display text-2xl font-bold text-card-foreground">Free themes</h3></div><span className="text-sm text-muted-foreground">{THEME_OPTIONS.length} available</span></div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{THEME_OPTIONS.map((theme) => {
-          const selected = selectedProfile?.theme_key === theme.key
+          const selected = selectedProfile ? getRewardThemeId(selectedProfile.theme_key) === theme.key : false
           return <article key={theme.key} className="min-w-0 rounded-2xl border border-border p-3"><ProfileThemeTile themeKey={theme.key} selected={selected} onSelect={() => void applyTheme(theme.key)} /><div className="px-1 pb-1 pt-3"><h4 className="font-semibold text-card-foreground">{theme.label}</h4><p className="mt-1 min-h-10 text-sm leading-5 text-muted-foreground">{theme.description}</p><Button type="button" size="sm" variant={selected ? "secondary" : "outline"} className="mt-3 w-full" onClick={() => void applyTheme(theme.key)} disabled={!selectedProfile || savingTheme !== null}>{selected ? <><Check className="h-4 w-4" />Selected</> : savingTheme === theme.key ? "Applying…" : "Apply theme"}</Button></div></article>
         })}</div>
       </section>
