@@ -3,7 +3,7 @@ import { Plus, Target } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { GOAL_FREQUENCIES, type FamilyProfile, type GoalFrequency, type GoalRecord } from "@/lib/familyTypes"
 import { prepareCelebration } from "@/lib/celebration"
 
@@ -38,7 +38,7 @@ export function GoalAssignmentPanel({ profiles, goals, goalTotal, loading, error
     setSaving(true)
     setActionError(null)
     try {
-      await overskill.entities.goal.create({
+      await db.goal.create({
         title: title.trim(),
         description: description.trim(),
         frequency,
@@ -69,7 +69,7 @@ export function GoalAssignmentPanel({ profiles, goals, goalTotal, loading, error
       const target = profiles.find((profile) => profile.id === goal.target_profile_id)
       const previousProgress = Math.min(Number(goal.progress), Number(goal.target_count))
       const nextProgress = Math.min(previousProgress + 1, Number(goal.target_count))
-      await overskill.entities.goal.update(goal.id, { progress: nextProgress })
+      await db.goal.update(goal.id, { progress: nextProgress })
       if (previousProgress < Number(goal.target_count) && nextProgress >= Number(goal.target_count)) {
         celebrate(`${target?.display_name ?? "Your child"} reached the goal: ${goal.title}!`)
       }

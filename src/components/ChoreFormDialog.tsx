@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
 import { GOAL_FREQUENCIES } from "@/lib/familyTypes"
 import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks } from "@/lib/choreUtils"
@@ -64,8 +64,8 @@ export function ChoreFormDialog({ open, onOpenChange, profiles, rewards, chore, 
       .filter((task) => task.title.length > 0)
     const data = { title: title.trim(), frequency, target_profile_id: assignedIds[0], assigned_profile_ids: JSON.stringify(assignedIds), subtasks: JSON.stringify(savedSubtasks), reward: reward.trim(), reward_id: rewardId, reward_points: Math.max(0, Number(rewardPoints) || 0), time_limit_minutes: timeLimit ? Math.max(1, Number(timeLimit)) : null, requires_verification: requiresVerification, random_assignment_enabled: randomAssignmentEnabled, assignment_rotation_enabled: rotationEnabled, assignment_change_frequency: rotationFrequency, is_active: true }
     try {
-      if (chore) await overskill.entities.chore.update(chore.id, data)
-      else await overskill.entities.chore.create(data)
+      if (chore) await db.chore.update(chore.id, data)
+      else await db.chore.create(data)
       await onRefresh()
       onOpenChange(false)
     } catch (caught) {

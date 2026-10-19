@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ProfileThemeTile } from "@/components/ProfileThemeTile"
 import { THEME_OPTIONS, type FamilyProfile } from "@/lib/familyTypes"
 import { getRewardThemeId } from "@/lib/rewardThemes"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 interface FamilyThemeLibraryProps {
   profiles: FamilyProfile[]
@@ -22,7 +22,7 @@ export function FamilyThemeLibrary({ profiles, onRefresh }: FamilyThemeLibraryPr
     setSavingTheme(themeKey)
     setError(null)
     try {
-      await overskill.entities.family_profile.update(selectedProfile.id, { theme_key: themeKey })
+      await db.family_profile.update(selectedProfile.id, { theme_key: themeKey })
       await onRefresh()
     } catch (caught) {
       console.error("Theme update failed:", caught)

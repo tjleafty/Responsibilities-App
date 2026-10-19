@@ -9,7 +9,8 @@ import { ChoreEditor } from "@/components/ChoreEditor"
 import { ChoreChecklist } from "@/components/ChoreChecklist"
 import { ChildThemePicker } from "@/components/ChildThemePicker"
 import { getTheme, type FamilyProfile, type GoalRecord, hashPin, isValidPin, type ProfileType, THEME_OPTIONS, type ChoreRecord, type ChoreCompletionRecord } from "@/lib/familyTypes"
-import { overskill, useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { ParentDashboard } from "@/components/ParentDashboard"
 import { ChildDashboard } from "@/components/ChildDashboard"
 import { FamilyReward } from "@/components/FamilyRewardsPanel"
@@ -43,17 +44,17 @@ export function FamilyWorkspace() {
     setLoadError(null)
     setGoalError(null)
     try {
-      let nextProfiles = (await overskill.entities.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
+      let nextProfiles = (await db.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
       if (!nextProfiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
-        await overskill.entities.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
-        nextProfiles = (await overskill.entities.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
+        await db.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
+        nextProfiles = (await db.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
       }
       const [nextGoals, nextGoalTotal, nextChores, nextCompletions, nextRewards] = await Promise.all([
-        overskill.entities.goal.list({ orderBy: "-created_at", all: true }),
-        overskill.entities.goal.count(),
-        overskill.entities.chore.list({ orderBy: "-created_at", all: true }),
-        overskill.entities.chore_completion.list({ orderBy: "-created_at", all: true }),
-        overskill.entities.family_reward.list({ orderBy: "-created_at", all: true }),
+        db.goal.list({ orderBy: "-created_at", all: true }),
+        db.goal.count(),
+        db.chore.list({ orderBy: "-created_at", all: true }),
+        db.chore_completion.list({ orderBy: "-created_at", all: true }),
+        db.family_reward.list({ orderBy: "-created_at", all: true }),
       ])
       const activeProfiles = nextProfiles.filter((profile) => profile.is_active !== false) as unknown as FamilyProfile[]
       setProfiles(activeProfiles)
@@ -93,7 +94,7 @@ export function FamilyWorkspace() {
     setProfileSaving(true)
     setLoadError(null)
     try {
-      await overskill.entities.family_profile.create({ display_name: newName.trim(), profile_type: newType, theme_key: newTheme, pin_hash: newPin ? await hashPin(newPin) : "", is_active: true })
+      await db.family_profile.create({ display_name: newName.trim(), profile_type: newType, theme_key: newTheme, pin_hash: newPin ? await hashPin(newPin) : "", is_active: true })
       setNewName("")
       setNewPin("")
       await loadData()
@@ -106,7 +107,7 @@ export function FamilyWorkspace() {
   }
 
   const setProfilePin = async (profileId: string, pinHash: string) => {
-    await overskill.entities.family_profile.update(profileId, { pin_hash: pinHash })
+    await db.family_profile.update(profileId, { pin_hash: pinHash })
     await loadData()
   }
 
@@ -115,7 +116,7 @@ export function FamilyWorkspace() {
     setThemeSaving(true)
     setThemeError(null)
     try {
-      await overskill.entities.family_profile.update(activeProfile.id, { theme_key: themeKey })
+      await db.family_profile.update(activeProfile.id, { theme_key: themeKey })
       setActiveProfile((current) => (current ? { ...current, theme_key: themeKey } : null))
       await loadData()
     } catch (caught) {

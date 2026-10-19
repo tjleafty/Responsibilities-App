@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { Check, Plus, Search, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { GOAL_FREQUENCIES, type ChoreRecord, type FamilyProfile, type GoalFrequency } from "@/lib/familyTypes"
 
 interface FamilyChorePanelProps {
@@ -69,7 +69,7 @@ export function FamilyChorePanel({ profiles, chores, completions, activeProfile,
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.chore.create({
+      await db.chore.create({
         title: trimmed,
         frequency: cadence,
         target_profile_id: targetProfileId,
@@ -94,7 +94,7 @@ export function FamilyChorePanel({ profiles, chores, completions, activeProfile,
   const removeChore = async (chore: ChoreRecord) => {
     setError(null)
     try {
-      await overskill.entities.chore.delete(chore.id)
+      await db.chore.delete(chore.id)
       await onRefresh()
     } catch (caught) {
       console.error("Chore removal failed:", caught)

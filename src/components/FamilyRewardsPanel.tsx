@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import type { FamilyProfile } from "@/lib/familyTypes"
 
 export interface FamilyReward {
@@ -38,7 +38,7 @@ export function FamilyRewardsPanel({ profiles, rewards, onRefresh }: FamilyRewar
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.family_reward.create({
+      await db.family_reward.create({
         title: title.trim(),
         description: description.trim(),
         reward_type: rewardType,
@@ -61,7 +61,7 @@ export function FamilyRewardsPanel({ profiles, rewards, onRefresh }: FamilyRewar
   const toggleReward = async (reward: FamilyReward, active: boolean) => {
     setError(null)
     try {
-      await overskill.entities.family_reward.update(reward.id, { is_active: active })
+      await db.family_reward.update(reward.id, { is_active: active })
       await onRefresh()
     } catch (caught) {
       console.error("Reward update failed:", caught)
@@ -72,7 +72,7 @@ export function FamilyRewardsPanel({ profiles, rewards, onRefresh }: FamilyRewar
   const removeReward = async (reward: FamilyReward) => {
     setError(null)
     try {
-      await overskill.entities.family_reward.delete(reward.id)
+      await db.family_reward.delete(reward.id)
       await onRefresh()
     } catch (caught) {
       console.error("Reward removal failed:", caught)
