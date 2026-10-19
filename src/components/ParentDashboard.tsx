@@ -12,7 +12,7 @@ import { GoalAssignmentPanel } from "@/components/GoalAssignmentPanel"
 import { ChoreReviewQueue } from "@/components/ChoreReviewQueue"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
 import { Button } from "@/components/ui/button"
-import { overskill, useAuth } from "@/lib/auth"
+import { useAuth, signOut } from "@/lib/auth"
 import { useNavigate } from "react-router-dom"
 import { ParentTodayOverview } from "@/components/ParentTodayOverview"
 import { ParentControlsPlaceholder } from "@/components/ParentalControlsPlaceholder"
@@ -72,8 +72,8 @@ export function ParentDashboard(props: ParentDashboardProps) {
     setBusy(true)
     setExitError(null)
     try {
-      await overskill.auth.logout()
-      navigate("/logged-out")
+      await signOut()
+      navigate("/")
     } catch (caught) {
       console.error("Parent logout failed:", caught)
       setExitError("We couldn't sign out. Please try again.")

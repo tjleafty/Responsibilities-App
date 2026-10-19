@@ -3,7 +3,7 @@ import { Check, Clock3, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { areDailyChoresApproved, parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
 import { parseUTC } from "@/lib/utils"
 import { prepareCelebration } from "@/lib/celebration"
@@ -52,7 +52,7 @@ export function ChoreReviewQueue({ completions, chores, profiles, onRefresh }: C
     try {
       const child = profiles.find((profile) => profile.id === completion.profile_id)
       const celebrate = decision === "approved" ? prepareCelebration({ themeKey: child?.theme_key, reward: "star-shower" }) : null
-      const updated = await overskill.entities.chore_completion.update(completion.id, {
+      const updated = await db.chore_completion.update(completion.id, {
         status: decision,
         review_status: decision,
         rejection_reason: decision === "rejected" ? reason : "",
