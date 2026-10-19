@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>ChoreReward</title>
+    <meta name="description" content="Chores, goals and rewards for the whole family." />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ChoreReward" />
+    <meta property="og:title" content="ChoreReward" />
+    <meta property="og:description" content="Chores, goals and rewards for the whole family." />
+    <style>
+      :root {
+        --safe-area-inset-top: env(safe-area-inset-top, 0px);
+        --safe-area-inset-right: env(safe-area-inset-right, 0px);
+        --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+        --safe-area-inset-left: env(safe-area-inset-left, 0px);
+      }
+
+      /* Apply safe-area padding to body only when running as installed PWA.
+       * Browser-tab mode keeps the existing layout. Apps that need finer
+       * control (e.g., edge-to-edge content with a sticky header) can read
+       * --safe-area-inset-* directly in component styles. */
+      @media (display-mode: standalone) {
+        body {
+          padding-top: var(--safe-area-inset-top);
+          padding-right: var(--safe-area-inset-right);
+          padding-bottom: var(--safe-area-inset-bottom);
+          padding-left: var(--safe-area-inset-left);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

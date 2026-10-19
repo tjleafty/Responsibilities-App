@@ -1,0 +1,336 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Karla:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 42 45% 96%;
+    --foreground: 215 35% 17%;
+
+    --card: 42 50% 99%;
+    --card-foreground: 215 35% 17%;
+
+    --popover: 42 50% 99%;
+    --popover-foreground: 215 35% 17%;
+
+    --primary: 11 68% 57%;
+    --primary-foreground: 42 50% 99%;
+
+    --secondary: 42 92% 68%;
+    --secondary-foreground: 215 35% 17%;
+
+    --muted: 40 35% 91%;
+    --muted-foreground: 215 20% 42%;
+
+    --accent: 142 35% 58%;
+    --accent-foreground: 215 35% 17%;
+
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 42 50% 99%;
+
+    --border: 35 25% 84%;
+    --input: 35 25% 80%;
+    --ring: 11 68% 57%;
+
+    --radius: 0.75rem;
+
+    --font-display: 'Fredoka', sans-serif;
+    --font-body: 'Karla', sans-serif;
+    --font-sans: 'Karla', sans-serif;
+    --gradient-hero: radial-gradient(ellipse at top left, hsl(var(--secondary) / 0.8), transparent 56%), radial-gradient(ellipse at bottom right, hsl(var(--accent) / 0.34), transparent 52%), hsl(var(--background));
+    --shadow-elegant: 0 12px 28px -18px hsl(var(--foreground) / 0.28);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  /* Interface-feel defaults — global polish baked into every generated app.
+     Source: "Details that make interfaces feel better" by Jakub Krehel.
+     These are universal/safe; per-component details (tabular-nums, concentric
+     radius, scale-on-press) are applied case-by-case in components. */
+  html {
+    /* Crisper, thinner text on macOS. No-op on other platforms — safe everywhere. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+    /* Avoid orphaned words on short-to-medium text everywhere. */
+    text-wrap: pretty;
+  }
+
+  /* Even line distribution on short headings (balance only applies to ≤6 lines). */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Subtle 1px inset outline gives images consistent depth.
+     MUST be pure black (light) / pure white (dark) — never a tinted neutral,
+     which reads as dirt on the image edge. Scoped to <img> so SVG icons are
+     unaffected. `outline` + negative offset adds no layout size.
+
+     EXCEPT the app's brand mark. An outline traces the <img> BOX, not the
+     artwork, so on a logo — transparent margins, `object-contain`, sitting
+     directly on the header background — it draws a visible rectangle AROUND
+     the mark instead of edging a photo. That is why changing an app's logo
+     looked like the platform "adds a border around it" (Sanzone, 2026-08-27):
+     the default brand mark is a <span> badge, so nothing here applied until a
+     real <img> logo replaced it, and the border arrived with the logo. Depth
+     is a treatment for CONTENT images; the brand mark is chrome.
+
+     Exempting by [data-app-icon] rather than deleting the rule keeps the
+     photo/screenshot treatment this was added for (#2203) intact. The
+     selector stays inside @layer base, so any Tailwind utility (`ring-*`,
+     `outline-*`) still wins if a design genuinely wants an edge here. */
+  img:not([data-app-icon]) {
+    outline: 1px solid rgb(0 0 0 / 0.1);
+    outline-offset: -1px;
+  }
+
+  .dark img:not([data-app-icon]) {
+    outline-color: rgb(255 255 255 / 0.1);
+  }
+}
+
+/* Custom Scrollbar - thin elegant style */
+@layer base {
+  /* WebKit browsers (Chrome, Safari, Edge) */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.4);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.6);
+  }
+
+  /* Dark mode scrollbar */
+  .dark ::-webkit-scrollbar-thumb {
+    background-color: rgba(107, 114, 128, 0.4);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.6);
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
+  }
+}
+
+/* Text gradient utilities.
+
+   ⚠️ Do NOT combine `.text-gradient` with a `background:`-SHORTHAND utility
+   (e.g. `.bg-warm { background: var(--gradient-warm) }`, or `.bg-primary` /
+   `.bg-hero` / `.bg-subtle` mapped to a `--gradient-*` token). The `background:`
+   shorthand RESETS `background-clip` back to border-box and, defined after
+   `.text-gradient` with equal specificity, wins by source order — so the
+   gradient fills the whole box and the text shows as a SOLID COLOR BLOCK.
+
+   Two safe paths:
+   1. `.text-gradient` PLUS a Tailwind `bg-gradient-to-r ...` class — Tailwind
+      emits a `background-image` LONGHAND, which does NOT reset background-clip.
+        <h1 className="bg-gradient-to-r from-primary to-accent text-gradient">…</h1>
+   2. A single combined `.text-gradient-*` class that bundles the gradient
+      (as `background-image` LONGHAND) + the clip props in ONE rule (below). */
+@layer utilities {
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Using -webkit-text-fill-color instead of color: transparent
+       because Tailwind's base styles can override color but not text-fill-color */
+  }
+
+  /* Bulletproof combined gradient-text class: ONE class, no separate bg-* needed.
+     Uses the `background-image` LONGHAND so nothing resets background-clip.
+     Add more variants for custom `--gradient-*` tokens you define in :root, e.g.:
+       .text-gradient-warm {
+         background-image: var(--gradient-warm);
+         -webkit-background-clip: text; background-clip: text;
+         -webkit-text-fill-color: transparent; color: transparent;
+         display: inline-block;
+       }
+     (`display: inline-block` keeps the gradient from painting a full-width bar.) */
+  .text-gradient-primary {
+    background-image: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.6));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    display: inline-block;
+  }
+}
+
+/* OverSkill Remix Badge styles moved to src/lib/overskill-badge.css.
+   That file is platform-owned (BLOCKED_PATHS in ai_tool_service.rb) so the
+   AI can't accidentally drop it during theming/redesign work. The styles
+   are imported directly by src/App.tsx. */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.quest-stagger > * {
+  opacity: 0;
+  animation: fade-up 0.5s ease-out forwards;
+}
+.quest-stagger > *:nth-child(1) { animation-delay: 0.08s; }
+.quest-stagger > *:nth-child(2) { animation-delay: 0.16s; }
+.quest-stagger > *:nth-child(3) { animation-delay: 0.24s; }
+.quest-stagger > *:nth-child(4) { animation-delay: 0.32s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .quest-stagger > * {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* Celebration animations */
+
+@keyframes toast-enter {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes icon-sparkle {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes icon-bounce {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes icon-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Celebration animation application */
+
+.celebration-panel {
+  animation: toast-enter 260ms ease-out both;
+}
+
+.celebration-sparkle .celebration-mark {
+  animation: icon-sparkle 650ms ease-in-out;
+}
+
+.celebration-bounce .celebration-mark {
+  animation: icon-bounce 500ms ease-in-out;
+}
+
+.celebration-spin .celebration-mark {
+  animation: icon-spin 650ms ease-out;
+}
+
+.celebration-pop .celebration-mark {
+  animation: icon-pop 450ms ease-out;
+}
+
+/* prefers-reduced-motion override */
+@media (prefers-reduced-motion: reduce) {
+  .celebration-panel,
+  .celebration-sparkle .celebration-mark,
+  .celebration-bounce .celebration-mark,
+  .celebration-spin .celebration-mark,
+  .celebration-pop .celebration-mark {
+    animation: none;
+    opacity: 1;
+  }
+}
