@@ -143,7 +143,7 @@ export function ParentFamilySettings() {
     <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6" aria-labelledby="family-profiles-settings-heading" data-element-id="family-profiles-settings">
       <div className="flex items-start gap-3">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary"><Users className="h-5 w-5" /></span>
-        <div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Parent controls</p><h2 id="family-profiles-settings-heading" className="mt-1 font-display text-2xl font-bold text-card-foreground">Family profiles</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Manage the parent and child profiles used on this household device. Child profiles use a PIN; they are not separate Overskill sign-ins.</p></div>
+        <div><p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Parent controls</p><h2 id="family-profiles-settings-heading" className="mt-1 font-display text-2xl font-bold text-card-foreground">Family profiles</h2><p className="mt-1 text-sm leading-6 text-muted-foreground">Manage the parent and child profiles used on this household device. Child profiles use a PIN, so kids don't need their own accounts.</p></div>
       </div>
 
       {status === "loading" ? <p className="mt-6 text-sm text-muted-foreground">Loading family profiles…</p> : null}
