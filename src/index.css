@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Karla:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -10,41 +10,47 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 42 45% 96%;
-    --foreground: 215 35% 17%;
+    /* Parent mode and shared screens: the Sunny Room palette from chore-rewards/themes/themes.json,
+       on a calmer off-white. Kid screens override these per profile with getRewardThemeStyle(). */
+    --background: 38 50% 97%;
+    --foreground: 246 28% 23%;
 
-    --card: 42 50% 99%;
-    --card-foreground: 215 35% 17%;
+    --card: 0 0% 100%;
+    --card-foreground: 246 28% 23%;
 
-    --popover: 42 50% 99%;
-    --popover-foreground: 215 35% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 246 28% 23%;
 
-    --primary: 11 68% 57%;
-    --primary-foreground: 42 50% 99%;
+    --primary: 221 60% 55%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 42 92% 68%;
-    --secondary-foreground: 215 35% 17%;
+    --secondary: 342 100% 74%;
+    --secondary-foreground: 246 28% 23%;
 
-    --muted: 40 35% 91%;
-    --muted-foreground: 215 20% 42%;
+    --muted: 38 46% 92%;
+    --muted-foreground: 247 14% 47%;
 
-    --accent: 142 35% 58%;
-    --accent-foreground: 215 35% 17%;
+    --accent: 43 100% 62%;
+    --accent-foreground: 246 28% 23%;
 
-    --destructive: 0 72% 52%;
-    --destructive-foreground: 42 50% 99%;
+    --success: 156 56% 42%;
+    --success-foreground: 0 0% 100%;
 
-    --border: 35 25% 84%;
-    --input: 35 25% 80%;
-    --ring: 11 68% 57%;
+    --coral: 7 74% 60%;
 
-    --radius: 0.75rem;
+    --destructive: 7 74% 52%;
+    --destructive-foreground: 0 0% 100%;
 
-    --font-display: 'Fredoka', sans-serif;
-    --font-body: 'Karla', sans-serif;
-    --font-sans: 'Karla', sans-serif;
-    --gradient-hero: radial-gradient(ellipse at top left, hsl(var(--secondary) / 0.8), transparent 56%), radial-gradient(ellipse at bottom right, hsl(var(--accent) / 0.34), transparent 52%), hsl(var(--background));
-    --shadow-elegant: 0 12px 28px -18px hsl(var(--foreground) / 0.28);
+    --border: 37 42% 88%;
+    --input: 37 42% 85%;
+    --ring: 221 60% 55%;
+
+    --radius: 1rem;
+
+    --font-display: 'Fredoka', ui-rounded, 'Arial Rounded MT Bold', sans-serif;
+    --font-body: 'Nunito', ui-rounded, system-ui, sans-serif;
+    --font-sans: 'Nunito', ui-rounded, system-ui, sans-serif;
+    --shadow-soft: 0 4px 16px rgba(45, 42, 74, 0.08);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -329,4 +335,29 @@ All colors MUST be HSL.
     animation: none;
     opacity: 1;
   }
+}
+
+/* Redesign helpers (Stitch redesign, Oct 2026) */
+@layer utilities {
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+}
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.pin-shake { animation: pin-shake 0.4s ease-in-out; }
+
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float-soft { animation: float-soft 2.4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pin-shake, .float-soft { animation: none; }
 }

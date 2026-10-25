@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_ENVIRONMENT: string
   readonly VITE_R2_BASE_URL: string
   readonly VITE_USE_LOCAL_ASSETS: string
+  readonly VITE_DEMO_DATA?: string
 }
 
 interface ImportMeta {

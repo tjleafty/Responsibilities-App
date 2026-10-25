@@ -1,147 +1,167 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react"
-import { Plus, Star, Users } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { GoalAssignmentPanel } from "@/components/GoalAssignmentPanel"
-import { ProfileLoginScreen } from "@/components/ProfileLoginScreen"
-import { ProfileThemeTile } from "@/components/ProfileThemeTile"
-import { ChoreEditor } from "@/components/ChoreEditor"
-import { ChoreChecklist } from "@/components/ChoreChecklist"
-import { ChildThemePicker } from "@/components/ChildThemePicker"
-import { getTheme, type FamilyProfile, type GoalRecord, hashPin, isValidPin, type ProfileType, THEME_OPTIONS, type ChoreRecord, type ChoreCompletionRecord } from "@/lib/familyTypes"
-import { useAuth } from "@/lib/auth"
+import { MASCOT } from "@/components/kit"
+import { WhoIsHere } from "@/components/WhoIsHere"
+import { KidApp } from "@/components/kid/KidApp"
+import { ParentApp } from "@/components/parent/ParentApp"
+import type { FamilyReward } from "@/lib/familyTypes"
+import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
+import { signOut, useAuth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { ParentDashboard } from "@/components/ParentDashboard"
-import { ChildDashboard } from "@/components/ChildDashboard"
-import { FamilyReward } from "@/components/FamilyRewardsPanel"
+
+// The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
+const ACTIVE_KEY = "responsibilities.activeProfile"
+
+function readActiveId() {
+  try {
+    return sessionStorage.getItem(ACTIVE_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writeActiveId(id: string | null) {
+  try {
+    if (id) sessionStorage.setItem(ACTIVE_KEY, id)
+    else sessionStorage.removeItem(ACTIVE_KEY)
+  } catch {
+    // Storage can be blocked; the picker still works without it.
+  }
+}
 
 export function FamilyWorkspace() {
+  const navigate = useNavigate()
   const { user, loading: authLoading } = useAuth()
   const userId = user?.id
   const userName = user?.name
   const userEmail = user?.email
-  const [profiles, setProfiles] = useState<FamilyProfile[]>([])
+  const [allProfiles, setAllProfiles] = useState<FamilyProfile[]>([])
   const [goals, setGoals] = useState<GoalRecord[]>([])
   const [chores, setChores] = useState<ChoreRecord[]>([])
   const [completions, setCompletions] = useState<ChoreCompletionRecord[]>([])
-  const [goalTotal, setGoalTotal] = useState<number | undefined>(undefined)
-  const [activeProfile, setActiveProfile] = useState<FamilyProfile | null>(null)
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "signed-out">("loading")
-  const [goalError, setGoalError] = useState<string | null>(null)
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const [newName, setNewName] = useState("")
-  const [newType, setNewType] = useState<ProfileType>("child")
-  const [newTheme, setNewTheme] = useState("sunny-room")
-  const [newPin, setNewPin] = useState("")
-  const [profileSaving, setProfileSaving] = useState(false)
-  const [themeSaving, setThemeSaving] = useState(false)
-  const [themeError, setThemeError] = useState<string | null>(null)
   const [rewards, setRewards] = useState<FamilyReward[]>([])
+  const [activeId, setActiveId] = useState<string | null>(readActiveId)
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
 
   const loadData = useCallback(async () => {
     if (!userId) return
-    setStatus("loading")
-    setLoadError(null)
-    setGoalError(null)
     try {
-      let nextProfiles = (await db.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
-      if (!nextProfiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
+      let profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
+      if (!profiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
         await db.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
-        nextProfiles = (await db.family_profile.list({ orderBy: "-created_at", all: true })) as unknown as FamilyProfile[]
+        profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       }
-      const [nextGoals, nextGoalTotal, nextChores, nextCompletions, nextRewards] = await Promise.all([
+      const [nextGoals, nextChores, nextCompletions, nextRewards] = await Promise.all([
         db.goal.list({ orderBy: "-created_at", all: true }),
-        db.goal.count(),
-        db.chore.list({ orderBy: "-created_at", all: true }),
+        db.chore.list({ orderBy: "created_at", all: true }),
         db.chore_completion.list({ orderBy: "-created_at", all: true }),
         db.family_reward.list({ orderBy: "-created_at", all: true }),
       ])
-      const activeProfiles = nextProfiles.filter((profile) => profile.is_active !== false) as unknown as FamilyProfile[]
-      setProfiles(activeProfiles)
+      setAllProfiles(profiles)
       setGoals(nextGoals as unknown as GoalRecord[])
       setChores(nextChores as unknown as ChoreRecord[])
       setCompletions(nextCompletions as unknown as ChoreCompletionRecord[])
       setRewards(nextRewards as unknown as FamilyReward[])
-      setGoalTotal(nextGoalTotal)
-      setActiveProfile((current) => {
-        const found = activeProfiles.find((profile) => profile.id === current?.id)
-        return found ?? null
-      })
-      setStatus("success")
+      setStatus("ready")
     } catch (caught) {
       console.error("Family workspace load failed:", caught)
-      setLoadError("We couldn't load the family workspace. Please try again.")
-      setGoalError("We couldn't load goals right now.")
-      setStatus("error")
+      setStatus((current) => current === "ready" ? current : "error")
     }
   }, [userId, userName, userEmail])
 
   useEffect(() => {
-    if (authLoading) {
-      setStatus("loading")
-      return
-    }
+    if (authLoading) return
     if (!userId) {
-      setStatus("signed-out")
+      navigate("/login")
       return
     }
     void loadData()
-  }, [authLoading, userId, loadData])
+  }, [authLoading, userId, loadData, navigate])
 
-  const createProfile = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!newName.trim() || (newPin && !isValidPin(newPin))) return
-    setProfileSaving(true)
-    setLoadError(null)
-    try {
-      await db.family_profile.create({ display_name: newName.trim(), profile_type: newType, theme_key: newTheme, pin_hash: newPin ? await hashPin(newPin) : "", is_active: true })
-      setNewName("")
-      setNewPin("")
-      await loadData()
-    } catch (caught) {
-      console.error("Profile creation failed:", caught)
-      setLoadError("We couldn't add that profile. Please try again.")
-    } finally {
-      setProfileSaving(false)
-    }
+  const profiles = allProfiles.filter((profile) => profile.is_active !== false)
+  const inactiveProfiles = allProfiles.filter((profile) => profile.is_active === false)
+  const active = profiles.find((profile) => profile.id === activeId) ?? null
+
+  const open = (profile: FamilyProfile | null) => {
+    setActiveId(profile?.id ?? null)
+    writeActiveId(profile?.id ?? null)
+    if (profile) setAllProfiles((current) => current.map((item) => item.id === profile.id ? { ...item, ...profile } : item))
   }
 
-  const setProfilePin = async (profileId: string, pinHash: string) => {
+  const setPin = async (profileId: string, pinHash: string) => {
     await db.family_profile.update(profileId, { pin_hash: pinHash })
     await loadData()
   }
 
-  const updateProfileTheme = async (themeKey: string) => {
-    if (!activeProfile) return
-    setThemeSaving(true)
-    setThemeError(null)
-    try {
-      await db.family_profile.update(activeProfile.id, { theme_key: themeKey })
-      setActiveProfile((current) => (current ? { ...current, theme_key: themeKey } : null))
-      await loadData()
-    } catch (caught) {
-      console.error("Theme update failed:", caught)
-      setThemeError("We couldn't update the theme. Please try again.")
-    } finally {
-      setThemeSaving(false)
-    }
+  const changeTheme = async (themeKey: string) => {
+    if (!active) return
+    await db.family_profile.update(active.id, { theme_key: themeKey })
+    setAllProfiles((current) => current.map((item) => item.id === active.id ? { ...item, theme_key: themeKey } : item))
   }
 
-  const activeGoals = activeProfile ? goals.filter((goal) => goal.target_profile_id === activeProfile.id) : []
-  const activeTheme = activeProfile ? getTheme(activeProfile.theme_key) : null
+  const leave = async () => {
+    writeActiveId(null)
+    await signOut()
+    navigate("/")
+  }
 
-  if (status === "loading") return <div className="rounded-3xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Preparing your family quest…</div>
-  if (status === "signed-out") return <div className="rounded-3xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">Sign in to open your family profiles.</div>
-  if (status === "error") return <div className="rounded-3xl border border-destructive/30 bg-card p-8 text-center"><p className="text-sm text-destructive" role="alert">{loadError ?? "We couldn't load the family workspace."}</p><Button type="button" onClick={() => void loadData()} className="mt-4">Try again</Button></div>
-  if (!activeProfile) return <ProfileLoginScreen profiles={profiles} onUnlocked={setActiveProfile} onSetPin={setProfilePin} />
+  if (status === "loading") {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background">
+        <div className="text-center">
+          <span className="float-soft inline-block text-6xl" aria-hidden="true">{MASCOT}</span>
+          <p className="mt-3 font-display text-xl font-semibold">Getting your family ready...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (status === "error") {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background px-4">
+        <div className="max-w-sm rounded-[22px] bg-card p-8 text-center shadow-soft">
+          <span className="text-5xl" aria-hidden="true">{MASCOT}</span>
+          <p className="mt-3 font-display text-xl font-semibold">We couldn't load your family</p>
+          <p className="mt-1 text-muted-foreground">Check your connection and try again.</p>
+          <Button onClick={() => { setStatus("loading"); void loadData() }} className="mt-5">Try again</Button>
+        </div>
+      </main>
+    )
+  }
+
+  if (!active) {
+    return <WhoIsHere profiles={profiles} completions={completions} onUnlocked={open} onSetPin={setPin} onSignOut={() => void leave()} />
+  }
+
+  if (active.profile_type === "parent") {
+    return (
+      <ParentApp
+        profile={active}
+        profiles={profiles}
+        inactiveProfiles={inactiveProfiles}
+        chores={chores}
+        completions={completions}
+        goals={goals}
+        rewards={rewards}
+        onRefresh={loadData}
+        onSwitchProfile={() => open(null)}
+        onSignOut={() => void leave()}
+      />
+    )
+  }
 
   return (
-    <div className="space-y-8" data-element-id="family-workspace">
-      {activeProfile.profile_type === "parent" ? (
-        <ParentDashboard profiles={profiles} chores={chores} completions={completions} goals={goals} rewards={rewards} goalTotal={goalTotal} loading={status === "loading"} goalError={goalError} onRefresh={loadData} onExit={() => setActiveProfile(null)} />
-      ) : (
-        <ChildDashboard profile={activeProfile} profiles={profiles} chores={chores} completions={completions} goals={goals} onRefresh={loadData} onParent={() => setActiveProfile(null)} themeSaving={themeSaving} themeError={themeError} onThemeChange={updateProfileTheme} />
-      )}
-    </div>
+    <KidApp
+      profile={active}
+      profiles={profiles}
+      chores={chores}
+      completions={completions}
+      goals={goals}
+      rewards={rewards}
+      onRefresh={loadData}
+      onSwitchProfile={() => open(null)}
+      onThemeChange={changeTheme}
+    />
   )
 }

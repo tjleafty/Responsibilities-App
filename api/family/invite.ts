@@ -17,8 +17,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     try {
       await sendEmail({
         to: email,
-        subject: "A family invitation to try ChoreReward",
-        text: `${message || "Our family uses ChoreReward to organize chores and celebrate progress."}\n\nOpen ChoreReward: ${appUrl}`,
+        subject: "A family invitation to try Responsibilities App",
+        text: `${message || "Our family uses the Responsibilities App to organize chores and celebrate progress."}\n\nOpen the Responsibilities App: ${appUrl}`,
         replyTo: user.email,
       })
       return true

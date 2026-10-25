@@ -157,3 +157,13 @@ export const GOAL_FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = 
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
 ]
+
+export interface FamilyReward {
+  id: string
+  title: string
+  description?: string | null
+  reward_type: "participation" | "goal" | "chore"
+  target_profile_id?: string | null
+  points_required?: number
+  is_active?: boolean
+}
