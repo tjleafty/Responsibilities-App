@@ -36,7 +36,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
   const others = daily.filter((row) => row !== next)
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-5 lg:max-w-5xl">
       <header className="flex items-center gap-3">
         <span className="md:hidden"><Avatar profile={profile} size={52} /></span>
         <div className="min-w-0 flex-1">
@@ -72,14 +72,14 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           {others.length > 0 ? (
             <section className="space-y-3">
               <h2 className="font-display text-xl font-semibold">More today</h2>
-              {others.map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}
+              <div className="grid gap-3 lg:grid-cols-2">{others.map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
 
           {later.filter((row) => row !== next).length > 0 ? (
             <section className="space-y-3">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />This week and month</h2>
-              {later.filter((row) => row !== next).map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}
+              <div className="grid gap-3 lg:grid-cols-2">{later.filter((row) => row !== next).map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
         </>

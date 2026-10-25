@@ -35,10 +35,31 @@ export function choreIcon(title: string): LucideIcon {
 }
 
 /** Chores that have a finished how-to video in public/videos. */
-const VIDEOS: Array<[RegExp, { src: string; poster: string; length: string }]> = [
-  [/make (your |the )?bed/i, { src: "/videos/make-your-bed.mp4", poster: "/videos/make-your-bed.jpg", length: "0:42" }],
+export interface ChoreVideo {
+  src: string
+  poster: string
+  length: string
+  /** Chapter start and end in seconds, from the video's script. */
+  chapters: Array<{ title: string; start: number; end: number }>
+  tip?: string
+}
+
+const VIDEOS: Array<[RegExp, ChoreVideo]> = [
+  [/make (your |the )?bed/i, {
+    src: "/videos/make-your-bed.mp4",
+    poster: "/videos/make-your-bed.jpg",
+    length: "0:42",
+    chapters: [
+      { title: "Take the pillows off", start: 4, end: 11 },
+      { title: "Pull the sheet up to the top", start: 11, end: 18 },
+      { title: "Pull the blanket up and smooth it", start: 18, end: 26 },
+      { title: "Put the pillows back", start: 26, end: 32 },
+      { title: "Add your favorite stuffy", start: 32, end: 36 },
+    ],
+    tip: "Smooth the blanket with flat hands, like you're petting a big sleepy cat.",
+  }],
 ]
 
-export function choreVideo(title: string) {
+export function choreVideo(title: string): ChoreVideo | null {
   return VIDEOS.find(([pattern]) => pattern.test(title))?.[1] ?? null
 }

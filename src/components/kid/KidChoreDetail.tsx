@@ -1,8 +1,9 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowLeft, Check, Clock3, Film, MessageCircle, PartyPopper, RotateCcw, Timer } from "lucide-react"
+import { ArrowLeft, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, ErrorNote, MASCOT, ProgressBar, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
+import { KidVideoPlayer } from "@/components/kid/KidVideoPlayer"
 import type { ChoreCompletionRecord, ChoreRecord } from "@/lib/familyTypes"
 import { choreState, completionFor, firstName, grownUpsOf, requiresApproval } from "@/lib/family"
 import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
@@ -26,6 +27,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sentTo, setSentTo] = useState<string | null>(null)
+  const [watching, setWatching] = useState(false)
   const points = Number(chore.reward_points) || 0
   const video = choreVideo(chore.title)
   const locked = state === "waiting" || state === "done"
@@ -64,6 +66,10 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
     }
   }
 
+  if (watching && video) {
+    return <KidVideoPlayer title={chore.title} kidName={firstName(profile)} video={video} onBack={() => setWatching(false)} onReady={() => setWatching(false)} />
+  }
+
   if (sentTo) {
     return (
       <div className="mx-auto flex min-h-[80dvh] max-w-md flex-col items-center justify-center text-center">
@@ -96,10 +102,13 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
       ) : null}
 
       {video ? (
-        <section className="overflow-hidden rounded-[22px] bg-card shadow-soft">
-          <video src={video.src} poster={video.poster} controls playsInline preload="none" className="aspect-video w-full bg-black" aria-label={`How to ${chore.title.toLowerCase()}`} />
-          <p className="flex items-center justify-between px-4 py-3 font-bold"><span className="flex items-center gap-2"><Film className="h-5 w-5 text-primary" />Watch how</span><span className="text-muted-foreground">{video.length}</span></p>
-        </section>
+        <button type="button" onClick={() => setWatching(true)} className="block w-full overflow-hidden rounded-[22px] bg-card text-left shadow-soft">
+          <span className="relative block">
+            <img src={video.poster} alt="" className="aspect-video w-full object-cover" />
+            <span className="absolute inset-0 grid place-items-center"><span className="grid h-16 w-16 place-items-center rounded-full bg-white/95 text-[#2D2A4A] shadow-soft"><Play className="ml-1 h-7 w-7 fill-current" /></span></span>
+          </span>
+          <span className="flex items-center justify-between px-4 py-3 font-bold"><span className="flex items-center gap-2"><Film className="h-5 w-5 text-primary" />Watch how · {video.chapters.length} steps</span><span className="text-muted-foreground">{video.length}</span></span>
+        </button>
       ) : (
         <section className="flex items-center gap-4 rounded-[22px] bg-card p-4 shadow-soft">
           <ChoreIconTile title={chore.title} size={64} />

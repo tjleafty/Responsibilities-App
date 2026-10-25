@@ -69,7 +69,14 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
           </div>
 
           {active.length === 0 ? (
-            <EmptyState title="No chores yet" action={<Button onClick={() => setIdeasOpen(true)}><Lightbulb className="h-5 w-5" />Pick from ideas</Button>}>Start with a few ideas, or make your own.</EmptyState>
+            <EmptyState title="No chores yet" action={
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button onClick={() => setIdeasOpen(true)}><Lightbulb className="h-5 w-5" />Pick from ideas</Button>
+                <Button variant="outline" onClick={() => create()}><PencilLine className="h-5 w-5" />Create my own</Button>
+              </div>
+            }>
+              Start your family's routine. Most families start with two easy morning chores, like making the bed and brushing teeth.
+            </EmptyState>
           ) : shown.length === 0 ? (
             <p className="rounded-[22px] bg-card p-6 text-center text-muted-foreground shadow-soft">No chores match that search.</p>
           ) : (

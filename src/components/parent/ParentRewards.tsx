@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Check, Gift, PencilLine, Plus, Target, Trash2 } from "lucide-react"
+import { CalendarDays, Check, Gift, PencilLine, Plus, Target, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,10 +13,10 @@ import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
 type View = "prizes" | "goals"
-const FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
+const FREQUENCIES: Array<{ value: GoalFrequency; label: string; hint: string }> = [
+  { value: "daily", label: "Daily", hint: "Every day" },
+  { value: "weekly", label: "Weekly", hint: "Mon to Sun" },
+  { value: "monthly", label: "Monthly", hint: "Each month" },
 ]
 
 export function ParentRewards({ profiles, completions, rewards, goals, onRefresh }: ParentScreenProps) {
@@ -209,9 +209,15 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
       <div className="space-y-4">
         <Field label="Prize"><input className={inputClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Pick the family movie" maxLength={80} /></Field>
         <Field label="Details (optional)"><Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={2} maxLength={200} placeholder="Choose Friday's movie and the popcorn." /></Field>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="font-bold">Costs</span>
-          <Stepper value={cost} onChange={setCost} step={5} max={5000} label="points" />
+        <div className="space-y-2 rounded-2xl bg-muted/60 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span><span className="block font-bold">Points needed</span><span className="block text-sm text-muted-foreground">Kids see it in their own token.</span></span>
+            <Stepper value={cost} onChange={setCost} step={5} max={5000} label="points" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-bold text-muted-foreground">Quick add</span>
+            {[5, 10, 25, 50].map((amount) => <Chip key={amount} onClick={() => setCost((value) => Math.min(5000, value + amount))}>+{amount}</Chip>)}
+          </div>
         </div>
         <ForWhom kids={kids} value={kidId} onChange={setKidId} allowEveryone />
       </div>
@@ -259,7 +265,19 @@ function GoalSheet({ state, onClose, kids, onRefresh }: { state: { goal: GoalRec
       <div className="space-y-4">
         <Field label="Goal"><input className={inputClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Read 10 books" maxLength={80} /></Field>
         <ForWhom kids={kids} value={kidId} onChange={setKidId} allowEveryone={false} />
-        <div className="space-y-1.5"><span className="block text-sm font-bold">Resets</span><Segmented value={frequency} onChange={setFrequency} options={FREQUENCIES} /></div>
+        <div className="space-y-1.5">
+          <span className="block text-sm font-bold">Starts over</span>
+          <div className="grid grid-cols-3 gap-2">
+            {FREQUENCIES.map((option) => (
+              <button key={option.value} type="button" onClick={() => setFrequency(option.value)} aria-pressed={frequency === option.value}
+                className={cn("flex flex-col items-center gap-0.5 rounded-2xl p-3 transition-colors", frequency === option.value ? "bg-primary text-primary-foreground shadow-soft" : "bg-muted/60 hover:bg-muted")}>
+                <CalendarDays className="h-5 w-5" />
+                <span className="font-display font-semibold">{option.label}</span>
+                <span className="text-xs opacity-80">{option.hint}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3"><span className="font-bold">Times to reach it</span><Stepper value={target} onChange={setTarget} min={1} max={100} label="times" /></div>
         <Field label="Prize when reached (optional)"><input className={inputClass} value={prize} onChange={(event) => setPrize(event.target.value)} placeholder="Ice cream trip" maxLength={80} /></Field>
       </div>

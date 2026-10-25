@@ -57,10 +57,11 @@ export function ParentToday(props: ParentScreenProps) {
 
       <ErrorNote>{review.error}</ErrorNote>
 
+      <div className="space-y-6 xl:grid xl:grid-cols-3 xl:items-start xl:gap-4 xl:space-y-0">
       {waiting.length > 0 ? (
         <section className="space-y-3">
           <SectionTitle count={waiting.length}><span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true" />Waiting for you</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
             {waiting.map((row) => (
               <li key={`${row.chore.id}-${row.profile.id}`} className="rounded-[22px] bg-card p-4 shadow-soft">
                 <div className="flex items-start gap-3">
@@ -71,7 +72,7 @@ export function ParentToday(props: ParentScreenProps) {
                   </div>
                   <StateChip state="waiting" label="Ready" />
                 </div>
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StepsDone row={row} />
                   {Number(row.chore.reward_points) > 0 ? <TokenPill amount={Number(row.chore.reward_points)} token={getKidTheme(row.profile.theme_key).token} prefix="+" /> : null}
                   <span className="flex-1" />
@@ -87,7 +88,7 @@ export function ParentToday(props: ParentScreenProps) {
       {toDo.length > 0 ? (
         <section className="space-y-3">
           <SectionTitle count={toDo.length}><span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" aria-hidden="true" />Still to do</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
             {toDo.map((row) => (
               <li key={`${row.chore.id}-${row.profile.id}`} className={cn("rounded-[22px] bg-card p-4 shadow-soft", row.state === "sent_back" && "border-l-[6px] border-coral")}>
                 <div className="flex items-center gap-3">
@@ -113,21 +114,20 @@ export function ParentToday(props: ParentScreenProps) {
               <span className="block font-display text-lg font-semibold">{done.length} {done.length === 1 ? "chore" : "chores"} done</span>
               <span className="block text-sm text-muted-foreground">{doneSummary(done)}</span>
             </span>
-            <ChevronDown className={cn("h-5 w-5 transition-transform", showDone && "rotate-180")} />
+            <ChevronDown className={cn("h-5 w-5 transition-transform xl:hidden", showDone && "rotate-180")} />
           </button>
-          {showDone ? (
-            <ul className="space-y-2 px-4 pb-4">
-              {done.map((row) => (
-                <li key={`${row.chore.id}-${row.profile.id}`} className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2">
-                  <Avatar profile={row.profile} size={32} />
-                  <span className="min-w-0 flex-1 truncate font-semibold">{row.chore.title}</span>
-                  <span className="text-sm text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          <ul className={cn("space-y-2 px-4 pb-4", !showDone && "hidden xl:block")}>
+            {done.map((row) => (
+              <li key={`${row.chore.id}-${row.profile.id}`} className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2">
+                <Avatar profile={row.profile} size={32} />
+                <span className="min-w-0 flex-1 truncate font-semibold">{row.chore.title}</span>
+                <span className="text-sm text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</span>
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
+      </div>
 
       <button type="button" onClick={onAddChore} className="fixed bottom-24 right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 lg:hidden" aria-label="Add chore"><Plus className="h-8 w-8" /></button>
       {review.sheet}
@@ -154,7 +154,7 @@ function StepsDone({ row }: { row: TodayRow }) {
   const steps = parseChoreSubtasks(row.chore.subtasks)
   if (steps.length === 0) return null
   const checked = parseCompletedTaskIds(row.completion?.completed_task_ids).filter((id) => steps.some((step) => step.id === id)).length
-  return <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-bold"><Check className="h-3.5 w-3.5" />{checked}/{steps.length} steps</span>
+  return <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2.5 py-1 text-xs font-bold"><Check className="h-3.5 w-3.5" />{checked}/{steps.length} steps</span>
 }
 
 function KidCard({ kid, rows, points }: { kid: TodayRow["profile"]; rows: TodayRow[]; points: number }) {

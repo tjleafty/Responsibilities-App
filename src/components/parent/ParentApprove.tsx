@@ -1,15 +1,15 @@
 import { useState } from "react"
-import { Check, CheckCheck, ChevronDown, CircleCheck, History, RotateCcw } from "lucide-react"
+import { Check, CheckCheck, ChevronRight, CircleCheck, History, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, Chip, EmptyState, ErrorNote, StateChip, TokenPill } from "@/components/kit"
+import { Avatar, Chip, EmptyState, ErrorNote, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
-import { awaitingReview, choreState, kidsOf, relativeTime } from "@/lib/family"
+import { ApprovalHistory, reviewedRows } from "@/components/parent/ApprovalHistory"
+import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
 import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
 import { getKidTheme } from "@/lib/themes"
-import { parseUTC } from "@/lib/utils"
 import type { ChoreCompletionRecord } from "@/lib/familyTypes"
-import { cn } from "@/lib/utils"
+import { cn, parseUTC } from "@/lib/utils"
 
 const newestFirst = (field: "completed_at" | "verified_at") => (a: ChoreCompletionRecord, b: ChoreCompletionRecord) =>
   parseUTC(b[field] ?? "").getTime() - parseUTC(a[field] ?? "").getTime()
@@ -23,10 +23,11 @@ export function ParentApprove(props: ParentScreenProps) {
   const profileById = new Map(profiles.map((profile) => [profile.id, profile]))
   const queue = awaitingReview(completions).filter((row) => choreById.has(row.chore_id) && profileById.has(row.profile_id)).sort(newestFirst("completed_at"))
   const visible = kidFilter ? queue.filter((row) => row.profile_id === kidFilter) : queue
-  const history = completions
-    .filter((row) => (choreState(row) === "done" || choreState(row) === "sent_back") && row.verified_at && choreById.has(row.chore_id))
-    .sort(newestFirst("verified_at"))
-    .slice(0, 20)
+  const history = reviewedRows(completions, chores)
+  const weekAgo = Date.now() - 7 * 86_400_000
+  const thisWeek = history.filter((row) => parseUTC(row.verified_at ?? "").getTime() >= weekAgo).length
+
+  if (showHistory) return <ApprovalHistory profiles={profiles} chores={chores} completions={completions} onBack={() => setShowHistory(false)} />
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -96,28 +97,9 @@ export function ParentApprove(props: ParentScreenProps) {
       )}
 
       {history.length > 0 ? (
-        <section className="rounded-[22px] bg-card shadow-soft">
-          <button type="button" onClick={() => setShowHistory((open) => !open)} aria-expanded={showHistory} className="flex w-full items-center gap-3 p-4 text-left font-display text-lg font-semibold">
-            <History className="h-5 w-5 text-primary" />Recent decisions<ChevronDown className={cn("ml-auto h-5 w-5 transition-transform", showHistory && "rotate-180")} />
-          </button>
-          {showHistory ? (
-            <ul className="space-y-2 px-4 pb-4">
-              {history.map((row) => {
-                const kid = profileById.get(row.profile_id)
-                return (
-                  <li key={row.id} className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2">
-                    {kid ? <Avatar profile={kid} size={32} /> : null}
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-semibold">{choreById.get(row.chore_id)?.title}</span>
-                      <span className="block text-xs text-muted-foreground">{kid?.display_name} · {relativeTime(row.verified_at)}</span>
-                    </span>
-                    <StateChip state={choreState(row)} label={choreState(row) === "done" ? "Approved" : undefined} />
-                  </li>
-                )
-              })}
-            </ul>
-          ) : null}
-        </section>
+        <button type="button" onClick={() => setShowHistory(true)} className="mx-auto flex min-h-12 items-center gap-2 rounded-full bg-card px-5 font-display font-semibold shadow-soft hover:bg-muted">
+          <History className="h-5 w-5 text-primary" />See approval history ({thisWeek} this week)<ChevronRight className="h-5 w-5" />
+        </button>
       ) : null}
       {review.sheet}
     </div>
