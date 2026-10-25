@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { ChevronRight, Clock3, Sparkles, Trophy } from "lucide-react"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
 import { getAssignedProfileIds, getRandomlyAssignedProfileId, getPeriodKey, getLocalPeriodKey, isRandomAssignmentEnabled, parseChoreSubtasks, parseCompletedTaskIds, areDailyChoresApproved } from "@/lib/choreUtils"
 import { parseUTC } from "@/lib/utils"
@@ -61,7 +61,7 @@ export function ChoreChecklist({ activeProfile, profiles, chores, completions, o
     if (existing) return existing
     const now = new Date()
     const deadline = chore.time_limit_minutes ? new Date(now.getTime() + Number(chore.time_limit_minutes) * 60_000) : null
-    const created = await overskill.entities.chore_completion.create({
+    const created = await db.chore_completion.create({
       chore_id: chore.id,
       profile_id: activeProfile.id,
       period_key: periodKey,
@@ -78,7 +78,7 @@ export function ChoreChecklist({ activeProfile, profiles, chores, completions, o
   const finishChore = async (chore: ChoreRecord, completion: ChoreCompletionRecord, completedIds: string[]) => {
     const requiresApproval = chore.requires_verification === true || chore.requires_verification === 1
     const completedAt = new Date().toISOString()
-    const updated = await overskill.entities.chore_completion.update(completion.id, {
+    const updated = await db.chore_completion.update(completion.id, {
       completed_task_ids: JSON.stringify(completedIds),
       status: requiresApproval ? "pending_verification" : "approved",
       completed_at: completedAt,
@@ -95,7 +95,7 @@ export function ChoreChecklist({ activeProfile, profiles, chores, completions, o
     try {
       const completion = completionFor(chore) ?? await startChore(chore)
       const wasRejected = completion.status === "rejected"
-      const saved = await overskill.entities.chore_completion.update(completion.id, {
+      const saved = await db.chore_completion.update(completion.id, {
         completed_task_ids: JSON.stringify(completedIds),
         ...(wasRejected ? {
           status: "in_progress",

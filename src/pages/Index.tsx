@@ -1,54 +1,21 @@
-import React from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { overskill } from "@/lib/auth";
 import AppBrand from "@/components/AppBrand";
 import { Target } from "lucide-react";
 
-/**
- * Default Index page — public landing.
- *
- * INTENT: This is the **public face** of the app. It MUST render without any
- * `isAuthenticated()` checks or auto-redirects. Showing the landing page is
- * the correct behavior for:
- *   - Unauthenticated visitors discovering the app
- *   - SEO crawlers
- *   - Authenticated users who navigate to `/` (they should see the landing
- *     page and click through, NOT be silently teleported to /dashboard)
- *   - The OverSkill editor preview iframe (auto-injects auth tokens, but
- *     should still show the landing page so creators can edit/iterate)
- *
- * The AI MUST replace this file's CONTENT (hero text, features, CTA copy)
- * with app-specific marketing for each generated app. The structural
- * pattern — hero / features / CTA, no auth checks — should stay intact.
- *
- * For login-required internal tools (admin panels, dashboards-only apps),
- * the AI may opt-in to redirect logic here, but it's NOT the default.
- *
- * Apr 2026 (revert): previous "smart redirect" version (commits 6ac4d1dc1,
- * 2de0ba7cb, f83a4063a) auto-navigated authed users to /dashboard, which
- * meant nobody ever saw the landing page in preview or production. Reverted
- * to the Overskill template's public marketing landing.
- */
 export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Top nav */}
       <header className="border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          {/* Header brand mark — shows the uploaded logo automatically when
-              VITE_APP_LOGO_URL is set; otherwise renders the wordmark exactly
-              like the classic <h1>. Restyle/replace freely (see AppBrand). */}
           <AppBrand name="ChoreReward" icon={<Target className="h-5 w-5" />} className="text-lg font-semibold text-foreground" />
           <div className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link to="/pricing">Pricing</Link>
-            </Button>
             <Button variant="outline" asChild>
               <Link to="/login">Log in</Link>
             </Button>
-            <Button onClick={() => overskill.auth.login()} variant="default">
-              Create account
+            <Button variant="default" asChild>
+              <Link to="/login?mode=signup">Create account</Link>
             </Button>
           </div>
         </div>
@@ -63,14 +30,11 @@ export default function Index() {
           ChoreReward keeps responsibilities, profile handoffs, theme tiles, and family goals in one encouraging place.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={() => overskill.auth.login()}>
-            Get Started Free
+          <Button size="lg" asChild>
+            <Link to="/login?mode=signup">Get Started Free</Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link to="/pricing">View the parent plan</Link>
-          </Button>
-          <Button size="lg" variant="outline" asChild>
-            <Link to="#features">Learn More</Link>
+            <a href="#features">Learn More</a>
           </Button>
         </div>
       </section>
@@ -99,8 +63,8 @@ export default function Index() {
         <p className="text-lg text-muted-foreground mb-8">
           Give every chore a home, then make the next win visible.
         </p>
-        <Button size="lg" onClick={() => overskill.auth.login()}>
-          Create your family profiles
+        <Button size="lg" asChild>
+          <Link to="/login?mode=signup">Create your family profiles</Link>
         </Button>
       </section>
 

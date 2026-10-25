@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import type { ChoreRecord, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
 import { getAssignedProfileIds } from "@/lib/choreUtils"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 const PRESETS: Array<{ title: string; frequency: GoalFrequency }> = [
   { title: "Sweep porch", frequency: "daily" }, { title: "Personal morning prayer", frequency: "daily" },
@@ -66,7 +66,7 @@ export function ChorePresetDialog({ open, onOpenChange, profiles, chores, onRefr
       return
     }
     try {
-      await overskill.entities.chore.bulkCreate(records)
+      await db.chore.bulkCreate(records)
       await onRefresh()
       setSelectedPresets([])
       setSelectedProfiles([])

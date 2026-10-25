@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState, type FormEvent } from "react"
 import { Edit, Key, Plus, Save, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { overskill, useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType, THEME_OPTIONS } from "@/lib/familyTypes"
 
 type LoadStatus = "loading" | "success" | "error" | "signed-out"
@@ -29,7 +30,7 @@ export function ParentFamilySettings() {
     setStatus("loading")
     setError(null)
     try {
-      const rows = await overskill.entities.family_profile.list({ orderBy: "-created_at", all: true })
+      const rows = await db.family_profile.list({ orderBy: "-created_at", all: true })
       setProfiles(rows as unknown as FamilyProfile[])
       setStatus("success")
     } catch (caught) {
@@ -57,7 +58,7 @@ export function ParentFamilySettings() {
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.family_profile.create({
+      await db.family_profile.create({
         display_name: newName.trim(),
         profile_type: newType,
         theme_key: newTheme,
@@ -86,7 +87,7 @@ export function ParentFamilySettings() {
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.family_profile.update(profile.id, {
+      await db.family_profile.update(profile.id, {
         display_name: draft.display_name.trim(),
         profile_type: draft.profile_type,
         theme_key: draft.theme_key,
@@ -113,7 +114,7 @@ export function ParentFamilySettings() {
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.family_profile.update(profile.id, { is_active: false })
+      await db.family_profile.update(profile.id, { is_active: false })
       await loadProfiles()
     } catch (caught) {
       console.error("Family profile deactivation failed:", caught)
@@ -128,7 +129,7 @@ export function ParentFamilySettings() {
     setSaving(true)
     setError(null)
     try {
-      await overskill.entities.family_profile.update(profile.id, { is_active: true })
+      await db.family_profile.update(profile.id, { is_active: true })
       await loadProfiles()
     } catch (caught) {
       console.error("Family profile reactivation failed:", caught)

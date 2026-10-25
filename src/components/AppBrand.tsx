@@ -4,7 +4,7 @@ import React, { useState } from "react";
  * <AppBrand/> — the app's header brand mark (logo/wordmark) primitive.
  *
  * WHAT IT DOES:
- *   - If the user uploaded a brand logo in OverSkill Settings, the platform
+ *   - If VITE_APP_LOGO_URL is set, the build
  *     exposes it as `import.meta.env.VITE_APP_LOGO_URL`. When that's set,
  *     AppBrand renders it as an `<img data-app-icon>` — so the header shows
  *     the real logo AND the favicon capture picks it up automatically.

@@ -7,7 +7,7 @@ import { ChorePresetDialog } from "@/components/ChorePresetDialog"
 import { FamilyRewardsPanel, type FamilyReward } from "@/components/FamilyRewardsPanel"
 import type { ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
 import { getAssignedProfileIds, parseChoreSubtasks } from "@/lib/choreUtils"
-import { overskill } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 interface ChoreEditorProps {
   profiles: FamilyProfile[]
@@ -39,7 +39,7 @@ export function ChoreEditor({ profiles, chores, rewards = [], onRefresh, mode = 
   const removeChore = async (chore: ChoreRecord) => {
     setError(null)
     try {
-      await overskill.entities.chore.delete(chore.id)
+      await db.chore.delete(chore.id)
       await onRefresh()
     } catch (caught) {
       console.error("Chore deletion failed:", caught)

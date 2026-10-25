@@ -240,10 +240,6 @@ All colors MUST be HSL.
   }
 }
 
-/* OverSkill Remix Badge styles moved to src/lib/overskill-badge.css.
-   That file is platform-owned (BLOCKED_PATHS in ai_tool_service.rb) so the
-   AI can't accidentally drop it during theming/redesign work. The styles
-   are imported directly by src/App.tsx. */
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(12px); }
