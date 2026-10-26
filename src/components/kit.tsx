@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { Check, Clock3, Minus, Plus, RotateCcw, X } from "lucide-react"
+import { useTheme } from "next-themes"
+import { Check, Clock3, Minus, Monitor, Moon, Plus, RotateCcw, Sun, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { choreIcon } from "@/lib/choreIcons"
 import { getKidTheme } from "@/lib/themes"
@@ -221,5 +222,27 @@ export function BrandMark({ className, compact = false }: { className?: string; 
       <span data-app-icon className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-primary text-xl shadow-soft" aria-hidden="true">{MASCOT}</span>
       {compact ? null : <span className="font-display text-lg font-semibold leading-tight text-foreground">Responsibilities<span className="block text-sm text-muted-foreground">App</span></span>}
     </span>
+  )
+}
+
+const APPEARANCE = [
+  { id: "light", label: "Light", icon: Sun },
+  { id: "dark", label: "Dark", icon: Moon },
+  { id: "system", label: "Match device", icon: Monitor },
+] as const
+
+/** Light or dark for grown-up screens. Kid screens always use the kid's own theme. */
+export function AppearancePicker({ className }: { className?: string }) {
+  const { theme = "system", setTheme } = useTheme()
+  return (
+    <div role="radiogroup" aria-label="Appearance" className={cn("grid grid-cols-3 gap-2", className)}>
+      {APPEARANCE.map(({ id, label, icon: Icon }) => (
+        <button key={id} type="button" role="radio" aria-checked={theme === id} onClick={() => setTheme(id)}
+          className={cn("flex min-h-16 flex-col items-center justify-center gap-1 rounded-2xl border-2 px-2 py-2 text-sm font-bold transition-colors",
+            theme === id ? "border-primary bg-primary/10 text-primary" : "border-transparent bg-muted text-muted-foreground hover:text-foreground")}>
+          <Icon className="h-5 w-5" />{label}
+        </button>
+      ))}
+    </div>
   )
 }

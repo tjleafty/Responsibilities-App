@@ -79,6 +79,11 @@ export function kidThemeStyle(themeKey: string, withPattern = true): CSSProperti
     "--font-display": data.fonts.displayStack,
     "--font-body": data.fonts.bodyStack,
     "--theme-radius": `${data.shape.radius}px`,
+    // Kid worlds keep their own look when a grown-up turns on dark mode.
+    "--success": "156 56% 42%",
+    "--success-foreground": "0 0% 100%",
+    "--coral": "7 74% 60%",
+    "--shadow-soft": "0 4px 16px rgba(45, 42, 74, 0.08)",
     fontFamily: data.fonts.bodyStack,
     colorScheme: data.mode,
     ...(withPattern ? { backgroundImage: pattern } : {}),

@@ -63,41 +63,52 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Parent mode at night: the deep navy from the Stitch dark Parent Today screen,
+       keeping the Sunny Room brand hues a little brighter so they read on dark.
+       Kid screens never use these: each kid theme sets its own colors. */
+    --background: 232 28% 9%;
+    --foreground: 240 45% 92%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 232 19% 14%;
+    --card-foreground: 240 45% 92%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 232 19% 14%;
+    --popover-foreground: 240 45% 92%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 221 84% 68%;
+    --primary-foreground: 228 60% 11%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 342 100% 76%;
+    --secondary-foreground: 228 60% 11%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 232 16% 19%;
+    --muted-foreground: 230 14% 70%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 43 100% 64%;
+    --accent-foreground: 228 60% 11%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 156 55% 52%;
+    --success-foreground: 228 60% 11%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --coral: 7 88% 70%;
+
+    --destructive: 7 80% 62%;
+    --destructive-foreground: 228 60% 11%;
+
+    --border: 232 14% 24%;
+    --input: 232 14% 28%;
+    --ring: 221 84% 68%;
+
+    --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.35);
+
+    --sidebar-background: 232 28% 9%;
+    --sidebar-foreground: 240 45% 92%;
+    --sidebar-primary: 221 84% 68%;
+    --sidebar-primary-foreground: 228 60% 11%;
+    --sidebar-accent: 232 16% 19%;
+    --sidebar-accent-foreground: 240 45% 92%;
+    --sidebar-border: 232 14% 24%;
+    --sidebar-ring: 221 84% 68%;
   }
 }
 

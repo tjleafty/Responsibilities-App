@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, KeyRound, LogOut, Mail } from "lucide-react"
+import { ArrowLeft, KeyRound, LogOut, Mail, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, ErrorNote, Field, inputClass } from "@/components/kit"
+import { AppearancePicker, Card, ErrorNote, Field, inputClass } from "@/components/kit"
 import { signOut, updatePassword, useAuth } from "@/lib/auth"
 
 export default function SettingsPage() {
@@ -33,7 +33,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-background px-4 py-6">
+    <main className="min-h-dvh bg-background px-4 py-6 text-foreground">
       <div className="mx-auto max-w-2xl space-y-5">
         <header className="flex items-center gap-3">
           <button type="button" onClick={() => navigate("/dashboard")} className="grid h-12 w-12 place-items-center rounded-full bg-card shadow-soft" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
@@ -44,6 +44,12 @@ export default function SettingsPage() {
           <p className="flex items-center gap-2 font-display text-lg font-semibold"><Mail className="h-5 w-5 text-primary" />Signed in as</p>
           <p className="text-muted-foreground">{user?.email}</p>
           <p className="pt-2 text-sm text-muted-foreground">Profiles, PINs and themes live in Family inside the app.</p>
+        </Card>
+
+        <Card className="space-y-3">
+          <p className="flex items-center gap-2 font-display text-lg font-semibold"><Moon className="h-5 w-5 text-primary" />Appearance</p>
+          <AppearancePicker />
+          <p className="text-sm text-muted-foreground">Kids always see their own theme.</p>
         </Card>
 
         <Card>

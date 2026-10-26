@@ -103,7 +103,7 @@ function SendBackSheet({ completion, chore, kid, onClose, onSend }: {
       footer={
         <div className="flex gap-3">
           <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button onClick={() => void send()} disabled={busy} className="flex-1 bg-coral text-white hover:bg-coral/90"><RotateCcw className="h-5 w-5" />{busy ? "Sending..." : "Send back"}</Button>
+          <Button onClick={() => void send()} disabled={busy} className="flex-1 bg-coral text-primary-foreground hover:bg-coral/90"><RotateCcw className="h-5 w-5" />{busy ? "Sending..." : "Send back"}</Button>
         </div>
       }
     >

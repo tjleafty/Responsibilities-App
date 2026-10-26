@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { Check, ChevronRight, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, UserRoundCog, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
+import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
 import { choresFor, grownUpsOf, kidsOf, pointsEarned } from "@/lib/family"
@@ -102,7 +102,12 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
         </div>
 
         <aside className="space-y-3">
-          <h2 className="font-display text-xl font-semibold">More</h2>
+          <h2 className="font-display text-xl font-semibold">Appearance</h2>
+          <div className="rounded-[22px] bg-card p-3 shadow-soft">
+            <AppearancePicker />
+            <p className="px-1 pt-2 text-sm text-muted-foreground">For grown-up screens. Kids always see their own theme.</p>
+          </div>
+          <h2 className="pt-2 font-display text-xl font-semibold">More</h2>
           <ul className="overflow-hidden rounded-[22px] bg-card shadow-soft">
             <MenuRow icon={<LifeBuoy className="h-5 w-5" />} label="Help and ideas" onClick={() => setSupport(true)} />
             <MenuRow icon={<Share2 className="h-5 w-5" />} label="Share with a friend" onClick={() => setShare(true)} />

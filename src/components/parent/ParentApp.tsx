@@ -53,7 +53,7 @@ export function ParentApp(props: ParentAppProps) {
             <button key={id} type="button" onClick={() => setTab(id)} aria-current={tab === id ? "page" : undefined}
               className={cn("flex min-h-12 items-center gap-3 rounded-2xl px-4 font-display text-base font-semibold transition-colors", tab === id ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:bg-card hover:text-foreground")}>
               <Icon className="h-5 w-5" />{label}
-              {id === "approve" && waiting > 0 ? <span className={cn("ml-auto grid min-w-6 place-items-center rounded-full px-1.5 text-xs font-extrabold", tab === id ? "bg-white text-primary" : "bg-secondary text-secondary-foreground")}>{waiting}</span> : null}
+              {id === "approve" && waiting > 0 ? <span className={cn("ml-auto grid min-w-6 place-items-center rounded-full px-1.5 text-xs font-extrabold", tab === id ? "bg-primary-foreground text-primary" : "bg-secondary text-secondary-foreground")}>{waiting}</span> : null}
             </button>
           ))}
           <div className="mt-auto flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft">
