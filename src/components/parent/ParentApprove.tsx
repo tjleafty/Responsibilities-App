@@ -5,6 +5,8 @@ import { Avatar, Chip, EmptyState, ErrorNote, TokenPill } from "@/components/kit
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
 import { ApprovalHistory, reviewedRows } from "@/components/parent/ApprovalHistory"
+import { PrizeRequests } from "@/components/parent/PrizeRequests"
+import { pendingRequests } from "@/lib/prizeRequests"
 import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
 import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
 import { getKidTheme } from "@/lib/themes"
@@ -15,7 +17,7 @@ const newestFirst = (field: "completed_at" | "verified_at") => (a: ChoreCompleti
   parseUTC(b[field] ?? "").getTime() - parseUTC(a[field] ?? "").getTime()
 
 export function ParentApprove(props: ParentScreenProps) {
-  const { profiles, chores, completions } = props
+  const { profiles, chores, completions, prizeRequests } = props
   const [kidFilter, setKidFilter] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const review = useReview(props)
@@ -25,6 +27,7 @@ export function ParentApprove(props: ParentScreenProps) {
   const visible = kidFilter ? queue.filter((row) => row.profile_id === kidFilter) : queue
   const history = reviewedRows(completions, chores)
   const weekAgo = Date.now() - 7 * 86_400_000
+  const prizeAsks = pendingRequests(prizeRequests).length
   const thisWeek = history.filter((row) => parseUTC(row.verified_at ?? "").getTime() >= weekAgo).length
 
   if (showHistory) return <ApprovalHistory profiles={profiles} chores={chores} completions={completions} onBack={() => setShowHistory(false)} />
@@ -34,7 +37,7 @@ export function ParentApprove(props: ParentScreenProps) {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-semibold sm:text-4xl">Review queue</h1>
-          <p className="text-muted-foreground">{queue.length === 0 ? "Nothing waiting right now." : `${queue.length} ${queue.length === 1 ? "chore is" : "chores are"} waiting for your OK.`}</p>
+          <p className="text-muted-foreground">{queue.length + prizeAsks === 0 ? "Nothing waiting right now." : waitingLine(queue.length, prizeAsks)}</p>
         </div>
         {visible.length > 1 ? <Button onClick={() => void review.approveAll(visible)} disabled={review.busyId === "all"}><CheckCheck className="h-5 w-5" />{review.busyId === "all" ? "Approving..." : `Approve all (${visible.length})`}</Button> : null}
       </header>
@@ -49,11 +52,13 @@ export function ParentApprove(props: ParentScreenProps) {
         </div>
       ) : null}
 
+      <PrizeRequests {...props} />
+
       <ErrorNote>{review.error}</ErrorNote>
 
-      {visible.length === 0 ? (
+      {visible.length === 0 && (prizeAsks === 0 || queue.length > 0) ? (
         <EmptyState emoji="🎉" title="All caught up!">When a kid finishes a chore that needs your OK, it shows up here.</EmptyState>
-      ) : (
+      ) : visible.length === 0 ? null : (
         <ul className="grid gap-4 lg:grid-cols-2">
           {visible.map((row) => {
             const chore = choreById.get(row.chore_id)!
@@ -104,4 +109,12 @@ export function ParentApprove(props: ParentScreenProps) {
       {review.sheet}
     </div>
   )
+}
+
+function waitingLine(chores: number, prizes: number) {
+  const parts = [
+    chores ? `${chores} ${chores === 1 ? "chore" : "chores"}` : "",
+    prizes ? `${prizes} prize ${prizes === 1 ? "request" : "requests"}` : "",
+  ].filter(Boolean)
+  return `${parts.join(" and ")} waiting for your OK.`
 }

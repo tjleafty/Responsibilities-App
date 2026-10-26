@@ -9,6 +9,7 @@ import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
 import { signOut, useAuth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
 
 // The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
 const ACTIVE_KEY = "responsibilities.activeProfile"
@@ -40,6 +41,7 @@ export function FamilyWorkspace() {
   const [goals, setGoals] = useState<GoalRecord[]>([])
   const [chores, setChores] = useState<ChoreRecord[]>([])
   const [completions, setCompletions] = useState<ChoreCompletionRecord[]>([])
+  const [prizeRequests, setPrizeRequests] = useState<PrizeRequest[]>([])
   const [rewards, setRewards] = useState<FamilyReward[]>([])
   const [activeId, setActiveId] = useState<string | null>(readActiveId)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
@@ -61,7 +63,9 @@ export function FamilyWorkspace() {
       setAllProfiles(profiles)
       setGoals(nextGoals as unknown as GoalRecord[])
       setChores(nextChores as unknown as ChoreRecord[])
-      setCompletions(nextCompletions as unknown as ChoreCompletionRecord[])
+      const split = splitCompletions(nextCompletions as unknown as ChoreCompletionRecord[])
+      setCompletions(split.completions)
+      setPrizeRequests(split.prizeRequests)
       setRewards(nextRewards as unknown as FamilyReward[])
       setStatus("ready")
     } catch (caught) {
@@ -131,7 +135,7 @@ export function FamilyWorkspace() {
   }
 
   if (!active) {
-    return <WhoIsHere profiles={profiles} completions={completions} onUnlocked={open} onSetPin={setPin} onSignOut={() => void leave()} />
+    return <WhoIsHere profiles={profiles} completions={completions} prizeRequests={prizeRequests} onUnlocked={open} onSetPin={setPin} onSignOut={() => void leave()} />
   }
 
   if (active.profile_type === "parent") {
@@ -142,6 +146,7 @@ export function FamilyWorkspace() {
         inactiveProfiles={inactiveProfiles}
         chores={chores}
         completions={completions}
+        prizeRequests={prizeRequests}
         goals={goals}
         rewards={rewards}
         onRefresh={loadData}
@@ -157,6 +162,7 @@ export function FamilyWorkspace() {
       profiles={profiles}
       chores={chores}
       completions={completions}
+      prizeRequests={prizeRequests}
       goals={goals}
       rewards={rewards}
       onRefresh={loadData}

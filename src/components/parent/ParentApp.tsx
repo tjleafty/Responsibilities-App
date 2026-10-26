@@ -4,6 +4,7 @@ import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } fr
 import type { FamilyReward } from "@/lib/familyTypes"
 import { Avatar, BrandMark } from "@/components/kit"
 import { awaitingReview } from "@/lib/family"
+import { pendingRequests, type PrizeRequest } from "@/lib/prizeRequests"
 import { cn } from "@/lib/utils"
 import { ParentToday } from "@/components/parent/ParentToday"
 import { ParentApprove } from "@/components/parent/ParentApprove"
@@ -17,6 +18,7 @@ export interface ParentAppProps {
   inactiveProfiles: FamilyProfile[]
   chores: ChoreRecord[]
   completions: ChoreCompletionRecord[]
+  prizeRequests: PrizeRequest[]
   goals: GoalRecord[]
   rewards: FamilyReward[]
   onRefresh: () => Promise<void>
@@ -38,7 +40,7 @@ export function ParentApp(props: ParentAppProps) {
   const [tab, setTab] = useState<ParentTab>("today")
   const [newChore, setNewChore] = useState(0)
   const choreIds = new Set(props.chores.map((chore) => chore.id))
-  const waiting = awaitingReview(props.completions).filter((row) => choreIds.has(row.chore_id)).length
+  const waiting = awaitingReview(props.completions).filter((row) => choreIds.has(row.chore_id)).length + pendingRequests(props.prizeRequests).length
 
   useEffect(() => { window.scrollTo({ top: 0 }) }, [tab])
 

@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from "react"
 import { ArrowLeft, Delete, Lock, RotateCcw } from "lucide-react"
 import { Avatar, MASCOT } from "@/components/kit"
 import { hashPin, type FamilyProfile } from "@/lib/familyTypes"
-import { firstName, grownUpsOf, kidsOf, pointsEarned } from "@/lib/family"
+import { firstName, grownUpsOf, kidsOf } from "@/lib/family"
+import { pointsBalance, type PrizeRequest } from "@/lib/prizeRequests"
 import { ensureThemeFonts, getKidTheme, kidThemeStyle } from "@/lib/themes"
 import type { ChoreCompletionRecord } from "@/lib/familyTypes"
 import { cn } from "@/lib/utils"
@@ -10,12 +11,13 @@ import { cn } from "@/lib/utils"
 interface WhoIsHereProps {
   profiles: FamilyProfile[]
   completions: ChoreCompletionRecord[]
+  prizeRequests: PrizeRequest[]
   onUnlocked: (profile: FamilyProfile) => void
   onSetPin: (profileId: string, pinHash: string) => Promise<void>
   onSignOut: () => void
 }
 
-export function WhoIsHere({ profiles, completions, onUnlocked, onSetPin, onSignOut }: WhoIsHereProps) {
+export function WhoIsHere({ profiles, completions, prizeRequests, onUnlocked, onSetPin, onSignOut }: WhoIsHereProps) {
   const [selected, setSelected] = useState<FamilyProfile | null>(null)
   const kids = kidsOf(profiles)
   const grownUps = grownUpsOf(profiles)
@@ -61,7 +63,7 @@ export function WhoIsHere({ profiles, completions, onUnlocked, onSetPin, onSignO
                     </span>
                     <span className="mt-3 font-display text-2xl font-semibold">{kid.display_name}</span>
                     <span className="mt-2 rounded-full px-3 py-1 text-sm font-bold" style={{ background: theme.colors.surface, color: theme.colors.ink }}>
-                      {theme.token} {pointsEarned(kid.id, completions)} {theme.tokenName}
+                      {theme.token} {pointsBalance(kid.id, completions, prizeRequests)} {theme.tokenName}
                     </span>
                   </button>
                 </li>

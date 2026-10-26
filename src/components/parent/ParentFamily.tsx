@@ -6,13 +6,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
-import { choresFor, grownUpsOf, kidsOf, pointsEarned } from "@/lib/family"
+import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
+import { pointsBalance } from "@/lib/prizeRequests"
 import { KID_THEME_IDS, ensureThemeFonts, getKidTheme } from "@/lib/themes"
 import { getAuthToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
-export function ParentFamily({ profiles, inactiveProfiles, chores, completions, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
+export function ParentFamily({ profiles, inactiveProfiles, chores, completions, prizeRequests, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
   const [editing, setEditing] = useState<{ profile: FamilyProfile | null; type: ProfileType } | null>(null)
   const [support, setSupport] = useState(false)
   const [share, setShare] = useState(false)
@@ -54,7 +55,7 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-display text-xl font-semibold">{kid.display_name}</span>
                         <span className="block text-sm text-muted-foreground">{theme.name} · {choresFor(kid.id, chores, profiles).length} chores</span>
-                        <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold">{theme.token} {pointsEarned(kid.id, completions)} {theme.tokenName}</span>
+                        <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold">{theme.token} {pointsBalance(kid.id, completions, prizeRequests)} {theme.tokenName}</span>
                       </span>
                       {kid.pin_hash ? <KeyRound className="h-4 w-4 text-muted-foreground" aria-label="Has a PIN" /> : null}
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />

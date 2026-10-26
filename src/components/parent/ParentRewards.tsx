@@ -7,7 +7,8 @@ import { Avatar, Chip, EmptyState, ErrorNote, Field, inputClass, ProgressBar, Se
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { FamilyProfile, GoalFrequency, GoalRecord } from "@/lib/familyTypes"
-import { firstName, isActive, kidsOf, pointsEarned } from "@/lib/family"
+import { firstName, isActive, kidsOf } from "@/lib/family"
+import { pointsBalance } from "@/lib/prizeRequests"
 import { prepareCelebration } from "@/lib/celebration"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
@@ -19,7 +20,7 @@ const FREQUENCIES: Array<{ value: GoalFrequency; label: string; hint: string }> 
   { value: "monthly", label: "Monthly", hint: "Each month" },
 ]
 
-export function ParentRewards({ profiles, completions, rewards, goals, onRefresh }: ParentScreenProps) {
+export function ParentRewards({ profiles, completions, prizeRequests, rewards, goals, onRefresh }: ParentScreenProps) {
   const [view, setView] = useState<View>("prizes")
   const [prizeSheet, setPrizeSheet] = useState<{ reward: FamilyReward | null } | null>(null)
   const [goalSheet, setGoalSheet] = useState<{ goal: GoalRecord | null } | null>(null)
@@ -74,7 +75,7 @@ export function ParentRewards({ profiles, completions, rewards, goals, onRefresh
             {rewards.map((reward) => {
               const cost = Number(reward.points_required) || 0
               const forKids = reward.target_profile_id ? kids.filter((kid) => kid.id === reward.target_profile_id) : kids
-              const ready = forKids.filter((kid) => pointsEarned(kid.id, completions) >= cost)
+              const ready = forKids.filter((kid) => pointsBalance(kid.id, completions, prizeRequests) >= cost)
               return (
                 <li key={reward.id} className={cn("rounded-[22px] bg-card p-4 shadow-soft", !isActive(reward) && "opacity-60")}>
                   <div className="flex items-start gap-3">

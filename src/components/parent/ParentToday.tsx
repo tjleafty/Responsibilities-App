@@ -1,10 +1,11 @@
 import { useState } from "react"
-import { ArrowRight, Check, ChevronDown, Clock3, MessageSquareText, Plus, RotateCcw } from "lucide-react"
+import { ArrowRight, Check, ChevronDown, Clock3, Gift, MessageSquareText, Plus, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, ErrorNote, Ring, SectionTitle, StateChip, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
 import { familyRows, firstName, kidsOf, pointsToday, relativeTime, type TodayRow } from "@/lib/family"
+import { pendingRequests, requestedRewardId } from "@/lib/prizeRequests"
 import { getKidTheme } from "@/lib/themes"
 import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
 import { cn } from "@/lib/utils"
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils"
 const FREQUENCY = { daily: "Today", weekly: "This week", monthly: "This month" } as const
 
 export function ParentToday(props: ParentScreenProps) {
-  const { profile, profiles, chores, completions, onNavigate, onAddChore } = props
+  const { profile, profiles, chores, completions, prizeRequests, rewards, onNavigate, onAddChore } = props
   const [showDone, setShowDone] = useState(false)
   const review = useReview(props)
   const rows = familyRows(chores, completions, profiles)
@@ -24,6 +25,8 @@ export function ParentToday(props: ParentScreenProps) {
     .sort((a, b) => order(a) - order(b))
   const done = rows.filter((row) => row.state === "done")
   const waitingNames = [...new Set(waiting.map((row) => firstName(row.profile)))]
+  const prizeAsks = pendingRequests(prizeRequests).filter((row) => profiles.some((kid) => kid.id === row.profile_id))
+  const firstAsk = prizeAsks[0]
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -53,6 +56,19 @@ export function ParentToday(props: ParentScreenProps) {
           </div>
           <Button onClick={() => onNavigate("approve")}>Review all ({waiting.length})<ArrowRight className="h-5 w-5" /></Button>
         </section>
+      ) : null}
+
+      {firstAsk ? (
+        <button type="button" onClick={() => onNavigate("approve")} className="flex w-full items-center gap-4 rounded-[22px] bg-card p-4 text-left shadow-soft hover:bg-muted/60">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-secondary"><Gift className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-lg font-semibold">{prizeAsks.length === 1 ? "A prize request" : `${prizeAsks.length} prize requests`}</span>
+            <span className="block truncate text-muted-foreground">
+              {firstName(profiles.find((kid) => kid.id === firstAsk.profile_id)!)} is asking for {rewards.find((reward) => reward.id === requestedRewardId(firstAsk))?.title ?? "a prize"}{prizeAsks.length > 1 ? ` and ${prizeAsks.length - 1} more` : ""}
+            </span>
+          </span>
+          <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        </button>
       ) : null}
 
       <ErrorNote>{review.error}</ErrorNote>

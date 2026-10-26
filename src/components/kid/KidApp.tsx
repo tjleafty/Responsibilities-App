@@ -4,7 +4,7 @@ import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } fr
 import type { FamilyReward } from "@/lib/familyTypes"
 import { Avatar } from "@/components/kit"
 import { ensureThemeFonts, getKidTheme, kidThemeStyle } from "@/lib/themes"
-import { pointsEarned } from "@/lib/family"
+import { pointsBalance, type PrizeRequest } from "@/lib/prizeRequests"
 import { cn } from "@/lib/utils"
 import { KidToday } from "@/components/kid/KidToday"
 import { KidChoreDetail } from "@/components/kid/KidChoreDetail"
@@ -16,6 +16,7 @@ export interface KidAppProps {
   profiles: FamilyProfile[]
   chores: ChoreRecord[]
   completions: ChoreCompletionRecord[]
+  prizeRequests: PrizeRequest[]
   goals: GoalRecord[]
   rewards: FamilyReward[]
   onRefresh: () => Promise<void>
@@ -37,9 +38,11 @@ export function KidApp(props: KidAppProps) {
   const [openChoreId, setOpenChoreId] = useState<string | null>(null)
   // Saved rows show up right away; the full reload from the database follows in the background.
   const [completions, setCompletions] = useState(props.completions)
+  const [prizeRequests, setPrizeRequests] = useState(props.prizeRequests)
   const theme = getKidTheme(profile.theme_key)
 
   useEffect(() => { setCompletions(props.completions) }, [props.completions])
+  useEffect(() => { setPrizeRequests(props.prizeRequests) }, [props.prizeRequests])
   useEffect(() => { ensureThemeFonts(profile.theme_key) }, [profile.theme_key])
   useEffect(() => { window.scrollTo({ top: 0 }) }, [tab, openChoreId])
 
@@ -48,9 +51,14 @@ export function KidApp(props: KidAppProps) {
     void props.onRefresh()
   }
 
-  const shared = { ...props, completions }
+  const addRequest = (row: PrizeRequest) => {
+    setPrizeRequests((current) => [...current, row])
+    void props.onRefresh()
+  }
+
+  const shared = { ...props, completions, prizeRequests }
   const openChore = props.chores.find((chore) => chore.id === openChoreId) ?? null
-  const balance = pointsEarned(profile.id, completions)
+  const balance = pointsBalance(profile.id, completions, prizeRequests)
 
   return (
     <div className="min-h-dvh bg-background text-foreground" style={kidThemeStyle(profile.theme_key)}>
@@ -75,7 +83,7 @@ export function KidApp(props: KidAppProps) {
           ) : tab === "today" ? (
             <KidToday {...shared} balance={balance} token={theme.token} onOpenChore={setOpenChoreId} />
           ) : tab === "prizes" ? (
-            <KidPrizes {...shared} balance={balance} />
+            <KidPrizes {...shared} balance={balance} onRequested={addRequest} />
           ) : (
             <KidMe {...shared} />
           )}
