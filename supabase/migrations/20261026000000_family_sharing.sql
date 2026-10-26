@@ -42,6 +42,13 @@ language sql stable security definer set search_path = '' as $$
   select family_id from public.family_members where user_id = (select auth.uid())
 $$;
 
+-- Same check for inserts. Volatile so it sees a family that set_family_id() created
+-- for a brand-new login a moment earlier in the same insert.
+create function public.is_family_member(fam uuid) returns boolean
+language sql volatile security definer set search_path = '' as $$
+  select exists (select 1 from public.family_members where family_id = fam and user_id = (select auth.uid()))
+$$;
+
 -- The family new rows go into: the one this login joined most recently.
 create function public.current_family_id() returns uuid
 language sql stable security definer set search_path = '' as $$
@@ -68,14 +75,29 @@ begin
 end;
 $$;
 
+-- Gives a login with no family a new one, with them as its owner. Safe to call on every load.
+create function public.ensure_family() returns uuid
+language plpgsql security definer set search_path = '' as $$
+declare
+  me uuid := auth.uid();
+  fam uuid := public.current_family_id();
+begin
+  if me is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if fam is null then
+    insert into public.families (created_by) values (me) returning id into fam;
+    insert into public.family_members (family_id, user_id, role, email) values (fam, me, 'owner', auth.jwt() ->> 'email');
+  end if;
+  return fam;
+end;
+$$;
+
 create function public.set_family_id() returns trigger
 language plpgsql security definer set search_path = '' as $$
 begin
+  -- A login saving its first row without a family gets one, so app versions that
+  -- don't know about families keep working for brand-new sign-ups.
   if new.family_id is null then
-    new.family_id := public.current_family_id();
-  end if;
-  if new.family_id is null then
-    raise exception 'This login is not in a family yet.' using errcode = '42501';
+    new.family_id := public.ensure_family();
   end if;
   return new;
 end;
@@ -95,7 +117,7 @@ begin
     execute format('drop policy "owner can update" on public.%I', t);
     execute format('drop policy "owner can delete" on public.%I', t);
     execute format('create policy "family can read" on public.%I for select to authenticated using (family_id in (select public.my_family_ids()))', t);
-    execute format('create policy "family can insert" on public.%I for insert to authenticated with check (family_id in (select public.my_family_ids()))', t);
+    execute format('create policy "family can insert" on public.%I for insert to authenticated with check (public.is_family_member(family_id))', t);
     execute format('create policy "family can update" on public.%I for update to authenticated using (family_id in (select public.my_family_ids())) with check (family_id in (select public.my_family_ids()))', t);
     execute format('create policy "family can delete" on public.%I for delete to authenticated using (family_id in (select public.my_family_ids()))', t);
   end loop;
@@ -112,22 +134,6 @@ create policy "members can rename" on public.families for update to authenticate
 create policy "members can read" on public.family_members for select to authenticated using (family_id in (select public.my_family_ids()));
 create policy "members can read" on public.family_invites for select to authenticated using (family_id in (select public.my_family_ids()));
 create policy "members can cancel" on public.family_invites for delete to authenticated using (family_id in (select public.my_family_ids()));
-
--- Gives a login with no family a new one, with them as its owner. Safe to call on every load.
-create function public.ensure_family() returns uuid
-language plpgsql security definer set search_path = '' as $$
-declare
-  me uuid := auth.uid();
-  fam uuid := public.current_family_id();
-begin
-  if me is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
-  if fam is null then
-    insert into public.families (created_by) values (me) returning id into fam;
-    insert into public.family_members (family_id, user_id, role, email) values (fam, me, 'owner', auth.jwt() ->> 'email');
-  end if;
-  return fam;
-end;
-$$;
 
 -- Makes a new 7-day invite code for the caller's family. Only the code's hash is kept.
 create function public.create_family_invite() returns table (code text, expires_at timestamptz)
@@ -214,8 +220,8 @@ $$;
 -- Signed-out visitors may only look up an invite; everything else needs a login.
 revoke all on public.families, public.family_members, public.family_invites from anon;
 revoke truncate, trigger, references on public.families, public.family_members, public.family_invites from authenticated;
-revoke execute on function public.my_family_ids(), public.current_family_id(), public.set_family_id(), public.ensure_family(),
+revoke execute on function public.my_family_ids(), public.is_family_member(uuid), public.current_family_id(), public.set_family_id(), public.ensure_family(),
   public.create_family_invite(), public.family_invite_details(text), public.accept_family_invite(text), public.remove_family_member(uuid) from public, anon;
-grant execute on function public.my_family_ids(), public.current_family_id(), public.ensure_family(),
+grant execute on function public.my_family_ids(), public.is_family_member(uuid), public.current_family_id(), public.ensure_family(),
   public.create_family_invite(), public.family_invite_details(text), public.accept_family_invite(text), public.remove_family_member(uuid) to authenticated;
 grant execute on function public.family_invite_details(text) to anon;
