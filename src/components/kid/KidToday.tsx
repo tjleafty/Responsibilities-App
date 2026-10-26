@@ -1,22 +1,18 @@
 import { ArrowRight, CalendarDays, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, ChoreIconTile, EmptyState, TokenPill } from "@/components/kit"
+import { Avatar, ChoreIconTile, EmptyState, MASCOT, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import type { ChoreRecord } from "@/lib/familyTypes"
 import { choreState, choresFor, completionFor, firstName, type ChoreState } from "@/lib/family"
 import { parseChoreSubtasks } from "@/lib/choreUtils"
 import { choreVideo } from "@/lib/choreIcons"
+import { themeCopy, type ThemeCopy } from "@/lib/themeCopy"
 import { cn } from "@/lib/utils"
 
 interface KidTodayProps extends KidAppProps {
   balance: number
   token: string
   onOpenChore: (choreId: string) => void
-}
-
-function greeting(date = new Date()) {
-  const hour = date.getHours()
-  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening"
 }
 
 // What a kid should do next: fix sent-back chores first, then finish started ones, then new ones.
@@ -34,13 +30,14 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
   const next = NEXT_ORDER.map((state) => daily.find((row) => row.state === state)).find(Boolean)
     ?? NEXT_ORDER.map((state) => later.find((row) => row.state === state)).find(Boolean)
   const others = daily.filter((row) => row !== next)
+  const copy = themeCopy(profile.theme_key)
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 lg:max-w-5xl">
       <header className="flex items-center gap-3">
         <span className="md:hidden"><Avatar profile={profile} size={52} /></span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">{greeting()}, {firstName(profile)}!</h1>
+          <h1 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">{copy.greeting(firstName(profile), new Date().getHours())}</h1>
           <p className="text-muted-foreground">{new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date())}</p>
         </div>
         <TokenPill amount={balance} token={token} className="bg-card px-4 py-2 text-lg shadow-soft" />
@@ -53,8 +50,8 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           {daily.length > 0 ? (
             <section className="rounded-[22px] bg-card p-5 shadow-soft" aria-label="Today's progress">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-xl font-semibold">Today's journey</h2>
-                <span className="rounded-full bg-primary/10 px-3 py-1 font-display text-sm font-semibold text-primary">{doneCount} of {daily.length} done</span>
+                <h2 className="font-display text-xl font-semibold">{copy.journey}</h2>
+                <span className="rounded-full bg-primary/10 px-3 py-1 font-display text-sm font-semibold text-primary">{copy.progress(doneCount, daily.length)}</span>
               </div>
               <ol className="mt-4 flex items-center" aria-label="Chores in order">
                 {daily.map((row, index) => (
@@ -67,18 +64,20 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
             </section>
           ) : null}
 
-          {next ? <HeroChore chore={next.chore} state={next.state} note={next.completion?.rejection_reason} token={token} onOpen={() => onOpenChore(next.chore.id)} /> : <AllDone token={token} />}
+          {next ? <HeroChore chore={next.chore} state={next.state} note={next.completion?.rejection_reason} token={token} copy={copy} onOpen={() => onOpenChore(next.chore.id)} /> : <AllDone token={token} copy={copy} />}
+
+          {rows.length > 0 ? <p className="flex items-center gap-3 rounded-[22px] bg-primary/10 px-4 py-3 font-display text-lg font-semibold text-primary"><span aria-hidden="true" className="text-2xl">{MASCOT}</span>{copy.cheer(firstName(profile))}</p> : null}
 
           {others.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="font-display text-xl font-semibold">More today</h2>
+              <h2 className="font-display text-xl font-semibold">{copy.more}</h2>
               <div className="grid gap-3 lg:grid-cols-2">{others.map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
 
           {later.filter((row) => row !== next).length > 0 ? (
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />This week and month</h2>
+              <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />{copy.later}</h2>
               <div className="grid gap-3 lg:grid-cols-2">{later.filter((row) => row !== next).map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
@@ -101,7 +100,7 @@ function JourneyStop({ state, current, token, title }: { state: ChoreState; curr
   )
 }
 
-function HeroChore({ chore, state, note, token, onOpen }: { chore: ChoreRecord; state: ChoreState; note?: string | null; token: string; onOpen: () => void }) {
+function HeroChore({ chore, state, note, token, copy, onOpen }: { chore: ChoreRecord; state: ChoreState; note?: string | null; token: string; copy: ThemeCopy; onOpen: () => void }) {
   const steps = parseChoreSubtasks(chore.subtasks).length
   const video = choreVideo(chore.title)
   const points = Number(chore.reward_points) || 0
@@ -114,7 +113,7 @@ function HeroChore({ chore, state, note, token, onOpen }: { chore: ChoreRecord; 
           </span>
         )}
         {video ? <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-sm font-bold text-[#2D2A4A]"><Play className="h-4 w-4 fill-current" />Watch how</span> : null}
-        <span className="absolute right-3 top-3 rounded-full bg-secondary px-3 py-1.5 font-display text-sm font-semibold uppercase tracking-wide text-secondary-foreground">{state === "sent_back" ? "Try again" : state === "in_progress" ? "Keep going" : "Up next"}</span>
+        <span className="absolute right-3 top-3 rounded-full bg-secondary px-3 py-1.5 font-display text-sm font-semibold uppercase tracking-wide text-secondary-foreground">{state === "sent_back" ? copy.tryAgain : state === "in_progress" ? copy.keepGoing : copy.upNext}</span>
       </button>
       <div className="p-5">
         <h2 className="font-display text-3xl font-semibold">{chore.title}</h2>
@@ -123,18 +122,18 @@ function HeroChore({ chore, state, note, token, onOpen }: { chore: ChoreRecord; 
           {points > 0 ? <TokenPill amount={points} token={token} prefix="+" /> : null}
         </p>
         {state === "sent_back" ? <p className="mt-3 flex items-center gap-2 rounded-2xl bg-coral/10 px-4 py-3 font-bold text-coral"><RotateCcw className="h-5 w-5 shrink-0" />{note || "Let's try that one again."}</p> : null}
-        <Button size="lg" onClick={onOpen} className="mt-4 w-full">{state === "todo" ? "Start" : state === "sent_back" ? "Try again" : "Keep going"}<ArrowRight className="h-5 w-5" /></Button>
+        <Button size="lg" onClick={onOpen} className="mt-4 w-full">{state === "todo" ? copy.start : state === "sent_back" ? copy.tryAgain : copy.keepGoing}<ArrowRight className="h-5 w-5" /></Button>
       </div>
     </article>
   )
 }
 
-function AllDone({ token }: { token: string }) {
+function AllDone({ token, copy }: { token: string; copy: ThemeCopy }) {
   return (
     <section className="flex flex-col items-center rounded-[26px] bg-card px-6 py-8 text-center shadow-soft">
       <span className="grid h-24 w-24 place-items-center rounded-full bg-accent/30"><Trophy className="h-12 w-12 text-accent-foreground" /></span>
-      <h2 className="mt-4 font-display text-3xl font-semibold">You finished everything!</h2>
-      <p className="mt-2 text-lg text-muted-foreground">Great work today. {token}</p>
+      <h2 className="mt-4 font-display text-3xl font-semibold">{copy.allDone}</h2>
+      <p className="mt-2 text-lg text-muted-foreground">{copy.allDoneSub} {token}</p>
     </section>
   )
 }
