@@ -13,6 +13,7 @@ import "@/App.css";
 
 const LoginPage = lazy(() => import("@/routes/login"));
 const SettingsPage = lazy(() => import("@/routes/settings"));
+const InvitePage = lazy(() => import("@/routes/invite"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +47,11 @@ function App() {
                   <SettingsPage />
                 </Suspense>
               </ProtectedRoute>
+            } />
+            <Route path="/invite/:code" element={
+              <Suspense fallback={<LoadingScreen text="Opening your invite..." />}>
+                <InvitePage />
+              </Suspense>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -10,6 +10,7 @@ import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } fr
 import { signOut, useAuth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
+import { ensureFamily, pendingInvite } from "@/lib/familySharing"
 
 // The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
 const ACTIVE_KEY = "responsibilities.activeProfile"
@@ -45,10 +46,18 @@ export function FamilyWorkspace() {
   const [rewards, setRewards] = useState<FamilyReward[]>([])
   const [activeId, setActiveId] = useState<string | null>(readActiveId)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
+  const [sharingAvailable, setSharingAvailable] = useState(false)
 
   const loadData = useCallback(async () => {
     if (!userId) return
+    // Someone who signed up from an invite link finishes joining before anything else loads.
+    const invite = pendingInvite()
+    if (invite) {
+      navigate(`/invite/${invite}`, { replace: true })
+      return
+    }
     try {
+      setSharingAvailable(await ensureFamily())
       let profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       if (!profiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
         await db.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
@@ -72,7 +81,7 @@ export function FamilyWorkspace() {
       console.error("Family workspace load failed:", caught)
       setStatus((current) => current === "ready" ? current : "error")
     }
-  }, [userId, userName, userEmail])
+  }, [userId, userName, userEmail, navigate])
 
   useEffect(() => {
     if (authLoading) return
@@ -149,6 +158,7 @@ export function FamilyWorkspace() {
         prizeRequests={prizeRequests}
         goals={goals}
         rewards={rewards}
+        sharingAvailable={sharingAvailable}
         onRefresh={loadData}
         onSwitchProfile={() => open(null)}
         onSignOut={() => void leave()}

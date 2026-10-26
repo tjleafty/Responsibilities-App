@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
+import { FamilyLogins } from "@/components/parent/FamilyLogins"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
 import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
 import { pointsBalance } from "@/lib/prizeRequests"
@@ -13,7 +14,7 @@ import { getAuthToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
-export function ParentFamily({ profiles, inactiveProfiles, chores, completions, prizeRequests, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
+export function ParentFamily({ profiles, inactiveProfiles, chores, completions, prizeRequests, sharingAvailable, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
   const [editing, setEditing] = useState<{ profile: FamilyProfile | null; type: ProfileType } | null>(null)
   const [support, setSupport] = useState(false)
   const [share, setShare] = useState(false)
@@ -87,6 +88,8 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
               ))}
             </ul>
           </section>
+
+          {sharingAvailable ? <FamilyLogins onLeft={() => void onRefresh()} /> : null}
 
           {inactiveProfiles.length > 0 ? (
             <section className="space-y-2 rounded-[22px] bg-muted/60 p-4">

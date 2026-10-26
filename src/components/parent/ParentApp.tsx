@@ -21,6 +21,8 @@ export interface ParentAppProps {
   prizeRequests: PrizeRequest[]
   goals: GoalRecord[]
   rewards: FamilyReward[]
+  /** False until the family sharing migration is on the database. */
+  sharingAvailable: boolean
   onRefresh: () => Promise<void>
   onSwitchProfile: () => void
   onSignOut: () => void

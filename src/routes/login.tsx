@@ -4,6 +4,7 @@ import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { BrandMark, ErrorNote, MASCOT } from "@/components/kit"
 import { sendPasswordReset, signIn, signUp, useAuth } from "@/lib/auth"
+import { pendingInvite } from "@/lib/familySharing"
 import { cn } from "@/lib/utils"
 
 type Mode = "signin" | "signup" | "reset"
@@ -62,7 +63,8 @@ export default function LoginPage() {
     }
   }
 
-  const text = copy[mode]
+  const joining = pendingInvite() !== null
+  const text = joining && mode === "signup" ? { ...copy.signup, title: "Make your login", description: "Then you'll join the family that invited you." } : copy[mode]
 
   return (
     <main className="flex min-h-dvh flex-col items-center bg-background px-4 py-8 sm:justify-center">
