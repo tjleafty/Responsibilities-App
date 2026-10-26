@@ -15,7 +15,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     await sendEmail({
       to: process.env.SUPPORT_EMAIL || "support@flogenixai.com",
-      subject: `[ChoreReward] ${kind}: ${subject}`,
+      subject: `[Responsibilities App] ${kind}: ${subject}`,
       text: `${kind}\n\n${message}\n\nFrom: ${user.email}\nUser ID: ${user.id}\nReceived at: ${new Date().toISOString()}`,
       replyTo: user.email,
     })

@@ -28,9 +28,17 @@ function setSession(session: Session | null) {
   listeners.forEach((listener) => listener())
 }
 
-const sessionReady = supabase.auth.getSession().then(({ data }) => setSession(data.session))
+const DEMO_MODE = import.meta.env.VITE_DEMO_DATA === "1"
 
-supabase.auth.onAuthStateChange((_event, session) => setSession(session))
+const sessionReady = DEMO_MODE
+  ? Promise.resolve().then(() => {
+    currentUser = { id: "demo-user", email: "sarah@example.com", name: "Sarah" }
+    sessionLoaded = true
+    listeners.forEach((listener) => listener())
+  })
+  : supabase.auth.getSession().then(({ data }) => setSession(data.session))
+
+if (!DEMO_MODE) supabase.auth.onAuthStateChange((_event, session) => setSession(session))
 
 /** Resolves once the stored session (if any) has been read. */
 export function waitForSession(): Promise<void> {
@@ -43,7 +51,7 @@ export function getAuthToken(): string | null {
 }
 
 export function isAuthenticated(): boolean {
-  return !!currentSession?.user
+  return !!currentSession?.user || (DEMO_MODE && !!currentUser)
 }
 
 export function useAuth() {

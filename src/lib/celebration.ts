@@ -112,7 +112,7 @@ async function playUploadedSound(reward: string) {
       sound = loadRewardSounds().then((runtime) => {
         const rendered = runtime.render(reward)
         const audio = context.createBuffer(1, rendered.samples.length, rendered.sampleRate)
-        audio.copyToChannel(rendered.samples, 0)
+        audio.copyToChannel(new Float32Array(rendered.samples), 0)
         return audio
       })
       decodedSounds.set(reward, sound)
