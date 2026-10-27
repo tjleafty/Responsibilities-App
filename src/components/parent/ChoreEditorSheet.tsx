@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Avatar, Chip, ChoreIconTile, ErrorNote, Field, inputClass, Segmented, Sheet, Stepper, TokenPill } from "@/components/kit"
 import type { FamilyReward } from "@/lib/familyTypes"
-import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
-import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks } from "@/lib/choreUtils"
+import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMode } from "@/lib/familyTypes"
+import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
 import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
 import { choreVideo } from "@/lib/choreIcons"
+import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +17,16 @@ const FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = [
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
 ]
+const RANDOM_MODES: Array<{ value: RandomMode; label: string }> = [
+  { value: "chore", label: "Chore only" },
+  { value: "chore_and_subtasks", label: "Chore and subtasks" },
+  { value: "subtasks", label: "Subtasks only" },
+]
+const RANDOM_MODE_HINT: Record<RandomMode, string> = {
+  chore: "One kid at a time does the whole chore.",
+  chore_and_subtasks: "A random group of kids is picked, and the steps are split between them.",
+  subtasks: "Every kid you picked does the chore, and the steps are split between them.",
+}
 const TIME_LIMITS = [0, 5, 10, 15, 30, 60]
 
 export interface ChoreDraftSeed {
@@ -35,10 +46,13 @@ interface ChoreEditorSheetProps {
 
 export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, rewards, onRefresh }: ChoreEditorSheetProps) {
   const [title, setTitle] = useState("")
-  const [frequency, setFrequency] = useState<GoalFrequency>("daily")
+  const [schedule, setSchedule] = useState<ChoreSchedule>(DEFAULT_SCHEDULE)
+  const [perKid, setPerKid] = useState<Record<string, ChoreSchedule> | null>(null)
   const [assigned, setAssigned] = useState<string[]>([])
   const [takeTurns, setTakeTurns] = useState(false)
   const [turnEvery, setTurnEvery] = useState<GoalFrequency>("weekly")
+  const [randomMode, setRandomMode] = useState<RandomMode>("chore")
+  const [groupSize, setGroupSize] = useState(2)
   const [steps, setSteps] = useState<ChoreSubtask[]>([])
   const [points, setPoints] = useState(5)
   const [rewardId, setRewardId] = useState("")
@@ -52,10 +66,14 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   useEffect(() => {
     if (!open) return
     setTitle(chore?.title ?? seed?.title ?? "")
-    setFrequency(chore?.frequency ?? seed?.frequency ?? "daily")
+    setSchedule(chore ? baseSchedule(chore) : { ...DEFAULT_SCHEDULE, frequency: seed?.frequency ?? "daily" })
+    const own = chore ? kidSchedules(chore) : {}
+    setPerKid(Object.keys(own).length > 0 ? own : null)
     setAssigned(chore ? getAssignedProfileIds(chore) : [])
     setTakeTurns(chore ? isRandomAssignmentEnabled(chore) : false)
     setTurnEvery(chore?.assignment_change_frequency ?? "weekly")
+    setRandomMode(chore ? randomModeOf(chore) : "chore")
+    setGroupSize(Number(chore?.random_group_size) || 2)
     setSteps(chore ? parseChoreSubtasks(chore.subtasks) : [])
     setPoints(chore ? Number(chore.reward_points) || 0 : 5)
     setRewardId(chore?.reward_id ?? "")
@@ -67,6 +85,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
 
   const kidsPicked = assigned.filter((id) => kidsOf(profiles).some((kid) => kid.id === id))
   const cleanSteps = steps.map((step) => ({ ...step, title: step.title.trim() })).filter((step) => step.title)
+  const kidsForSchedules = kidsPicked.length > 1 && !takeTurns ? kidsPicked : []
   const canSave = title.trim().length > 0 && assigned.length > 0 && (!takeTurns || kidsPicked.length > 0)
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
@@ -90,9 +109,15 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       return
     }
     const reward = rewards.find((item) => item.id === rewardId)
+    const ownSchedules = perKid && kidsForSchedules.length > 0
+      ? Object.fromEntries(kidsForSchedules.map((id) => [id, perKid[id] ?? schedule]))
+      : null
+    const scheduleJson = serializeSchedule(schedule, ownSchedules)
     const data = {
       title: title.trim(),
-      frequency,
+      frequency: schedule.frequency,
+      // Only sent when used, so plain chores still save on a database without the schedule column.
+      ...(scheduleJson || chore?.schedule ? { schedule: scheduleJson } : {}),
       target_profile_id: assigned[0],
       assigned_profile_ids: JSON.stringify(assigned),
       subtasks: JSON.stringify(cleanSteps),
@@ -104,6 +129,9 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       random_assignment_enabled: takeTurns,
       assignment_rotation_enabled: takeTurns,
       assignment_change_frequency: turnEvery,
+      // Only sent when used, so chores still save on a database without these columns.
+      ...(takeTurns && randomMode !== "chore" ? { random_mode: randomMode, random_group_size: randomMode === "chore_and_subtasks" ? Math.min(groupSize, kidsPicked.length) : null } : {}),
+      ...(chore?.random_mode && (!takeTurns || randomMode === "chore") ? { random_mode: "chore", random_group_size: null } : {}),
       is_active: chore ? isActive(chore) : true,
     }
     void run(() => chore ? db.chore.update(chore.id, data) : db.chore.create(data), "We couldn't save that chore. Please try again.")
@@ -145,10 +173,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             <Field label="Chore name">
               <input className={inputClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Put away clean dishes" maxLength={80} autoFocus={!chore} />
             </Field>
-            <div className="space-y-1.5">
-              <span className="block text-sm font-bold">How often</span>
-              <Segmented value={frequency} onChange={setFrequency} options={FREQUENCIES} />
-            </div>
+            <ScheduleFields value={schedule} onChange={setSchedule} />
           </Section>
 
           <Section number={2} title="Who does it">
@@ -167,15 +192,51 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
                 })}
               </div>
             )}
+            {kidsForSchedules.length > 0 ? (
+              <div className="rounded-2xl bg-muted/60 p-4">
+                <label className="flex items-center justify-between gap-3">
+                  <span><span className="block font-bold">Different schedule for each kid</span><span className="block text-sm text-muted-foreground">For example, one kid daily and another every Tuesday.</span></span>
+                  <Switch checked={!!perKid} onCheckedChange={(on) => setPerKid(on ? Object.fromEntries(kidsForSchedules.map((id) => [id, schedule])) : null)} />
+                </label>
+                {perKid ? (
+                  <ul className="mt-3 space-y-3">
+                    {kidsForSchedules.map((id) => {
+                      const kid = profiles.find((item) => item.id === id)
+                      if (!kid) return null
+                      return (
+                        <li key={id} className="space-y-2 rounded-2xl bg-card p-3">
+                          <span className="flex items-center gap-2 font-bold"><Avatar profile={kid} size={32} />{kid.display_name}</span>
+                          <ScheduleFields value={perKid[id] ?? schedule} onChange={(next) => setPerKid((current) => ({ ...(current ?? {}), [id]: next }))} />
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : null}
+              </div>
+            ) : null}
             <div className="rounded-2xl bg-muted/60 p-4">
               <label className="flex items-center justify-between gap-3">
-                <span><span className="block font-bold">Take turns</span><span className="block text-sm text-muted-foreground">One kid at a time, rotating between the kids you picked.</span></span>
+                <span><span className="block font-bold">Randomly assign</span><span className="block text-sm text-muted-foreground">Pick kids at random from the ones you chose, and change who's up over time.</span></span>
                 <Switch checked={takeTurns} onCheckedChange={setTakeTurns} />
               </label>
               {takeTurns ? (
-                <div className="mt-3 space-y-1.5">
-                  <span className="block text-sm font-bold">Change who's up</span>
-                  <Segmented value={turnEvery} onChange={setTurnEvery} options={FREQUENCIES} />
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <span className="block text-sm font-bold">What's random</span>
+                    <Segmented value={randomMode} onChange={setRandomMode} options={RANDOM_MODES} />
+                    <p className="text-xs text-muted-foreground">{RANDOM_MODE_HINT[randomMode]}</p>
+                  </div>
+                  {randomMode === "chore_and_subtasks" ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="text-sm font-bold">Kids each time</span>
+                      <Stepper value={Math.min(groupSize, Math.max(kidsPicked.length, 1))} onChange={setGroupSize} min={1} max={Math.max(kidsPicked.length, 1)} label="kids" />
+                    </div>
+                  ) : null}
+                  {randomMode !== "chore" && cleanSteps.length < 2 ? <p className="text-sm font-semibold text-coral">Add at least two steps so they can be split.</p> : null}
+                  <div className="space-y-1.5">
+                    <span className="block text-sm font-bold">Change who's up</span>
+                    <Segmented value={turnEvery} onChange={setTurnEvery} options={FREQUENCIES} />
+                  </div>
                   {kidsPicked.length === 0 ? <p className="text-sm font-semibold text-coral">Pick at least one kid to take turns.</p> : null}
                 </div>
               ) : null}
@@ -252,6 +313,49 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
         </aside>
       </div>
     </Sheet>
+  )
+}
+
+const DEFAULT_SCHEDULE: ChoreSchedule = { frequency: "daily", weekday: null, every: 1, anchor: null }
+
+/** How often a chore repeats; weekly chores can have a due day and repeat every week or every other week. */
+function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (next: ChoreSchedule) => void }) {
+  const thisWeek = isoDate(startOfWeek(new Date()))
+  const nextWeek = new Date()
+  nextWeek.setDate(nextWeek.getDate() + 7)
+  const startsThisWeek = isOnWeek({ ...value, anchor: value.anchor ?? thisWeek }, new Date())
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <span className="block text-sm font-bold">How often</span>
+        <Segmented value={value.frequency} onChange={(frequency) => onChange({ ...value, frequency })} options={FREQUENCIES} />
+      </div>
+      {value.frequency === "weekly" ? (
+        <>
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">Due day</span>
+            <div className="flex flex-wrap gap-2">
+              <Chip active={value.weekday === null} onClick={() => onChange({ ...value, weekday: null })}>Any day</Chip>
+              {WEEKDAYS.map((day) => <Chip key={day.value} active={value.weekday === day.value} onClick={() => onChange({ ...value, weekday: day.value })}>{day.short}</Chip>)}
+            </div>
+            <p className="text-xs text-muted-foreground">{value.weekday === null ? "Kids can do it any day that week." : "Shows up on that day. If it's not done, it stays on the list as late until the week ends."}</p>
+          </div>
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">Repeats</span>
+            <Segmented value={String(value.every)} onChange={(every) => onChange({ ...value, every: every === "2" ? 2 : 1, anchor: every === "2" ? value.anchor ?? thisWeek : null })} options={[{ value: "1", label: "Every week" }, { value: "2", label: "Every other week" }]} />
+          </div>
+          {value.every === 2 ? (
+            <div className="space-y-1.5">
+              <span className="block text-sm font-bold">Starting</span>
+              <div className="flex flex-wrap gap-2">
+                <Chip active={startsThisWeek} onClick={() => onChange({ ...value, anchor: thisWeek })}>This week</Chip>
+                <Chip active={!startsThisWeek} onClick={() => onChange({ ...value, anchor: isoDate(startOfWeek(nextWeek)) })}>Next week</Chip>
+              </div>
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </div>
   )
 }
 

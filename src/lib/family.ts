@@ -1,5 +1,6 @@
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
-import { getAssignedProfileIds, getPeriodKey, getRandomlyAssignedProfileId, isRandomAssignmentEnabled } from "@/lib/choreUtils"
+import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "@/lib/choreUtils"
+import { dueStatus, frequencyFor, isTodayChore, scheduleFor } from "@/lib/choreSchedule"
 import { parseUTC } from "@/lib/utils"
 
 export type ChoreState = "todo" | "in_progress" | "waiting" | "done" | "sent_back"
@@ -20,21 +21,33 @@ export function grownUpsOf(profiles: FamilyProfile[]): FamilyProfile[] {
   return profiles.filter((profile) => profile.profile_type === "parent" && isActive(profile))
 }
 
-/** Who a chore belongs to for the period that contains `date` (random rotation picks one kid). */
+/** Who a chore belongs to for the period that contains `date` (random assignment picks one kid or a group). */
 export function assigneesOf(chore: ChoreRecord, profiles: FamilyProfile[], date = new Date()): string[] {
-  if (isRandomAssignmentEnabled(chore)) {
-    const id = getRandomlyAssignedProfileId(chore, profiles, date)
-    return id ? [id] : []
-  }
+  if (isRandomAssignmentEnabled(chore)) return getRandomGroup(chore, profiles, date)
   return getAssignedProfileIds(chore)
 }
 
+/** The chores on a kid's list on `date`: assigned to them and due (weekly chores with a due day wait for that day). */
 export function choresFor(profileId: string, chores: ChoreRecord[], profiles: FamilyProfile[], date = new Date()): ChoreRecord[] {
-  return chores.filter((chore) => isActive(chore) && assigneesOf(chore, profiles, date).includes(profileId))
+  return chores.filter((chore) => {
+    if (!isActive(chore) || !assigneesOf(chore, profiles, date).includes(profileId)) return false
+    const status = dueStatus(scheduleFor(chore, profileId), date)
+    return status === "due" || status === "late"
+  })
+}
+
+/** Due today (daily, or a weekly chore whose day it is) rather than any time this week or month. */
+export function isTodayFor(chore: ChoreRecord, profileId: string): boolean {
+  return isTodayChore(scheduleFor(chore, profileId))
+}
+
+/** A weekly chore whose due day has passed this week. */
+export function isLate(chore: ChoreRecord, profileId: string, date = new Date()): boolean {
+  return dueStatus(scheduleFor(chore, profileId), date) === "late"
 }
 
 export function completionFor(chore: ChoreRecord, profileId: string, completions: ChoreCompletionRecord[], date = new Date()) {
-  const periodKey = getPeriodKey(chore.frequency, date)
+  const periodKey = getPeriodKey(frequencyFor(chore, profileId), date)
   return completions.find((row) => row.chore_id === chore.id && row.profile_id === profileId && row.period_key === periodKey) ?? null
 }
 
@@ -126,7 +139,7 @@ export interface TodayRow {
   state: ChoreState
 }
 
-/** Every kid's chores for today (daily) plus this week's and month's, with their state. */
+/** Every kid's chores for today plus this week's and month's, with their state. */
 export function familyRows(chores: ChoreRecord[], completions: ChoreCompletionRecord[], profiles: FamilyProfile[], date = new Date()): TodayRow[] {
   return kidsOf(profiles).flatMap((profile) => choresFor(profile.id, chores, profiles, date).map((chore) => {
     const completion = completionFor(chore, profile.id, completions, date)

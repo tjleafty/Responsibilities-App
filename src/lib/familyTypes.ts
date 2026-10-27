@@ -2,6 +2,7 @@ import { getRewardThemeId } from "@/lib/rewardThemes"
 
 export type ProfileType = "parent" | "child"
 export type GoalFrequency = "daily" | "weekly" | "monthly"
+export type RandomMode = "chore" | "chore_and_subtasks" | "subtasks"
 
 export interface FamilyProfile {
   id: string
@@ -45,6 +46,12 @@ export interface ChoreRecord {
   random_assignment_enabled?: boolean | number
   assignment_rotation_enabled?: boolean | number
   assignment_change_frequency?: GoalFrequency | null
+  /** JSON: due day, every-other-week and per-kid schedules (see lib/choreSchedule). */
+  schedule?: string | null
+  /** With random assignment on: "chore" (one kid), "chore_and_subtasks" (a random group splits the steps) or "subtasks" (every kid, steps split). */
+  random_mode?: RandomMode | null
+  /** "chore_and_subtasks" only: how many kids are picked each time. */
+  random_group_size?: number | null
 }
 
 export type ChoreSubtask = {

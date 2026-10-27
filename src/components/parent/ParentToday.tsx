@@ -4,13 +4,20 @@ import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, ErrorNote, Ring, SectionTitle, StateChip, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
-import { familyRows, firstName, kidsOf, pointsToday, relativeTime, type TodayRow } from "@/lib/family"
+import { familyRows, firstName, isLate, isTodayFor, kidsOf, pointsToday, relativeTime, type TodayRow } from "@/lib/family"
+import { scheduleFor, scheduleLabel } from "@/lib/choreSchedule"
 import { pendingRequests, requestedRewardId } from "@/lib/prizeRequests"
 import { getKidTheme } from "@/lib/themes"
-import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
+import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
+import type { FamilyProfile } from "@/lib/familyTypes"
 import { cn } from "@/lib/utils"
 
 const FREQUENCY = { daily: "Today", weekly: "This week", monthly: "This month" } as const
+
+function whenLabel(row: TodayRow) {
+  const schedule = scheduleFor(row.chore, row.profile.id)
+  return schedule.weekday === null && schedule.every === 1 ? FREQUENCY[schedule.frequency] : scheduleLabel(schedule)
+}
 
 export function ParentToday(props: ParentScreenProps) {
   const { profile, profiles, chores, completions, prizeRequests, rewards, onNavigate, onAddChore } = props
@@ -18,7 +25,7 @@ export function ParentToday(props: ParentScreenProps) {
   const review = useReview(props)
   const rows = familyRows(chores, completions, profiles)
   const kids = kidsOf(profiles)
-  const daily = rows.filter((row) => row.chore.frequency === "daily")
+  const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
   const dailyDone = daily.filter((row) => row.state === "done").length
   const waiting = rows.filter((row) => row.state === "waiting")
   const toDo = rows.filter((row) => row.state === "todo" || row.state === "in_progress" || row.state === "sent_back")
@@ -89,7 +96,7 @@ export function ParentToday(props: ParentScreenProps) {
                   <StateChip state="waiting" label="Ready" />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <StepsDone row={row} />
+                  <StepsDone row={row} profiles={profiles} />
                   {Number(row.chore.reward_points) > 0 ? <TokenPill amount={Number(row.chore.reward_points)} token={getKidTheme(row.profile.theme_key).token} prefix="+" /> : null}
                   <span className="flex-1" />
                   <button type="button" onClick={() => row.completion && review.sendBack(row.completion)} className="grid h-11 w-11 place-items-center rounded-full bg-coral/10 text-coral hover:bg-coral/20" aria-label={`Send back ${row.chore.title}`}><RotateCcw className="h-5 w-5" /></button>
@@ -111,7 +118,7 @@ export function ParentToday(props: ParentScreenProps) {
                   <ChoreIconTile title={row.chore.title} size={44} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-display text-lg font-semibold">{row.chore.title}</p>
-                    <p className="text-sm text-muted-foreground">{row.profile.display_name} · {FREQUENCY[row.chore.frequency]}</p>
+                    <p className="text-sm text-muted-foreground">{row.profile.display_name} · {whenLabel(row)}{isLate(row.chore, row.profile.id) ? <span className="font-bold text-coral"> · Late</span> : null}</p>
                   </div>
                   <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : undefined} />
                 </div>
@@ -166,8 +173,8 @@ function doneSummary(rows: TodayRow[]) {
   return [...counts].map(([name, count]) => `${name} (${count})`).join(", ")
 }
 
-function StepsDone({ row }: { row: TodayRow }) {
-  const steps = parseChoreSubtasks(row.chore.subtasks)
+function StepsDone({ row, profiles }: { row: TodayRow; profiles: FamilyProfile[] }) {
+  const steps = subtasksFor(row.chore, row.profile.id, profiles)
   if (steps.length === 0) return null
   const checked = parseCompletedTaskIds(row.completion?.completed_task_ids).filter((id) => steps.some((step) => step.id === id)).length
   return <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2.5 py-1 text-xs font-bold"><Check className="h-3.5 w-3.5" />{checked}/{steps.length} steps</span>
@@ -175,7 +182,7 @@ function StepsDone({ row }: { row: TodayRow }) {
 
 function KidCard({ kid, rows, points }: { kid: TodayRow["profile"]; rows: TodayRow[]; points: number }) {
   const theme = getKidTheme(kid.theme_key)
-  const daily = rows.filter((row) => row.chore.frequency === "daily")
+  const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
   const doneCount = daily.filter((row) => row.state === "done").length
   const waiting = rows.filter((row) => row.state === "waiting").length
   const sentBack = rows.filter((row) => row.state === "sent_back").length
