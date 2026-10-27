@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowLeft, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Timer } from "lucide-react"
+import { ArrowLeft, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Send, Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, ErrorNote, MASCOT, ProgressBar, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
@@ -162,7 +162,9 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
         <div className="fixed inset-x-0 bottom-0 z-40 space-y-2 border-t border-border bg-background/95 px-4 pt-3 backdrop-blur pb-safe md:static md:border-0 md:bg-transparent md:p-0">
           <div className="mx-auto max-w-2xl space-y-2 pb-3 md:pb-0">
             <Button size="lg" onClick={() => void finish()} disabled={!allChecked || busy} className="w-full text-xl">
-              <PartyPopper className="h-6 w-6" />{busy ? "Saving..." : "I'm done!"}
+              {requiresApproval(chore)
+                ? <><Send className="h-6 w-6" />{busy ? "Sending..." : "Send for approval"}</>
+                : <><PartyPopper className="h-6 w-6" />{busy ? "Saving..." : "Done"}</>}
             </Button>
             {!allChecked ? <p className="text-center text-sm font-bold text-muted-foreground">Check every step to finish.</p> : null}
             {steps.length > 0 ? <Button variant="ghost" onClick={onBack} className="w-full">Save for later</Button> : null}

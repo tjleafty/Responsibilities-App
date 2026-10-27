@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { FamilyLogins } from "@/components/parent/FamilyLogins"
+import { ThemePicker } from "@/components/ThemePicker"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
 import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
 import { pointsBalance } from "@/lib/prizeRequests"
@@ -211,20 +212,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
         {type === "child" ? (
           <div className="space-y-2">
             <span className="block text-sm font-bold">Theme</span>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {KID_THEME_IDS.map((id) => {
-                const theme = getKidTheme(id)
-                const active = themeKey === id
-                return (
-                  <li key={id}>
-                    <button type="button" onClick={() => setThemeKey(id)} aria-pressed={active} className={cn("flex w-full items-center gap-2 rounded-2xl p-2.5 text-left", active ? "ring-2 ring-primary" : "")} style={{ background: theme.colors.bg, color: theme.colors.ink }}>
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-lg" style={{ background: theme.colors.primary }} aria-hidden="true">{theme.token}</span>
-                      <span className="min-w-0 truncate text-sm font-semibold" style={{ fontFamily: theme.displayStack }}>{theme.name}</span>
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <ThemePicker value={themeKey} onChange={setThemeKey} kidName={name.trim() || "Kid"} />
           </div>
         ) : null}
         <div className="space-y-2 rounded-2xl bg-muted/60 p-4">
