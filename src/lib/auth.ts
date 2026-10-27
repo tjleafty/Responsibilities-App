@@ -73,6 +73,14 @@ export async function signIn(email: string, password: string) {
   if (error) throw error
 }
 
+/** Checks the signed-in login's password again, e.g. before resetting a forgotten parent PIN. */
+export async function verifyPassword(password: string): Promise<boolean> {
+  if (DEMO_MODE) return password.length > 0
+  if (!currentUser?.email) return false
+  const { error } = await supabase.auth.signInWithPassword({ email: currentUser.email, password })
+  return !error
+}
+
 /** Returns true when the account needs email confirmation before it can sign in. */
 export async function signUp(email: string, password: string, name?: string) {
   const { data, error } = await supabase.auth.signUp({

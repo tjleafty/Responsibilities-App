@@ -1,6 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowLeft, Delete, Lock, RotateCcw } from "lucide-react"
-import { Avatar, MASCOT } from "@/components/kit"
+import { Button } from "@/components/ui/button"
+import { Avatar, MASCOT, inputClass } from "@/components/kit"
+import { useAuth, verifyPassword } from "@/lib/auth"
 import { hashPin, type FamilyProfile } from "@/lib/familyTypes"
 import { firstName, grownUpsOf, kidsOf } from "@/lib/family"
 import { pointsBalance, type PrizeRequest } from "@/lib/prizeRequests"
@@ -100,8 +102,19 @@ export function WhoIsHere({ profiles, completions, prizeRequests, onUnlocked, on
   )
 }
 
-function PinScreen({ profile, onBack, onUnlocked, onSetPin }: { profile: FamilyProfile; onBack: () => void; onUnlocked: (profile: FamilyProfile) => void; onSetPin: (profileId: string, pinHash: string) => Promise<void> }) {
-  const creating = !profile.pin_hash
+interface PinScreenProps {
+  profile: FamilyProfile
+  onBack: () => void
+  onUnlocked: (profile: FamilyProfile) => void
+  onSetPin: (profileId: string, pinHash: string) => Promise<void>
+}
+
+export function PinScreen({ profile, onBack, onUnlocked, onSetPin }: PinScreenProps) {
+  const { user } = useAuth()
+  const [resetting, setResetting] = useState(false)
+  const creating = !profile.pin_hash || resetting
+  // A grown-up who forgot the PIN on their own profile can reset it with their login password.
+  const canReset = profile.profile_type === "parent" && !creating && !!user && profile.owner_id === user.id
   const [pin, setPin] = useState("")
   const [firstPin, setFirstPin] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -156,6 +169,7 @@ function PinScreen({ profile, onBack, onUnlocked, onSetPin }: { profile: FamilyP
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement) return
       if (/^\d$/.test(event.key)) press(event.key)
       else if (event.key === "Backspace") setPin((current) => current.slice(0, -1))
       else if (event.key === "Escape") onBack()
@@ -164,8 +178,12 @@ function PinScreen({ profile, onBack, onUnlocked, onSetPin }: { profile: FamilyP
     return () => window.removeEventListener("keydown", onKey)
   })
 
-  const heading = creating ? (firstPin ? "Type it one more time" : "Pick a secret code") : isKid ? `Hi ${firstName(profile)}!` : `Hi ${firstName(profile)}`
-  const sub = creating ? "Choose 4 numbers only you and your grown-up know." : "Type your secret code"
+  const heading = creating
+    ? firstPin ? "Type it one more time" : isKid ? "Pick a secret code" : resetting ? "Pick a new PIN" : "Create your parent PIN"
+    : isKid ? `Hi ${firstName(profile)}!` : `Hi ${firstName(profile)}`
+  const sub = creating
+    ? isKid ? "Choose 4 numbers only you and your grown-up know." : "4 numbers that keep kids out of parent mode."
+    : isKid ? "Type your secret code" : "Type your parent PIN"
 
   return (
     <main className="flex min-h-dvh flex-col bg-background px-4 pb-8 pt-4 text-foreground" style={isKid ? kidThemeStyle(profile.theme_key) : undefined}>
@@ -191,8 +209,41 @@ function PinScreen({ profile, onBack, onUnlocked, onSetPin }: { profile: FamilyP
           <Key onClick={() => setPin((current) => current.slice(0, -1))} label="Delete" className="bg-coral/15 text-coral"><Delete className="h-6 w-6" /></Key>
         </div>
         {!creating && isKid ? <p className="mt-6 text-center text-sm font-bold text-muted-foreground">Forgot your code? Ask a grown-up.</p> : null}
+        {canReset ? <ForgotPin onVerified={() => { setResetting(true); setFirstPin(null); setPin(""); setError(null) }} /> : null}
       </div>
     </main>
+  )
+}
+
+function ForgotPin({ onVerified }: { onVerified: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [password, setPassword] = useState("")
+  const [checking, setChecking] = useState(false)
+  const [problem, setProblem] = useState<string | null>(null)
+
+  if (!open) {
+    return <button type="button" onClick={() => setOpen(true)} className="mt-6 text-center text-sm font-bold text-muted-foreground underline underline-offset-4 hover:text-foreground">Forgot your PIN?</button>
+  }
+
+  const check = async () => {
+    setChecking(true)
+    setProblem(null)
+    const ok = await verifyPassword(password)
+    setChecking(false)
+    if (ok) onVerified()
+    else setProblem("That password didn't work.")
+  }
+
+  return (
+    <form className="mt-6 space-y-2" onSubmit={(event) => { event.preventDefault(); void check() }}>
+      <label htmlFor="reset-password" className="block text-sm font-bold">Type your login password to pick a new PIN</label>
+      <input id="reset-password" type="password" autoComplete="current-password" autoFocus value={password} onChange={(event) => setPassword(event.target.value)} className={inputClass} />
+      {problem ? <p className="text-sm font-bold text-coral" role="alert">{problem}</p> : null}
+      <div className="flex gap-2">
+        <Button type="submit" disabled={checking || !password} className="flex-1">{checking ? "Checking..." : "Reset PIN"}</Button>
+        <Button type="button" variant="ghost" onClick={() => { setOpen(false); setPassword(""); setProblem(null) }}>Cancel</Button>
+      </div>
+    </form>
   )
 }
 
