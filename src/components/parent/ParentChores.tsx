@@ -8,6 +8,7 @@ import type { ChoreRecord, FamilyProfile, GoalFrequency } from "@/lib/familyType
 import { assigneesOf, isActive, kidsOf, requiresApproval } from "@/lib/family"
 import { getAssignedProfileIds, isRandomAssignmentEnabled } from "@/lib/choreUtils"
 import { CHORE_PRESETS } from "@/lib/chorePresets"
+import { choreScheduleLabel } from "@/lib/choreSchedule"
 import { choreVideo } from "@/lib/choreIcons"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
@@ -102,7 +103,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
                       <button type="button" onClick={() => edit(chore)} className="flex w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left hover:bg-muted">
                         <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
                         <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
-                        <span className="text-xs font-bold text-muted-foreground">{FREQUENCY_LABEL[chore.frequency]}</span>
+                        <span className="text-xs font-bold text-muted-foreground">{choreScheduleLabel(chore)}</span>
                         {isRandomAssignmentEnabled(chore) ? <Repeat className="h-4 w-4 text-primary" aria-label="Takes turns" /> : null}
                       </button>
                     </li>
@@ -153,7 +154,7 @@ function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: F
           {choreVideo(chore.title) ? <Video className="h-4 w-4 shrink-0 text-secondary" aria-label="Has a how-to video" /> : null}
         </span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground">{FREQUENCY_LABEL[chore.frequency]}</span>
+          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground">{choreScheduleLabel(chore)}</span>
           <span className="flex -space-x-1.5">{people.slice(0, 4).map((person) => <Avatar key={person.id} profile={person} size={24} className="ring-2 ring-card" />)}</span>
           <span className="truncate">{turns ? <><Repeat className="mr-0.5 inline h-3.5 w-3.5" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</> : people.map((person) => person.display_name).join(", ")}</span>
         </span>

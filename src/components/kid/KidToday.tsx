@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, MASCOT, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import type { ChoreRecord } from "@/lib/familyTypes"
-import { choreState, choresFor, completionFor, firstName, type ChoreState } from "@/lib/family"
-import { parseChoreSubtasks } from "@/lib/choreUtils"
+import { choreState, choresFor, completionFor, firstName, isTodayFor, type ChoreState } from "@/lib/family"
+import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
 import { choreVideo } from "@/lib/choreIcons"
 import { themeCopy, type ThemeCopy } from "@/lib/themeCopy"
 import { cn } from "@/lib/utils"
@@ -22,10 +22,11 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
   const mine = choresFor(profile.id, chores, profiles)
   const rows = mine.map((chore) => {
     const completion = completionFor(chore, profile.id, completions)
-    return { chore, completion, state: choreState(completion) }
+    // When steps are split between kids, show this kid only their share.
+    return { chore: { ...chore, subtasks: JSON.stringify(subtasksFor(chore, profile.id, profiles)) }, completion, state: choreState(completion) }
   })
-  const daily = rows.filter((row) => row.chore.frequency === "daily")
-  const later = rows.filter((row) => row.chore.frequency !== "daily")
+  const daily = rows.filter((row) => isTodayFor(row.chore, profile.id))
+  const later = rows.filter((row) => !isTodayFor(row.chore, profile.id))
   const doneCount = daily.filter((row) => row.state === "done" || row.state === "waiting").length
   const next = NEXT_ORDER.map((state) => daily.find((row) => row.state === state)).find(Boolean)
     ?? NEXT_ORDER.map((state) => later.find((row) => row.state === state)).find(Boolean)

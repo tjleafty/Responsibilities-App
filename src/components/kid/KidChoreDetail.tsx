@@ -6,7 +6,7 @@ import type { KidAppProps } from "@/components/kid/KidApp"
 import { KidVideoPlayer } from "@/components/kid/KidVideoPlayer"
 import type { ChoreCompletionRecord, ChoreRecord } from "@/lib/familyTypes"
 import { choreState, completionFor, firstName, grownUpsOf, requiresApproval } from "@/lib/family"
-import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
+import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { completeChore, saveChoreProgress } from "@/lib/choreActions"
 import { choreVideo } from "@/lib/choreIcons"
 import { getKidTheme } from "@/lib/themes"
@@ -22,7 +22,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
   const theme = getKidTheme(profile.theme_key)
   const completion = completionFor(chore, profile.id, completions)
   const state = choreState(completion)
-  const steps = parseChoreSubtasks(chore.subtasks)
+  const steps = subtasksFor(chore, profile.id, profiles)
   const [checked, setChecked] = useState<string[]>(() => parseCompletedTaskIds(completion?.completed_task_ids))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)

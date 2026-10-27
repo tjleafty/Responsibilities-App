@@ -1,8 +1,9 @@
 import { db } from "@/lib/db"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
-import { areDailyChoresApproved, getPeriodKey, parseChoreSubtasks } from "@/lib/choreUtils"
+import { areDailyChoresApproved, getPeriodKey, subtasksFor } from "@/lib/choreUtils"
 import { prepareCelebration } from "@/lib/celebration"
 import { firstName, requiresApproval } from "@/lib/family"
+import { frequencyFor } from "@/lib/choreSchedule"
 
 export const SEND_BACK_REASONS = [
   "Not fully completed",
@@ -15,7 +16,7 @@ export const SEND_BACK_REASONS = [
 async function startChore(chore: ChoreRecord, profile: FamilyProfile, existing: ChoreCompletionRecord | null): Promise<ChoreCompletionRecord> {
   if (existing) return existing
   const now = new Date()
-  const periodKey = getPeriodKey(chore.frequency)
+  const periodKey = getPeriodKey(frequencyFor(chore, profile.id))
   const deadline = chore.time_limit_minutes ? new Date(now.getTime() + Number(chore.time_limit_minutes) * 60_000) : null
   const created = await db.chore_completion.create({
     chore_id: chore.id,
@@ -49,7 +50,7 @@ export async function completeChore(
   completedIds: string[],
   context: { chores: ChoreRecord[]; completions: ChoreCompletionRecord[]; profiles: FamilyProfile[] },
 ) {
-  const subtasks = parseChoreSubtasks(chore.subtasks)
+  const subtasks = subtasksFor(chore, profile.id, context.profiles)
   if (!subtasks.every((task) => completedIds.includes(task.id))) throw new Error("Check every step first.")
   const needsApproval = requiresApproval(chore)
   // Must run inside the tap so the browser lets the sound play.

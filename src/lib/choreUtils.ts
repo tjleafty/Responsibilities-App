@@ -1,4 +1,5 @@
-import type { ChoreCompletionRecord, ChoreRecord, ChoreSubtask, GoalFrequency, FamilyProfile } from "@/lib/familyTypes"
+import { frequencyFor } from "@/lib/choreSchedule"
+import type { ChoreCompletionRecord, ChoreRecord, ChoreSubtask, GoalFrequency, FamilyProfile, RandomMode } from "@/lib/familyTypes"
 
 export function getAssignedProfileIds(chore: ChoreRecord): string[] {
   if (chore.assigned_profile_ids) {
@@ -62,6 +63,60 @@ export function getRandomlyAssignedProfileId(
   return shuffledIds[index]
 }
 
+export function randomModeOf(chore: ChoreRecord): RandomMode {
+  return chore.random_mode === "subtasks" || chore.random_mode === "chore_and_subtasks" ? chore.random_mode : "chore"
+}
+
+/** Same order every time for the same seed, so everyone sees the same split for a period. */
+function seededOrder<T>(items: T[], key: (item: T) => string, seed: string): T[] {
+  return [...items].sort((left, right) => stableHash(`${seed}:${key(left)}`) - stableHash(`${seed}:${key(right)}`) || key(left).localeCompare(key(right)))
+}
+
+function rotationSeed(chore: ChoreRecord, date: Date): string {
+  if (!isAssignmentRotationEnabled(chore)) return chore.id
+  return `${chore.id}:${periodOrdinal(chore.assignment_change_frequency ?? "weekly", date)}`
+}
+
+/**
+ * Kids who share a randomly assigned chore whose steps are split: every picked kid
+ * ("subtasks"), or a random group of random_group_size kids ("chore_and_subtasks").
+ */
+function splitGroup(chore: ChoreRecord, profiles: FamilyProfile[], date: Date): string[] {
+  const selectedIds = new Set(getAssignedProfileIds(chore))
+  const childIds = profiles
+    .filter((profile) => profile.profile_type === "child" && profile.is_active !== false && selectedIds.has(profile.id))
+    .map((profile) => profile.id)
+  const seed = rotationSeed(chore, date)
+  const ordered = seededOrder(childIds, (id) => id, seed)
+  if (randomModeOf(chore) === "subtasks") return ordered
+  const size = Math.min(ordered.length, Math.max(1, Number(chore.random_group_size) || 2))
+  return ordered.slice(0, size)
+}
+
+/** Who gets the chore for the period containing `date` when random assignment is on. */
+export function getRandomGroup(chore: ChoreRecord, profiles: FamilyProfile[], date = new Date()): string[] {
+  if (!isRandomAssignmentEnabled(chore)) return []
+  if (randomModeOf(chore) === "chore") {
+    const id = getRandomlyAssignedProfileId(chore, profiles, date)
+    return id ? [id] : []
+  }
+  const group = splitGroup(chore, profiles, date)
+  // With fewer steps than kids, kids left without a step sit this one out.
+  const steps = parseChoreSubtasks(chore.subtasks)
+  return steps.length > 0 ? group.slice(0, steps.length) : group
+}
+
+/** The steps a kid does: all of them, or their share when the steps are split at random. */
+export function subtasksFor(chore: ChoreRecord, profileId: string, profiles: FamilyProfile[], date = new Date()): ChoreSubtask[] {
+  const steps = parseChoreSubtasks(chore.subtasks)
+  if (!isRandomAssignmentEnabled(chore) || randomModeOf(chore) === "chore") return steps
+  const group = getRandomGroup(chore, profiles, date)
+  if (group.length <= 1) return group.includes(profileId) ? steps : []
+  const dealt = seededOrder(steps, (step) => step.id, rotationSeed(chore, date))
+  const mine = new Set(dealt.filter((_, index) => group[index % group.length] === profileId).map((step) => step.id))
+  return steps.filter((step) => mine.has(step.id))
+}
+
 export function areDailyChoresApproved(
   chores: ChoreRecord[],
   completions: ChoreCompletionRecord[],
@@ -75,7 +130,7 @@ export function areDailyChoresApproved(
 
   const periodKey = getPeriodKey("daily", date)
   const assignedToday = chores.filter((chore) => {
-    if (chore.frequency !== "daily" || chore.is_active === false) return false
+    if (frequencyFor(chore, profileId) !== "daily" || chore.is_active === false) return false
     if (isRandomAssignmentEnabled(chore)) return getRandomlyAssignedProfileId(chore, profiles, date) === profileId
     return getAssignedProfileIds(chore).includes(profileId)
   })

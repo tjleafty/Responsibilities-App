@@ -8,7 +8,7 @@ import { ApprovalHistory, reviewedRows } from "@/components/parent/ApprovalHisto
 import { PrizeRequests } from "@/components/parent/PrizeRequests"
 import { pendingRequests } from "@/lib/prizeRequests"
 import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
-import { parseChoreSubtasks, parseCompletedTaskIds } from "@/lib/choreUtils"
+import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { getKidTheme } from "@/lib/themes"
 import type { ChoreCompletionRecord } from "@/lib/familyTypes"
 import { cn, parseUTC } from "@/lib/utils"
@@ -64,7 +64,7 @@ export function ParentApprove(props: ParentScreenProps) {
             const chore = choreById.get(row.chore_id)!
             const kid = profileById.get(row.profile_id)!
             const theme = getKidTheme(kid.theme_key)
-            const steps = parseChoreSubtasks(chore.subtasks)
+            const steps = subtasksFor(chore, kid.id, profiles, row.completed_at ? parseUTC(row.completed_at) : new Date())
             const checked = parseCompletedTaskIds(row.completed_task_ids)
             const points = Number(row.reward_points_snapshot ?? chore.reward_points) || 0
             return (
