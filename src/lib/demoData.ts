@@ -24,7 +24,7 @@ export function demoTables(): Record<string, Row[]> {
   const today = getPeriodKey("daily")
   const week = getPeriodKey("weekly")
   const profiles: Row[] = [
-    { id: "mom", display_name: "Sarah", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true, created_at: ago(9000) },
+    { id: "mom", display_name: "Sarah", profile_type: "parent", theme_key: "sunny-room", pin_hash: PIN_1234, is_active: true, owner_id: "demo-user", created_at: ago(9000) },
     { id: "dad", display_name: "David", profile_type: "parent", theme_key: "sunny-room", pin_hash: PIN_1234, is_active: true, created_at: ago(8990) },
     { id: "ava", display_name: "Ava", profile_type: "child", theme_key: "ocean-explorer", pin_hash: PIN_1234, is_active: true, created_at: ago(8980) },
     { id: "leo", display_name: "Leo", profile_type: "child", theme_key: "space-mission", pin_hash: PIN_1234, is_active: true, created_at: ago(8970) },

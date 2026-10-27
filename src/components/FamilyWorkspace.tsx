@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { MASCOT } from "@/components/kit"
 import { WhoIsHere } from "@/components/WhoIsHere"
+import { ParentSetup } from "@/components/ParentSetup"
 import { KidApp } from "@/components/kid/KidApp"
 import { ParentApp } from "@/components/parent/ParentApp"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
 import { signOut, useAuth } from "@/lib/auth"
-import { db } from "@/lib/db"
+import { db, DEMO_MODE } from "@/lib/db"
 import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
 import { ensureFamily, pendingInvite } from "@/lib/familySharing"
 
@@ -37,7 +38,6 @@ export function FamilyWorkspace() {
   const { user, loading: authLoading } = useAuth()
   const userId = user?.id
   const userName = user?.name
-  const userEmail = user?.email
   const [allProfiles, setAllProfiles] = useState<FamilyProfile[]>([])
   const [goals, setGoals] = useState<GoalRecord[]>([])
   const [chores, setChores] = useState<ChoreRecord[]>([])
@@ -58,11 +58,7 @@ export function FamilyWorkspace() {
     }
     try {
       setSharingAvailable(await ensureFamily())
-      let profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
-      if (!profiles.some((profile) => profile.profile_type === "parent" && profile.is_active !== false)) {
-        await db.family_profile.create({ display_name: userName || userEmail?.split("@")[0] || "Parent", profile_type: "parent", theme_key: "sunny-room", pin_hash: "", is_active: true })
-        profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
-      }
+      const profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       const [nextGoals, nextChores, nextCompletions, nextRewards] = await Promise.all([
         db.goal.list({ orderBy: "-created_at", all: true }),
         db.chore.list({ orderBy: "created_at", all: true }),
@@ -81,7 +77,7 @@ export function FamilyWorkspace() {
       console.error("Family workspace load failed:", caught)
       setStatus((current) => current === "ready" ? current : "error")
     }
-  }, [userId, userName, userEmail, navigate])
+  }, [userId, navigate])
 
   useEffect(() => {
     if (authLoading) return
@@ -100,6 +96,18 @@ export function FamilyWorkspace() {
     setActiveId(profile?.id ?? null)
     writeActiveId(profile?.id ?? null)
     if (profile) setAllProfiles((current) => current.map((item) => item.id === profile.id ? { ...item, ...profile } : item))
+  }
+
+  // Every login gets its own parent profile with a PIN; until then it goes through setup.
+  const needsSetup = !profiles.some((profile) => profile.profile_type === "parent" && profile.owner_id === userId)
+
+  const saveOwnProfile = async ({ displayName, pinHash, claimId }: { displayName: string; pinHash: string; claimId: string | null }) => {
+    const data = { display_name: displayName, pin_hash: pinHash }
+    const row = claimId
+      ? await db.family_profile.update(claimId, { ...data, owner_id: userId })
+      : await db.family_profile.create({ ...data, profile_type: "parent", theme_key: "sunny-room", is_active: true, ...(DEMO_MODE ? { owner_id: userId } : {}) })
+    await loadData()
+    return row as unknown as FamilyProfile
   }
 
   const setPin = async (profileId: string, pinHash: string) => {
@@ -141,6 +149,10 @@ export function FamilyWorkspace() {
         </div>
       </main>
     )
+  }
+
+  if (needsSetup) {
+    return <ParentSetup profiles={profiles} suggestedName={userName || ""} onSave={saveOwnProfile} onDone={open} onSignOut={() => void leave()} />
   }
 
   if (!active) {

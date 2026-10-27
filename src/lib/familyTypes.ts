@@ -11,6 +11,8 @@ export interface FamilyProfile {
   pin_hash?: string | null
   is_active?: boolean
   created_at?: string
+  /** The login that created this profile; a grown-up's own profile is the one they own. */
+  owner_id?: string | null
 }
 
 export interface GoalRecord {
