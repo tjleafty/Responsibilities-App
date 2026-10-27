@@ -1,15 +1,15 @@
 import { useState } from "react"
 import { Check, Flame, LogOut, Trophy } from "lucide-react"
+import { ThemePicker } from "@/components/ThemePicker"
 import { Button } from "@/components/ui/button"
 import { Avatar, ErrorNote } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import { bestStreak, choresDone, currentStreak, pointsEarned } from "@/lib/family"
-import { KID_THEME_IDS, ensureThemeFonts, getKidTheme, kidThemeStyle } from "@/lib/themes"
-import { cn } from "@/lib/utils"
+import { getKidTheme } from "@/lib/themes"
 
 export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: KidAppProps) {
   const theme = getKidTheme(profile.theme_key)
-  const [saving, setSaving] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const stats = [
@@ -21,7 +21,7 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
 
   const pick = async (themeId: string) => {
     if (themeId === theme.id || saving) return
-    setSaving(themeId)
+    setSaving(true)
     setError(null)
     try {
       await onThemeChange(themeId)
@@ -29,7 +29,7 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
       console.error("Theme change failed:", caught)
       setError("We couldn't change your world. Try again.")
     } finally {
-      setSaving(null)
+      setSaving(false)
     }
   }
 
@@ -54,30 +54,7 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
       <section className="space-y-3">
         <h2 className="font-display text-xl font-semibold">Pick your world</h2>
         <ErrorNote>{error}</ErrorNote>
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {KID_THEME_IDS.map((id) => {
-            const option = getKidTheme(id)
-            const active = option.id === theme.id
-            return (
-              <li key={id}>
-                <button
-                  type="button"
-                  onClick={() => void pick(id)}
-                  onMouseEnter={() => ensureThemeFonts(id)}
-                  aria-pressed={active}
-                  className={cn("relative flex h-full w-full flex-col items-start rounded-[22px] p-4 text-left shadow-soft transition-transform active:scale-[0.97]", active && "ring-4 ring-primary")}
-                  style={{ ...kidThemeStyle(id), backgroundColor: option.colors.bg, color: option.colors.ink }}
-                >
-                  <span className="grid h-12 w-12 place-items-center rounded-2xl text-2xl" style={{ background: option.colors.primary }} aria-hidden="true">{option.token}</span>
-                  <span className="mt-3 font-semibold leading-tight" style={{ fontFamily: option.displayStack, fontSize: 18 }}>{option.name}</span>
-                  <span className="mt-0.5 text-xs font-bold opacity-75">{option.vibe}</span>
-                  {active ? <span className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white text-[#2D2A4A] shadow-soft"><Check className="h-4 w-4" strokeWidth={3} /></span> : null}
-                  {saving === id ? <span className="absolute right-3 top-3 text-xs font-bold">Saving...</span> : null}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <ThemePicker value={theme.id} onChange={pick} kidName={profile.display_name} label={saving ? "Saving..." : "Change"} />
       </section>
 
       <Button variant="outline" size="lg" onClick={onSwitchProfile} className="w-full"><LogOut className="h-5 w-5" />Switch profile</Button>
