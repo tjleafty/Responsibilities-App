@@ -1,3 +1,4 @@
+import { pointsOnHold, swapPoints } from "@/lib/swaps"
 import { db } from "@/lib/db"
 import { pointsEarned } from "@/lib/family"
 import type { ChoreCompletionRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
@@ -43,7 +44,7 @@ export function pointsBalance(profileId: string, completions: ChoreCompletionRec
   const held = requests
     .filter((row) => row.profile_id === profileId && requestState(row) !== "declined")
     .reduce((sum, row) => sum + requestCost(row), 0)
-  return pointsEarned(profileId, completions) - held
+  return pointsEarned(profileId, completions) + swapPoints(profileId) - held - pointsOnHold(profileId)
 }
 
 /** Prize asks a kid made in the last 7 days, for the family's weekly limit. */

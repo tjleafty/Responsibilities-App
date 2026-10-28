@@ -19,7 +19,7 @@ import { getAuthToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
 
-export function ParentFamily({ profiles, inactiveProfiles, chores, completions, prizeRequests, sharingAvailable, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
+export function ParentFamily({ profile, profiles, inactiveProfiles, chores, completions, prizeRequests, sharingAvailable, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
   const [editing, setEditing] = useState<{ profile: FamilyProfile | null; type: ProfileType } | null>(null)
   const [support, setSupport] = useState(false)
   const [share, setShare] = useState(false)
@@ -138,7 +138,7 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
       <ProfileSheet state={editing} onClose={() => setEditing(null)} profiles={profiles} onRefresh={onRefresh} />
       <SupportSheet open={support} onOpenChange={setSupport} />
       <BillingSheet open={billing} onOpenChange={setBilling} />
-      <FamilySettingsSheet open={rules} onOpenChange={setRules} profiles={profiles} chores={chores} onRefresh={onRefresh} />
+      <FamilySettingsSheet open={rules} onOpenChange={setRules} me={profile} profiles={profiles} chores={chores} onRefresh={onRefresh} />
       <ShareSheet open={share} onOpenChange={setShare} />
     </div>
   )

@@ -12,6 +12,7 @@ import { ageFromBirthYear, useFamilySettings } from "@/lib/familySettings"
 import { choreScheduleLabel } from "@/lib/choreSchedule"
 import { choreVideo } from "@/lib/choreIcons"
 import { db } from "@/lib/db"
+import { chorePoints, DIFFICULTIES, difficultyOf } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 type View = "chore" | "kid"
@@ -143,7 +144,8 @@ function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: F
   const people = getAssignedProfileIds(chore).map((id) => profiles.find((profile) => profile.id === id)).filter((profile): profile is FamilyProfile => Boolean(profile))
   const turns = isRandomAssignmentEnabled(chore)
   const upNow = turns ? profiles.find((profile) => assigneesOf(chore, profiles).includes(profile.id)) : null
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
+  const level = DIFFICULTIES.find((option) => option.value === difficultyOf(chore))
   return (
     <button type="button" onClick={onOpen} className={cn("flex w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-soft transition-transform active:scale-[0.99]", !isActive(chore) && "opacity-60")}>
       <ChoreIconTile title={chore.title} size={52} />
@@ -156,6 +158,7 @@ function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: F
         </span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground">{choreScheduleLabel(chore)}</span>
+          {level ? <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground"><span aria-hidden="true">{level.emoji} </span>{level.label}</span> : null}
           <span className="flex -space-x-1.5">{people.slice(0, 4).map((person) => <Avatar key={person.id} profile={person} size={24} className="ring-2 ring-card" />)}</span>
           <span className="truncate">{turns ? <><Repeat className="mr-0.5 inline h-3.5 w-3.5" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</> : people.map((person) => person.display_name).join(", ")}</span>
         </span>

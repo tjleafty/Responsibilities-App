@@ -1,13 +1,19 @@
-import { ArrowRight, CalendarDays, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
+import { useState } from "react"
+import { ArrowRight, BellRing, CalendarDays, HandHelping, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, MASCOT, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import type { ChoreRecord } from "@/lib/familyTypes"
-import { choreState, choresFor, completionFor, firstName, isTodayFor, type ChoreState } from "@/lib/family"
+import { choreState, choresFor, completionFor, firstName, isLate, isTodayFor, kidsOf, type ChoreState } from "@/lib/family"
+import { familySettings, ageFromBirthYear } from "@/lib/familySettings"
+import { kidNudge } from "@/lib/nudges"
+import { SwapSheet } from "@/components/kid/SwapSheet"
+import { pendingSwaps, swapsAvailable, useSwaps } from "@/lib/swaps"
 import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
 import { choreVideo } from "@/lib/choreIcons"
 import { themeCopy, type ThemeCopy } from "@/lib/themeCopy"
 import { cn } from "@/lib/utils"
+import { chorePoints } from "@/lib/difficulty"
 
 interface KidTodayProps extends KidAppProps {
   balance: number
@@ -19,6 +25,9 @@ interface KidTodayProps extends KidAppProps {
 const NEXT_ORDER: ChoreState[] = ["sent_back", "in_progress", "todo"]
 
 export function KidToday({ profile, profiles, chores, completions, balance, token, onOpenChore }: KidTodayProps) {
+  const [helping, setHelping] = useState(false)
+  useSwaps()
+  const mySwaps = pendingSwaps().filter((row) => row.from_profile_id === profile.id)
   const mine = choresFor(profile.id, chores, profiles)
   const rows = mine.map((chore) => {
     const completion = completionFor(chore, profile.id, completions)
@@ -32,6 +41,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
     ?? NEXT_ORDER.map((state) => later.find((row) => row.state === state)).find(Boolean)
   const others = daily.filter((row) => row !== next)
   const copy = themeCopy(profile.theme_key)
+  const nudge = kidTodayNudge(profile, daily.filter((row) => row.state === "todo" || row.state === "in_progress" || row.state === "sent_back").map((row) => ({ title: row.chore.title, late: isLate(row.chore, profile.id) })))
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 lg:max-w-5xl">
@@ -65,6 +75,13 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
             </section>
           ) : null}
 
+          {nudge ? (
+            <p role="status" className="flex items-start gap-3 rounded-[22px] bg-accent/40 px-4 py-3">
+              <BellRing className="mt-1 h-5 w-5 shrink-0 text-primary" />
+              <span><span className="block font-display text-lg font-semibold">{nudge.title}</span><span className="block text-foreground/80">{nudge.body}</span></span>
+            </p>
+          ) : null}
+
           {next ? <HeroChore chore={next.chore} state={next.state} note={next.completion?.rejection_reason} token={token} copy={copy} onOpen={() => onOpenChore(next.chore.id)} /> : <AllDone token={token} copy={copy} />}
 
           {rows.length > 0 ? <p className="flex items-center gap-3 rounded-[22px] bg-primary/10 px-4 py-3 font-display text-lg font-semibold text-primary"><span aria-hidden="true" className="text-2xl">{MASCOT}</span>{copy.cheer(firstName(profile))}</p> : null}
@@ -76,6 +93,17 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
             </section>
           ) : null}
 
+          {swapsAvailable() && kidsOf(profiles).length > 1 ? (
+            <section className="flex flex-col gap-3 rounded-[22px] bg-card p-4 shadow-soft sm:flex-row sm:items-center">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-secondary"><HandHelping className="h-6 w-6" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-lg font-semibold">Want extra {token}?</span>
+                <span className="block text-sm text-muted-foreground">{mySwaps.length ? `${mySwaps.length} ${mySwaps.length === 1 ? "ask is" : "asks are"} waiting for a grown-up.` : "Offer to do a brother's or sister's chore for bonus points."}</span>
+              </span>
+              <Button variant="outline" onClick={() => setHelping(true)}>Help out</Button>
+            </section>
+          ) : null}
+
           {later.filter((row) => row !== next).length > 0 ? (
             <section className="space-y-3">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />{copy.later}</h2>
@@ -84,8 +112,21 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           ) : null}
         </>
       )}
+      <SwapSheet open={helping} onOpenChange={setHelping} profile={profile} profiles={profiles} chores={chores} completions={completions} chore={null} balance={balance} token={token} onSent={() => undefined} />
     </div>
   )
+}
+
+/** The in-app nudge: shown once the first reminder time has passed (or a chore is late) and chores are left. */
+function kidTodayNudge(profile: KidTodayProps["profile"], left: Array<{ title: string; late: boolean }>, now = new Date()) {
+  const { reminders } = familySettings()
+  if (!reminders.inApp || left.length === 0) return null
+  const first = left.find((item) => item.late) ?? left[0]
+  const minutes = now.getHours() * 60 + now.getMinutes()
+  const times = reminders.kidTimes.map((time) => { const [hours, mins] = time.split(":").map(Number); return hours * 60 + (mins || 0) }).sort((a, b) => a - b)
+  if (!first.late && (times.length === 0 || minutes < times[0])) return null
+  const evening = times.length > 1 && minutes >= times[times.length - 1]
+  return kidNudge({ name: firstName(profile), age: ageFromBirthYear(profile.birth_year), left: left.length, first: first.title, late: first.late, evening })
 }
 
 function JourneyStop({ state, current, token, title }: { state: ChoreState; current: boolean; token: string; title: string }) {
@@ -104,7 +145,7 @@ function JourneyStop({ state, current, token, title }: { state: ChoreState; curr
 function HeroChore({ chore, state, note, token, copy, onOpen }: { chore: ChoreRecord; state: ChoreState; note?: string | null; token: string; copy: ThemeCopy; onOpen: () => void }) {
   const steps = parseChoreSubtasks(chore.subtasks).length
   const video = choreVideo(chore.title)
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
   return (
     <article className="overflow-hidden rounded-[26px] bg-card shadow-soft">
       <button type="button" onClick={onOpen} className="relative block h-44 w-full overflow-hidden bg-primary/10 sm:h-56" aria-label={`Open ${chore.title}`}>
@@ -140,7 +181,7 @@ function AllDone({ token, copy }: { token: string; copy: ThemeCopy }) {
 }
 
 function ChoreRow({ chore, state, token, onOpen }: { chore: ChoreRecord; state: ChoreState; token: string; onOpen: () => void }) {
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
   const steps = parseChoreSubtasks(chore.subtasks).length
   return (
     <button type="button" onClick={onOpen} className={cn(

@@ -5,6 +5,7 @@ import { prepareCelebration } from "@/lib/celebration"
 import { firstName, requiresApproval } from "@/lib/family"
 import { frequencyFor } from "@/lib/choreSchedule"
 import { familySettings } from "@/lib/familySettings"
+import { chorePoints } from "@/lib/difficulty"
 import { notifyGrownUps } from "@/lib/notify"
 
 export const SEND_BACK_REASONS = [
@@ -28,7 +29,7 @@ async function startChore(chore: ChoreRecord, profile: FamilyProfile, existing: 
     status: "in_progress",
     started_at: now.toISOString(),
     deadline_at: deadline?.toISOString() ?? null,
-    reward_points_snapshot: Number(chore.reward_points) || 0,
+    reward_points_snapshot: chorePoints(chore),
   })
   return created as unknown as ChoreCompletionRecord
 }
@@ -69,7 +70,7 @@ export async function completeChore(
   }) as unknown as ChoreCompletionRecord
 
   if (celebrate) {
-    const points = Number(updated.reward_points_snapshot ?? chore.reward_points) || 0
+    const points = updated.reward_points_snapshot != null ? Number(updated.reward_points_snapshot) || 0 : chorePoints(chore)
     const allDone = familySettings().celebrations.allDoneTrophy && areDailyChoresApproved(context.chores, context.completions, context.profiles, profile.id, new Date(), updated)
     const reward = allDone ? "trophy" : points > 0 ? "coin-jar" : "star-shower"
     const text: Record<string, string | number> = allDone
