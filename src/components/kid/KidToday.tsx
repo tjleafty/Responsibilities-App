@@ -1,9 +1,12 @@
-import { ArrowRight, CalendarDays, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
+import { useState } from "react"
+import { ArrowRight, CalendarDays, HandHelping, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, MASCOT, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import type { ChoreRecord } from "@/lib/familyTypes"
-import { choreState, choresFor, completionFor, firstName, isTodayFor, type ChoreState } from "@/lib/family"
+import { choreState, choresFor, completionFor, firstName, isTodayFor, kidsOf, type ChoreState } from "@/lib/family"
+import { SwapSheet } from "@/components/kid/SwapSheet"
+import { pendingSwaps, swapsAvailable, useSwaps } from "@/lib/swaps"
 import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
 import { choreVideo } from "@/lib/choreIcons"
 import { themeCopy, type ThemeCopy } from "@/lib/themeCopy"
@@ -20,6 +23,9 @@ interface KidTodayProps extends KidAppProps {
 const NEXT_ORDER: ChoreState[] = ["sent_back", "in_progress", "todo"]
 
 export function KidToday({ profile, profiles, chores, completions, balance, token, onOpenChore }: KidTodayProps) {
+  const [helping, setHelping] = useState(false)
+  useSwaps()
+  const mySwaps = pendingSwaps().filter((row) => row.from_profile_id === profile.id)
   const mine = choresFor(profile.id, chores, profiles)
   const rows = mine.map((chore) => {
     const completion = completionFor(chore, profile.id, completions)
@@ -77,6 +83,17 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
             </section>
           ) : null}
 
+          {swapsAvailable() && kidsOf(profiles).length > 1 ? (
+            <section className="flex flex-col gap-3 rounded-[22px] bg-card p-4 shadow-soft sm:flex-row sm:items-center">
+              <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-secondary"><HandHelping className="h-6 w-6" /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-display text-lg font-semibold">Want extra {token}?</span>
+                <span className="block text-sm text-muted-foreground">{mySwaps.length ? `${mySwaps.length} ${mySwaps.length === 1 ? "ask is" : "asks are"} waiting for a grown-up.` : "Offer to do a brother's or sister's chore for bonus points."}</span>
+              </span>
+              <Button variant="outline" onClick={() => setHelping(true)}>Help out</Button>
+            </section>
+          ) : null}
+
           {later.filter((row) => row !== next).length > 0 ? (
             <section className="space-y-3">
               <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />{copy.later}</h2>
@@ -85,6 +102,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           ) : null}
         </>
       )}
+      <SwapSheet open={helping} onOpenChange={setHelping} profile={profile} profiles={profiles} chores={chores} completions={completions} chore={null} balance={balance} token={token} onSent={() => undefined} />
     </div>
   )
 }

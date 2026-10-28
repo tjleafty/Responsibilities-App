@@ -6,6 +6,8 @@ import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
 import { ApprovalHistory, reviewedRows } from "@/components/parent/ApprovalHistory"
 import { PrizeRequests } from "@/components/parent/PrizeRequests"
+import { SwapRequests } from "@/components/parent/SwapRequests"
+import { pendingSwaps, useSwaps } from "@/lib/swaps"
 import { pendingRequests } from "@/lib/prizeRequests"
 import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
 import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
@@ -28,7 +30,7 @@ export function ParentApprove(props: ParentScreenProps) {
   const visible = kidFilter ? queue.filter((row) => row.profile_id === kidFilter) : queue
   const history = reviewedRows(completions, chores)
   const weekAgo = Date.now() - 7 * 86_400_000
-  const prizeAsks = pendingRequests(prizeRequests).length
+  const prizeAsks = pendingRequests(prizeRequests).length + pendingSwaps(useSwaps()).length
   const thisWeek = history.filter((row) => parseUTC(row.verified_at ?? "").getTime() >= weekAgo).length
 
   if (showHistory) return <ApprovalHistory profiles={profiles} chores={chores} completions={completions} onBack={() => setShowHistory(false)} />
@@ -53,6 +55,7 @@ export function ParentApprove(props: ParentScreenProps) {
         </div>
       ) : null}
 
+      <SwapRequests {...props} />
       <PrizeRequests {...props} />
 
       <ErrorNote>{review.error}</ErrorNote>
@@ -115,7 +118,7 @@ export function ParentApprove(props: ParentScreenProps) {
 function waitingLine(chores: number, prizes: number) {
   const parts = [
     chores ? `${chores} ${chores === 1 ? "chore" : "chores"}` : "",
-    prizes ? `${prizes} prize ${prizes === 1 ? "request" : "requests"}` : "",
+    prizes ? `${prizes} ${prizes === 1 ? "request" : "requests"} from the kids` : "",
   ].filter(Boolean)
   return `${parts.join(" and ")} waiting for your OK.`
 }

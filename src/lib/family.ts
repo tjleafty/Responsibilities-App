@@ -1,3 +1,4 @@
+import { applySwaps } from "@/lib/swaps"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
 import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "@/lib/choreUtils"
 import { dueStatus, frequencyFor, isTodayChore, scheduleFor } from "@/lib/choreSchedule"
@@ -23,8 +24,8 @@ export function grownUpsOf(profiles: FamilyProfile[]): FamilyProfile[] {
 
 /** Who a chore belongs to for the period that contains `date` (random assignment picks one kid or a group). */
 export function assigneesOf(chore: ChoreRecord, profiles: FamilyProfile[], date = new Date()): string[] {
-  if (isRandomAssignmentEnabled(chore)) return getRandomGroup(chore, profiles, date)
-  return getAssignedProfileIds(chore)
+  const kids = isRandomAssignmentEnabled(chore) ? getRandomGroup(chore, profiles, date) : getAssignedProfileIds(chore)
+  return applySwaps(chore, kids, date)
 }
 
 /** The chores on a kid's list on `date`: assigned to them and due (weekly chores with a due day wait for that day). */

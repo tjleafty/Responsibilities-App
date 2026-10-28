@@ -1,17 +1,20 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { ArrowLeft, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Send, Timer } from "lucide-react"
+import { ArrowLeft, ArrowLeftRight, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Send, Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, ErrorNote, MASCOT, ProgressBar, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import { KidVideoPlayer } from "@/components/kid/KidVideoPlayer"
 import type { ChoreCompletionRecord, ChoreRecord } from "@/lib/familyTypes"
-import { choreState, completionFor, firstName, grownUpsOf, requiresApproval } from "@/lib/family"
+import { choreState, completionFor, firstName, grownUpsOf, kidsOf, requiresApproval } from "@/lib/family"
 import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { completeChore, saveChoreProgress } from "@/lib/choreActions"
 import { choreVideo } from "@/lib/choreIcons"
 import { getKidTheme } from "@/lib/themes"
 import { chorePoints } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
+import { SwapSheet } from "@/components/kid/SwapSheet"
+import { answerSwap, openSwapFor, swapsAvailable, useSwaps } from "@/lib/swaps"
+import { pointsBalance } from "@/lib/prizeRequests"
 
 interface KidChoreDetailProps extends KidAppProps {
   chore: ChoreRecord
@@ -19,7 +22,7 @@ interface KidChoreDetailProps extends KidAppProps {
   onSaved: (row: ChoreCompletionRecord) => void
 }
 
-export function KidChoreDetail({ profile, profiles, chores, completions, chore, onBack, onSaved }: KidChoreDetailProps) {
+export function KidChoreDetail({ profile, profiles, chores, completions, prizeRequests, chore, onBack, onSaved }: KidChoreDetailProps) {
   const theme = getKidTheme(profile.theme_key)
   const completion = completionFor(chore, profile.id, completions)
   const state = choreState(completion)
@@ -34,6 +37,10 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
   const locked = state === "waiting" || state === "done"
   const allChecked = steps.every((step) => checked.includes(step.id))
   const grownUp = grownUpsOf(profiles)[0]
+  const [swapping, setSwapping] = useState(false)
+  useSwaps()
+  const openSwap = openSwapFor(chore, profile.id)
+  const canSwap = swapsAvailable() && kidsOf(profiles).length > 1 && (state === "todo" || state === "in_progress") && !openSwap
 
   useEffect(() => { setChecked(parseCompletedTaskIds(completion?.completed_task_ids)) }, [completion?.id, completion?.completed_task_ids])
 
@@ -156,6 +163,15 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
           </ol>
         </section>
       ) : null}
+
+      {openSwap ? (
+        <StatusCard icon={<ArrowLeftRight className="h-6 w-6" />} title="Swap asked" className="bg-accent/30">
+          Waiting for a grown-up to say yes. <button type="button" className="font-bold underline" onClick={() => void answerSwap(openSwap, "canceled")}>Take it back</button>
+        </StatusCard>
+      ) : null}
+      {canSwap ? <Button variant="outline" onClick={() => setSwapping(true)} className="w-full"><ArrowLeftRight className="h-5 w-5" />Swap or trade this chore</Button> : null}
+      <SwapSheet open={swapping} onOpenChange={setSwapping} profile={profile} profiles={profiles} chores={chores} completions={completions} chore={chore}
+        balance={pointsBalance(profile.id, completions, prizeRequests)} token={theme.token} onSent={() => undefined} />
 
       <ErrorNote>{error}</ErrorNote>
 
