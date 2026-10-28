@@ -7,6 +7,7 @@ import type { ChoreRecord } from "@/lib/familyTypes"
 import { choreState, choresFor, completionFor, firstName, isLate, isTodayFor, kidsOf, type ChoreState } from "@/lib/family"
 import { familySettings, ageFromBirthYear } from "@/lib/familySettings"
 import { kidNudge } from "@/lib/nudges"
+import { isTeenKey } from "@/lib/teen"
 import { SwapSheet } from "@/components/kid/SwapSheet"
 import { pendingSwaps, swapsAvailable, useSwaps } from "@/lib/swaps"
 import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
@@ -118,7 +119,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
 }
 
 /** The in-app nudge: shown once the first reminder time has passed (or a chore is late) and chores are left. */
-function kidTodayNudge(profile: KidTodayProps["profile"], left: Array<{ title: string; late: boolean }>, now = new Date()) {
+export function kidTodayNudge(profile: KidTodayProps["profile"], left: Array<{ title: string; late: boolean }>, now = new Date()) {
   const { reminders } = familySettings()
   if (!reminders.inApp || left.length === 0) return null
   const first = left.find((item) => item.late) ?? left[0]
@@ -126,7 +127,7 @@ function kidTodayNudge(profile: KidTodayProps["profile"], left: Array<{ title: s
   const times = reminders.kidTimes.map((time) => { const [hours, mins] = time.split(":").map(Number); return hours * 60 + (mins || 0) }).sort((a, b) => a - b)
   if (!first.late && (times.length === 0 || minutes < times[0])) return null
   const evening = times.length > 1 && minutes >= times[times.length - 1]
-  return kidNudge({ name: firstName(profile), age: ageFromBirthYear(profile.birth_year), left: left.length, first: first.title, late: first.late, evening })
+  return kidNudge({ name: firstName(profile), age: ageFromBirthYear(profile.birth_year), left: left.length, first: first.title, late: first.late, evening, teen: isTeenKey(profile.theme_key) })
 }
 
 function JourneyStop({ state, current, token, title }: { state: ChoreState; current: boolean; token: string; title: string }) {

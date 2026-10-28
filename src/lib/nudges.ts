@@ -17,9 +17,10 @@ export interface Nudge {
 }
 
 /** A reminder for a kid with `left` chores still to do today. `late` = a chore whose day has passed. */
-export function kidNudge({ name, age, left, first, late, evening }: { name: string; age: number | null; left: number; first: string; late: boolean; evening: boolean }): Nudge {
+export function kidNudge({ name, age, left, first, late, evening, teen = false }: { name: string; age: number | null; left: number; first: string; late: boolean; evening: boolean; teen?: boolean }): Nudge {
   const more = left > 1 ? ` and ${left - 1} more` : ""
-  switch (ageBand(age)) {
+  // A profile in Teen mode always gets the teen wording, whatever its birth year says.
+  switch (teen ? "teen" : ageBand(age)) {
     case "little":
       return late
         ? { title: `${name}, a chore is waiting for you! 🐢`, body: `"${first}" is ready when you are. You can do it!` }

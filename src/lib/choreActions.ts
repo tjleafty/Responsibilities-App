@@ -2,6 +2,7 @@ import { db } from "@/lib/db"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
 import { areDailyChoresApproved, chorePeriodKey, subtasksFor } from "@/lib/choreUtils"
 import { prepareCelebration } from "@/lib/celebration"
+import { isTeenKey } from "@/lib/teen"
 import { firstName, requiresApproval } from "@/lib/family"
 import { familySettings } from "@/lib/familySettings"
 import { chorePoints } from "@/lib/difficulty"
@@ -71,13 +72,17 @@ export async function completeChore(
   if (celebrate) {
     const points = updated.reward_points_snapshot != null ? Number(updated.reward_points_snapshot) || 0 : chorePoints(chore)
     const allDone = familySettings().celebrations.allDoneTrophy && areDailyChoresApproved(context.chores, context.completions, context.profiles, profile.id, new Date(), updated)
-    const reward = allDone ? "trophy" : points > 0 ? "coin-jar" : "star-shower"
-    const text: Record<string, string | number> = allDone
+    const teen = isTeenKey(profile.theme_key)
+    // Teens get a quick, quiet check instead of confetti and coins.
+    const reward = teen ? "check-pop" : allDone ? "trophy" : points > 0 ? "coin-jar" : "star-shower"
+    const text: Record<string, string | number> = teen
+      ? { title: allDone ? "All done today" : "Done", subtitle: points > 0 ? `+${points} XP` : chore.title }
+      : allDone
       ? { title: "All done today!", subtitle: points > 0 ? `+${points} · Champion!` : "Champion!" }
       : reward === "coin-jar"
         ? { title: "Great job!", points, coins: Math.min(20, Math.max(1, Math.round(points))) }
         : { title: "Great job!", subtitle: chore.title, stars: 1 }
-    celebrate(allDone ? `All of today's chores are done, ${firstName(profile)}!` : `Great job, ${firstName(profile)}! ${chore.title} is done.`, { reward, text })
+    celebrate(teen ? `${chore.title} done.` : allDone ? `All of today's chores are done, ${firstName(profile)}!` : `Great job, ${firstName(profile)}! ${chore.title} is done.`, { reward, text })
   }
   if (needsApproval) notifyGrownUps({ event: "approval_needed", kid: profile.display_name, item: chore.title })
   return updated
