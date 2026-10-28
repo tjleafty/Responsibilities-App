@@ -158,7 +158,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
         </Group>
 
         <Group icon={<BellRing className="h-5 w-5" />} title="Reminders">
-          <Toggle label="Nudges in the app" hint="Kids see a friendly reminder on their Today page once chores are running late." checked={draft.reminders.inApp} onChange={(on) => set("reminders", { inApp: on })} />
+          <Toggle label="Nudges in the app" hint="Kids see a friendly reminder on their Today page after the first reminder time, or when a chore is late." checked={draft.reminders.inApp} onChange={(on) => set("reminders", { inApp: on })} />
           <div className="space-y-1.5">
             <span className="block font-bold">Push reminders to kids at</span>
             <span className="block text-sm text-muted-foreground">Only goes out when they still have chores left. Pick up to 3.</span>
