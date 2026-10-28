@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button"
 import { EmptyState, ErrorNote, ProgressBar, Ring, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import { isActive } from "@/lib/family"
-import { askForPrize, requestCost, requestState, requestedRewardId, type PrizeRequest } from "@/lib/prizeRequests"
+import { askForPrize, asksThisWeek, requestCost, requestState, requestedRewardId, type PrizeRequest } from "@/lib/prizeRequests"
 import { getKidTheme } from "@/lib/themes"
+import { useFamilySettings } from "@/lib/familySettings"
 import { cn, parseUTC } from "@/lib/utils"
 
 interface KidPrizesProps extends KidAppProps {
@@ -17,6 +18,8 @@ const FREQUENCY_LABEL = { daily: "Today", weekly: "This week", monthly: "This mo
 
 export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onRequested }: KidPrizesProps) {
   const theme = getKidTheme(profile.theme_key)
+  const { prizes: rules } = useFamilySettings()
+  const overLimit = rules.maxAsksPerWeek !== null && asksThisWeek(profile.id, prizeRequests) >= rules.maxAsksPerWeek
   const [asking, setAsking] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const mine = prizeRequests.filter((row) => row.profile_id === profile.id)
@@ -147,7 +150,9 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                       : ready ? null
                         : <span className="text-sm font-bold text-muted-foreground">{cost - balance} more</span>}
                   </div>
-                  {ready ? <Button onClick={() => void ask(reward)} disabled={asking !== null} className="mt-3 w-full"><Hand className="h-5 w-5" />{asking === reward.id ? "Asking..." : "Ask for it"}</Button>
+                  {ready && (!rules.kidsCanAsk || overLimit)
+                    ? <p className="mt-3 rounded-2xl bg-muted px-3 py-2 text-center text-sm font-bold">{rules.kidsCanAsk ? "You've asked for lots of prizes this week. Try again soon!" : "You have enough! Tell a grown-up."}</p>
+                    : ready ? <Button onClick={() => void ask(reward)} disabled={asking !== null} className="mt-3 w-full"><Hand className="h-5 w-5" />{asking === reward.id ? "Asking..." : "Ask for it"}</Button>
                     : !asked ? <ProgressBar value={balance} max={cost} className="mt-3" /> : null}
                 </li>
               )

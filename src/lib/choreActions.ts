@@ -4,6 +4,8 @@ import { areDailyChoresApproved, getPeriodKey, subtasksFor } from "@/lib/choreUt
 import { prepareCelebration } from "@/lib/celebration"
 import { firstName, requiresApproval } from "@/lib/family"
 import { frequencyFor } from "@/lib/choreSchedule"
+import { familySettings } from "@/lib/familySettings"
+import { notifyGrownUps } from "@/lib/notify"
 
 export const SEND_BACK_REASONS = [
   "Not fully completed",
@@ -68,7 +70,7 @@ export async function completeChore(
 
   if (celebrate) {
     const points = Number(updated.reward_points_snapshot ?? chore.reward_points) || 0
-    const allDone = areDailyChoresApproved(context.chores, context.completions, context.profiles, profile.id, new Date(), updated)
+    const allDone = familySettings().celebrations.allDoneTrophy && areDailyChoresApproved(context.chores, context.completions, context.profiles, profile.id, new Date(), updated)
     const reward = allDone ? "trophy" : points > 0 ? "coin-jar" : "star-shower"
     const text: Record<string, string | number> = allDone
       ? { title: "All done today!", subtitle: points > 0 ? `+${points} · Champion!` : "Champion!" }
@@ -77,6 +79,7 @@ export async function completeChore(
         : { title: "Great job!", subtitle: chore.title, stars: 1 }
     celebrate(allDone ? `All of today's chores are done, ${firstName(profile)}!` : `Great job, ${firstName(profile)}! ${chore.title} is done.`, { reward, text })
   }
+  if (needsApproval) notifyGrownUps({ event: "approval_needed", kid: profile.display_name, item: chore.title })
   return updated
 }
 
@@ -97,7 +100,7 @@ export async function reviewCompletion(
     verified_at: new Date().toISOString(),
   }) as unknown as ChoreCompletionRecord
   if (celebrate) {
-    const allDone = areDailyChoresApproved(context.chores, context.completions, context.profiles, completion.profile_id, new Date(), updated)
+    const allDone = familySettings().celebrations.allDoneTrophy && areDailyChoresApproved(context.chores, context.completions, context.profiles, completion.profile_id, new Date(), updated)
     const points = Number(updated.reward_points_snapshot) || 0
     const name = firstName(child) || "Your child"
     const reward = allDone ? "trophy" : points > 0 ? "coin-jar" : "star-shower"

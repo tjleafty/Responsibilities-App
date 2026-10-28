@@ -12,6 +12,9 @@ import { signOut, useAuth } from "@/lib/auth"
 import { db, DEMO_MODE } from "@/lib/db"
 import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
 import { ensureFamily, pendingInvite } from "@/lib/familySharing"
+import { loadFamilySettings } from "@/lib/familySettings"
+import { loadBilling, useBilling } from "@/lib/billing"
+import { BillingWall } from "@/components/parent/Billing"
 
 // The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
 const ACTIVE_KEY = "responsibilities.activeProfile"
@@ -58,6 +61,8 @@ export function FamilyWorkspace() {
     }
     try {
       setSharingAvailable(await ensureFamily())
+      await loadFamilySettings()
+      await loadBilling().catch((error) => console.error("Loading billing failed:", error))
       const profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       const [nextGoals, nextChores, nextCompletions, nextRewards] = await Promise.all([
         db.goal.list({ orderBy: "-created_at", all: true }),
@@ -88,6 +93,17 @@ export function FamilyWorkspace() {
     void loadData()
   }, [authLoading, userId, loadData, navigate])
 
+  // Back from Stripe Checkout: Stripe tells the server a moment later, so check again a few times.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (!params.has("billing")) return
+    window.history.replaceState(null, "", window.location.pathname)
+    if (params.get("billing") !== "success") return
+    const timers = [2000, 5000, 10000].map((delay) => window.setTimeout(() => void loadBilling(), delay))
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [])
+
+  const { access } = useBilling()
   const profiles = allProfiles.filter((profile) => profile.is_active !== false)
   const inactiveProfiles = allProfiles.filter((profile) => profile.is_active === false)
   const active = profiles.find((profile) => profile.id === activeId) ?? null
@@ -149,6 +165,10 @@ export function FamilyWorkspace() {
         </div>
       </main>
     )
+  }
+
+  if (access.locked) {
+    return <BillingWall onSignOut={() => void leave()} />
   }
 
   if (needsSetup) {

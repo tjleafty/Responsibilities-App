@@ -10,6 +10,8 @@ import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
 import { choreVideo } from "@/lib/choreIcons"
 import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
 import { db } from "@/lib/db"
+import { suggestFromChore } from "@/lib/catalog"
+import { familySettings } from "@/lib/familySettings"
 import { cn } from "@/lib/utils"
 
 const FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = [
@@ -32,6 +34,7 @@ const TIME_LIMITS = [0, 5, 10, 15, 30, 60]
 export interface ChoreDraftSeed {
   title?: string
   frequency?: GoalFrequency
+  steps?: ChoreSubtask[]
 }
 
 interface ChoreEditorSheetProps {
@@ -74,8 +77,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
     setTurnEvery(chore?.assignment_change_frequency ?? "weekly")
     setRandomMode(chore ? randomModeOf(chore) : "chore")
     setGroupSize(Number(chore?.random_group_size) || 2)
-    setSteps(chore ? parseChoreSubtasks(chore.subtasks) : [])
-    setPoints(chore ? Number(chore.reward_points) || 0 : 5)
+    setSteps(chore ? parseChoreSubtasks(chore.subtasks) : seed?.steps?.map((step) => ({ ...step, id: makeTaskId() })) ?? [])
+    setPoints(chore ? Number(chore.reward_points) || 0 : familySettings().points.defaultPoints)
     setRewardId(chore?.reward_id ?? "")
     setApproval(chore ? requiresApproval(chore) : false)
     setTimeLimit(Number(chore?.time_limit_minutes) || 0)
@@ -134,7 +137,11 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       ...(chore?.random_mode && (!takeTurns || randomMode === "chore") ? { random_mode: "chore", random_group_size: null } : {}),
       is_active: chore ? isActive(chore) : true,
     }
-    void run(() => chore ? db.chore.update(chore.id, data) : db.chore.create(data), "We couldn't save that chore. Please try again.")
+    void run(async () => {
+      await (chore ? db.chore.update(chore.id, data) : db.chore.create(data))
+      // New chores and steps go to the app's team to consider for the starter list.
+      void suggestFromChore({ title: data.title, frequency: schedule.frequency, steps: cleanSteps })
+    }, "We couldn't save that chore. Please try again.")
   }
 
   const togglePerson = (id: string) => setAssigned((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])

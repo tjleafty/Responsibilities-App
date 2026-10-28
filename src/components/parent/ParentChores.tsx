@@ -6,8 +6,9 @@ import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { ChoreEditorSheet, type ChoreDraftSeed } from "@/components/parent/ChoreEditorSheet"
 import type { ChoreRecord, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
 import { assigneesOf, isActive, kidsOf, requiresApproval } from "@/lib/family"
-import { getAssignedProfileIds, isRandomAssignmentEnabled } from "@/lib/choreUtils"
-import { CHORE_PRESETS } from "@/lib/chorePresets"
+import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId } from "@/lib/choreUtils"
+import { fitsAge, loadCatalog, type CatalogChore } from "@/lib/catalog"
+import { ageFromBirthYear, useFamilySettings } from "@/lib/familySettings"
 import { choreScheduleLabel } from "@/lib/choreSchedule"
 import { choreVideo } from "@/lib/choreIcons"
 import { db } from "@/lib/db"
@@ -189,12 +190,25 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
   const [kids, setKids] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [catalog, setCatalog] = useState<CatalogChore[]>([])
+  const settings = useFamilySettings()
   const allKids = kidsOf(profiles)
-  const key = (preset: (typeof CHORE_PRESETS)[number]) => `${preset.frequency}:${preset.title}`
-  const visible = useMemo(() => CHORE_PRESETS.filter((preset) => (filter === "all" || preset.frequency === filter) && preset.title.toLowerCase().includes(query.trim().toLowerCase())), [filter, query])
+  const key = (preset: CatalogChore) => preset.id
+  // Kids this idea suits, by age; only when the family turned age-based ideas on and kids have birth years.
+  const ages = allKids.map((kid) => ({ kid, age: ageFromBirthYear(kid.birth_year) })).filter((item) => item.age !== null)
+  const goodFor = (preset: CatalogChore) => settings.suggestions.ageBased && ages.length > 0 && (preset.min_age !== null || preset.max_age !== null)
+    ? ages.filter((item) => fitsAge(preset, item.age)).map((item) => item.kid)
+    : null
+  const visible = useMemo(() => catalog
+    .filter((preset) => (filter === "all" || preset.frequency === filter) && preset.title.toLowerCase().includes(query.trim().toLowerCase()))
+    .map((preset) => ({ preset, fits: goodFor(preset) }))
+    .sort((a, b) => (b.fits?.length ?? 0) - (a.fits?.length ?? 0)),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [catalog, filter, query, settings, profiles])
 
   useEffect(() => {
     if (!open) return
+    void loadCatalog().then(setCatalog)
     setPicked([])
     setKids(allKids.map((kid) => kid.id))
     setError(null)
@@ -202,10 +216,10 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
   }, [open])
 
   const add = async () => {
-    const records = CHORE_PRESETS.filter((preset) => picked.includes(key(preset))).flatMap((preset) => {
+    const records = catalog.filter((preset) => picked.includes(key(preset))).flatMap((preset) => {
       const ids = kids.filter((id) => !chores.some((chore) => isActive(chore) && chore.frequency === preset.frequency && chore.title.toLowerCase() === preset.title.toLowerCase() && getAssignedProfileIds(chore).includes(id)))
       if (ids.length === 0) return []
-      return [{ title: preset.title, frequency: preset.frequency, target_profile_id: ids[0], assigned_profile_ids: JSON.stringify(ids), subtasks: "[]", reward: "", reward_points: 5, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true }]
+      return [{ title: preset.title, frequency: preset.frequency, target_profile_id: ids[0], assigned_profile_ids: JSON.stringify(ids), subtasks: JSON.stringify(preset.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_points: settings.points.defaultPoints, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true }]
     })
     if (records.length === 0) {
       setError("Those chores are already set up for the kids you picked.")
@@ -257,7 +271,7 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
           {(["all", "daily", "weekly"] as FrequencyFilter[]).map((value) => <Chip key={value} active={filter === value} onClick={() => setFilter(value)}>{value === "all" ? "All" : FREQUENCY_LABEL[value]}</Chip>)}
         </div>
         <ul className="grid gap-2 sm:grid-cols-2">
-          {visible.map((preset) => {
+          {visible.map(({ preset, fits }) => {
             const selected = picked.includes(key(preset))
             return (
               <li key={key(preset)} className={cn("flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft", selected && "ring-2 ring-primary")}>
@@ -265,10 +279,13 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
                   <ChoreIconTile title={preset.title} size={40} className="rounded-xl" />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold">{preset.title}</span>
-                    <span className="text-xs font-bold text-muted-foreground">{FREQUENCY_LABEL[preset.frequency]}</span>
+                    <span className="text-xs font-bold text-muted-foreground">
+                      {FREQUENCY_LABEL[preset.frequency]}{preset.subtasks.length ? ` · ${preset.subtasks.length} steps` : ""}
+                      {fits?.length ? <span className="text-success"> · Good for {fits.map((kid) => kid.display_name).join(", ")}</span> : null}
+                    </span>
                   </span>
                 </button>
-                <button type="button" onClick={() => onCustomize({ title: preset.title, frequency: preset.frequency })} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Customize ${preset.title}`}><PencilLine className="h-4 w-4" /></button>
+                <button type="button" onClick={() => onCustomize({ title: preset.title, frequency: preset.frequency, steps: preset.subtasks })} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground" aria-label={`Customize ${preset.title}`}><PencilLine className="h-4 w-4" /></button>
                 <span className={cn("grid h-7 w-7 shrink-0 place-items-center rounded-full border-2", selected ? "border-primary bg-primary text-primary-foreground" : "border-border")} aria-hidden="true">{selected ? "✓" : ""}</span>
               </li>
             )

@@ -14,6 +14,8 @@ export interface FamilyProfile {
   created_at?: string
   /** The login that created this profile; a grown-up's own profile is the one they own. */
   owner_id?: string | null
+  /** Kids only: for age-appropriate chore ideas. */
+  birth_year?: number | null
 }
 
 export interface GoalRecord {
