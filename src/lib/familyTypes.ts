@@ -1,4 +1,4 @@
-import { getRewardThemeId } from "@/lib/rewardThemes"
+import { getRewardThemeId } from "./rewardThemes"
 
 export type ProfileType = "parent" | "child"
 export type GoalFrequency = "daily" | "weekly" | "monthly"

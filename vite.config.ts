@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,svg,png,ico}"],
+        // Push reminders (public/push-sw.js).
+        importScripts: ["push-sw.js"],
         globIgnores: ["**/*.html"],
         runtimeCaching: [
           {

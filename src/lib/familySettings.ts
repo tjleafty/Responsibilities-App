@@ -32,6 +32,18 @@ export interface FamilySettings {
     /** Sort and badge chore ideas by each kid's age. */
     ageBased: boolean
   }
+  reminders: {
+    /** Kids see a nudge in the app when chores are left after the first reminder time. */
+    inApp: boolean
+    /** Times ("16:00") the kids' devices get a push reminder about chores left today. */
+    kidTimes: string[]
+    /** When grown-ups get a push summary of what's left; null = never. */
+    parentTime: string | null
+    /** Remind about weekly chores on the morning they're due. */
+    dueDayMorning: boolean
+    /** The family's time zone, so reminders go out at local time. */
+    timeZone: string
+  }
   celebrations: {
     animations: boolean
     sounds: boolean
@@ -45,6 +57,15 @@ export const DEFAULT_SETTINGS: FamilySettings = {
   notifications: { approvalNeeded: false, prizeRequest: false, mutedUserIds: [] },
   suggestions: { ageBased: true },
   celebrations: { animations: true, sounds: true, allDoneTrophy: true },
+  reminders: { inApp: true, kidTimes: ["16:00", "19:00"], parentTime: "19:30", dueDayMorning: true, timeZone: localTimeZone() },
+}
+
+function localTimeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York"
+  } catch {
+    return "America/New_York"
+  }
 }
 
 type Stored = { [K in keyof FamilySettings]?: Partial<FamilySettings[K]> }
@@ -57,6 +78,7 @@ function withDefaults(stored: Stored | null | undefined): FamilySettings {
     notifications: { ...DEFAULT_SETTINGS.notifications, ...value.notifications },
     suggestions: { ...DEFAULT_SETTINGS.suggestions, ...value.suggestions },
     celebrations: { ...DEFAULT_SETTINGS.celebrations, ...value.celebrations },
+    reminders: { ...DEFAULT_SETTINGS.reminders, ...value.reminders },
   }
 }
 
@@ -88,6 +110,12 @@ export async function loadFamilySettings(): Promise<FamilySettings> {
     available = !!data
     familyId = data?.id ?? null
     current = withDefaults(data?.settings as Stored | undefined)
+    // Reminders go out at the family's local time, so remember it the first time we see it.
+    const stored = data?.settings as Stored | undefined
+    if (data && !stored?.reminders?.timeZone) {
+      void supabase.from("families").update({ settings: { ...(stored ?? {}), reminders: { ...(stored?.reminders ?? {}), timeZone: current.reminders.timeZone } } }).eq("id", data.id)
+        .then(({ error: saveError }) => { if (saveError) console.warn("Saving the time zone failed:", saveError) })
+    }
   }
   publish()
   return current

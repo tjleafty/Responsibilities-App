@@ -1,3 +1,4 @@
+import { DeviceReminders } from "@/components/DeviceReminders"
 import { useState } from "react"
 import { Check, Flame, LogOut, Trophy } from "lucide-react"
 import { ThemePicker } from "@/components/ThemePicker"
@@ -55,6 +56,10 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
         <h2 className="font-display text-xl font-semibold">Pick your world</h2>
         <ErrorNote>{error}</ErrorNote>
         <ThemePicker value={theme.id} onChange={pick} kidName={profile.display_name} label={saving ? "Saving..." : "Change"} />
+      </section>
+
+      <section className="rounded-[22px] bg-card p-4 shadow-soft">
+        <DeviceReminders profile={profile} kid />
       </section>
 
       <Button variant="outline" size="lg" onClick={onSwitchProfile} className="w-full"><LogOut className="h-5 w-5" />Switch profile</Button>

@@ -1,10 +1,12 @@
 import { useState } from "react"
-import { ArrowRight, CalendarDays, HandHelping, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
+import { ArrowRight, BellRing, CalendarDays, HandHelping, Check, Clock3, Lock, Play, RotateCcw, Trophy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, EmptyState, MASCOT, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import type { ChoreRecord } from "@/lib/familyTypes"
-import { choreState, choresFor, completionFor, firstName, isTodayFor, kidsOf, type ChoreState } from "@/lib/family"
+import { choreState, choresFor, completionFor, firstName, isLate, isTodayFor, kidsOf, type ChoreState } from "@/lib/family"
+import { familySettings, ageFromBirthYear } from "@/lib/familySettings"
+import { kidNudge } from "@/lib/nudges"
 import { SwapSheet } from "@/components/kid/SwapSheet"
 import { pendingSwaps, swapsAvailable, useSwaps } from "@/lib/swaps"
 import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
@@ -39,6 +41,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
     ?? NEXT_ORDER.map((state) => later.find((row) => row.state === state)).find(Boolean)
   const others = daily.filter((row) => row !== next)
   const copy = themeCopy(profile.theme_key)
+  const nudge = kidTodayNudge(profile, daily.filter((row) => row.state === "todo" || row.state === "in_progress" || row.state === "sent_back").map((row) => ({ title: row.chore.title, late: isLate(row.chore, profile.id) })))
 
   return (
     <div className="mx-auto max-w-3xl space-y-5 lg:max-w-5xl">
@@ -70,6 +73,13 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
                 ))}
               </ol>
             </section>
+          ) : null}
+
+          {nudge ? (
+            <p role="status" className="flex items-start gap-3 rounded-[22px] bg-accent/40 px-4 py-3">
+              <BellRing className="mt-1 h-5 w-5 shrink-0 text-primary" />
+              <span><span className="block font-display text-lg font-semibold">{nudge.title}</span><span className="block text-foreground/80">{nudge.body}</span></span>
+            </p>
           ) : null}
 
           {next ? <HeroChore chore={next.chore} state={next.state} note={next.completion?.rejection_reason} token={token} copy={copy} onOpen={() => onOpenChore(next.chore.id)} /> : <AllDone token={token} copy={copy} />}
@@ -105,6 +115,18 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
       <SwapSheet open={helping} onOpenChange={setHelping} profile={profile} profiles={profiles} chores={chores} completions={completions} chore={null} balance={balance} token={token} onSent={() => undefined} />
     </div>
   )
+}
+
+/** The in-app nudge: shown once the first reminder time has passed (or a chore is late) and chores are left. */
+function kidTodayNudge(profile: KidTodayProps["profile"], left: Array<{ title: string; late: boolean }>, now = new Date()) {
+  const { reminders } = familySettings()
+  if (!reminders.inApp || left.length === 0) return null
+  const first = left.find((item) => item.late) ?? left[0]
+  const minutes = now.getHours() * 60 + now.getMinutes()
+  const times = reminders.kidTimes.map((time) => { const [hours, mins] = time.split(":").map(Number); return hours * 60 + (mins || 0) }).sort((a, b) => a - b)
+  if (!first.late && (times.length === 0 || minutes < times[0])) return null
+  const evening = times.length > 1 && minutes >= times[times.length - 1]
+  return kidNudge({ name: firstName(profile), age: ageFromBirthYear(profile.birth_year), left: left.length, first: first.title, late: first.late, evening })
 }
 
 function JourneyStop({ state, current, token, title }: { state: ChoreState; current: boolean; token: string; title: string }) {

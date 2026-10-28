@@ -1,4 +1,4 @@
-import type { ChoreRecord, GoalFrequency } from "@/lib/familyTypes"
+import type { ChoreRecord, GoalFrequency } from "./familyTypes"
 
 /*
  * When a chore shows up. Stored as JSON in chores.schedule (migration 20261028000000):

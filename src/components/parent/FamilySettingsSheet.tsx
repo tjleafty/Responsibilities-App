@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { Bell, Check, Gift, Lightbulb, PartyPopper, Star } from "lucide-react"
+import { Bell, BellRing, Check, Gift, Lightbulb, PartyPopper, Star } from "lucide-react"
+import { DeviceReminders } from "@/components/DeviceReminders"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Chip, ChoreIconTile, ErrorNote, Sheet, Stepper } from "@/components/kit"
@@ -11,17 +12,27 @@ import { DIFFICULTIES } from "@/lib/difficulty"
 import { listMembers, type FamilyMember } from "@/lib/familySharing"
 
 const WEEKLY_LIMITS: Array<number | null> = [null, 1, 2, 3, 5]
+const KID_TIMES = ["07:00", "15:30", "16:00", "17:00", "18:00", "19:00", "20:00"]
+const PARENT_TIMES: Array<string | null> = [null, "18:00", "19:30", "20:30"]
+
+/** "16:00" as "4:00 PM". */
+const clock = (time: string) => {
+  const [hours, minutes] = time.split(":").map(Number)
+  return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+}
 
 interface FamilySettingsSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** The grown-up using the app, for "reminders on this device". */
+  me: FamilyProfile
   profiles: FamilyProfile[]
   chores: ChoreRecord[]
   onRefresh: () => Promise<void>
 }
 
 /** Family-wide rules: points, prizes, emails, chore ideas and celebrations. */
-export function FamilySettingsSheet({ open, onOpenChange, profiles, chores, onRefresh }: FamilySettingsSheetProps) {
+export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, onRefresh }: FamilySettingsSheetProps) {
   const [draft, setDraft] = useState<FamilySettings>(familySettings())
   const [points, setPoints] = useState<Record<string, number>>({})
   const [members, setMembers] = useState<FamilyMember[]>([])
@@ -144,6 +155,31 @@ export function FamilySettingsSheet({ open, onOpenChange, profiles, chores, onRe
               ))}
             </div>
           ) : null}
+        </Group>
+
+        <Group icon={<BellRing className="h-5 w-5" />} title="Reminders">
+          <Toggle label="Nudges in the app" hint="Kids see a friendly reminder on their Today page once chores are running late." checked={draft.reminders.inApp} onChange={(on) => set("reminders", { inApp: on })} />
+          <div className="space-y-1.5">
+            <span className="block font-bold">Push reminders to kids at</span>
+            <span className="block text-sm text-muted-foreground">Only goes out when they still have chores left. Pick up to 3.</span>
+            <div className="flex flex-wrap gap-2">
+              {KID_TIMES.map((time) => {
+                const picked = draft.reminders.kidTimes.includes(time)
+                return <Chip key={time} active={picked} onClick={() => set("reminders", { kidTimes: picked ? draft.reminders.kidTimes.filter((item) => item !== time) : [...draft.reminders.kidTimes, time].sort().slice(-3) })}>{clock(time)}</Chip>
+              })}
+            </div>
+          </div>
+          <Toggle label="Weekly chores on their day" hint="A morning reminder (8:00 AM) when a weekly chore is due." checked={draft.reminders.dueDayMorning} onChange={(on) => set("reminders", { dueDayMorning: on })} />
+          <div className="space-y-1.5">
+            <span className="block font-bold">Grown-ups' summary of what's left</span>
+            <div className="flex flex-wrap gap-2">
+              {PARENT_TIMES.map((time) => <Chip key={String(time)} active={draft.reminders.parentTime === time} onClick={() => set("reminders", { parentTime: time })}>{time ? clock(time) : "Off"}</Chip>)}
+            </div>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-3">
+            <DeviceReminders profile={me} />
+          </div>
+          <p className="text-sm text-muted-foreground">Kids turn reminders on from the Me page on their own phone or tablet. Times use {draft.reminders.timeZone.replace(/_/g, " ")} time.</p>
         </Group>
 
         <Group icon={<Lightbulb className="h-5 w-5" />} title="Chore ideas">
