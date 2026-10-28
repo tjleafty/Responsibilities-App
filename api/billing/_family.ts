@@ -1,5 +1,5 @@
-import type { ApiRequest } from "../_lib/server"
-import { userDb } from "../_lib/server"
+import type { ApiRequest } from "../_lib/server.js"
+import { userDb } from "../_lib/server.js"
 
 export interface SubscriptionRow {
   family_id: string

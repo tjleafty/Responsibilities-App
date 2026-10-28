@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
-import { getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server"
+import { getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 
 const EVENTS = {
   approval_needed: { setting: "approvalNeeded", subject: (kid: string, item: string) => `${kid} finished "${item}"`, text: (kid: string, item: string) => `${kid} finished "${item}" and it's waiting for your OK.` },

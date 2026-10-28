@@ -1,4 +1,4 @@
-import type { ChoreRecord, GoalFrequency } from "./familyTypes"
+import type { ChoreRecord, GoalFrequency } from "./familyTypes.js"
 
 /*
  * When a chore shows up. Stored as JSON in chores.schedule (migration 20261028000000):

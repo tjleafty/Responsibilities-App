@@ -1,10 +1,10 @@
 import webpush from "web-push"
-import { serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server"
+import { serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 // Shared with the app (relative imports, no "@/" alias, so the server bundle can use them).
-import { dueStatus, isTodayChore, scheduleFor } from "../../src/lib/choreSchedule"
-import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "../../src/lib/choreUtils"
-import { kidNudge, parentSummary } from "../../src/lib/nudges"
-import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "../../src/lib/familyTypes"
+import { dueStatus, isTodayChore, scheduleFor } from "../../src/lib/choreSchedule.js"
+import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "../../src/lib/choreUtils.js"
+import { kidNudge, parentSummary } from "../../src/lib/nudges.js"
+import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "../../src/lib/familyTypes.js"
 
 /*
  * Sends the push reminders that are due right now. Called every 15 minutes (pg_cron in

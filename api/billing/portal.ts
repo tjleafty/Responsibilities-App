@@ -1,6 +1,6 @@
-import { appUrl, getUser, type ApiRequest, type ApiResponse } from "../_lib/server"
-import { stripe, stripeReady } from "../_lib/stripe"
-import { familyOf } from "./_family"
+import { appUrl, getUser, type ApiRequest, type ApiResponse } from "../_lib/server.js"
+import { stripe, stripeReady } from "../_lib/stripe.js"
+import { familyOf } from "./_family.js"
 
 /** Opens Stripe's billing page, where a family changes its card or plan, sees receipts, or cancels. */
 export default async function handler(req: ApiRequest, res: ApiResponse) {
