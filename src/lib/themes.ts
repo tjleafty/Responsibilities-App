@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react"
 import themesFile from "../../chore-rewards/themes/themes.json"
 import { getRewardTheme, getRewardThemeId, getRewardThemeStyle } from "@/lib/rewardThemes"
+import { isTeenKey, teenIsDark, TEEN_BODY_STACK, TEEN_DISPLAY_STACK, TEEN_FONTS_URL, TEEN_THEME_ID } from "@/lib/teen"
 
 interface ThemeFile {
   themes: Array<{
@@ -36,6 +37,13 @@ export interface KidTheme {
 }
 
 export function getKidTheme(themeKey: string): KidTheme {
+  if (isTeenKey(themeKey)) {
+    return {
+      id: TEEN_THEME_ID, name: "Teen", vibe: "Clean and focused", mode: teenIsDark(themeKey) ? "dark" : "light",
+      token: "⚡", tokenName: "XP", cheer: "Done.", displayStack: TEEN_DISPLAY_STACK, bodyStack: TEEN_BODY_STACK,
+      colors: getRewardTheme(themeKey).colors,
+    }
+  }
   const id = getRewardThemeId(themeKey)
   const data = THEMES.find((theme) => theme.id === id) ?? THEMES[0]
   return {
@@ -60,17 +68,33 @@ const loadedFonts = new Set<string>()
 export function ensureThemeFonts(themeKey: string) {
   if (typeof document === "undefined") return
   const id = getRewardThemeId(themeKey)
-  const data = THEMES.find((theme) => theme.id === id)
-  if (!data || loadedFonts.has(data.fonts.googleFontsUrl)) return
-  loadedFonts.add(data.fonts.googleFontsUrl)
+  const url = isTeenKey(themeKey) ? TEEN_FONTS_URL : THEMES.find((theme) => theme.id === id)?.fonts.googleFontsUrl
+  if (!url || loadedFonts.has(url)) return
+  loadedFonts.add(url)
   const link = document.createElement("link")
   link.rel = "stylesheet"
-  link.href = data.fonts.googleFontsUrl
+  link.href = url
   document.head.appendChild(link)
 }
 
 /** CSS variables, fonts and the soft background pattern for a kid's theme. */
 export function kidThemeStyle(themeKey: string, withPattern = true): CSSProperties {
+  if (isTeenKey(themeKey)) {
+    const dark = teenIsDark(themeKey)
+    // No pattern or mascot shapes: flat surfaces, 16px corners, Space Grotesk headings.
+    return {
+      ...getRewardThemeStyle(themeKey),
+      "--font-display": TEEN_DISPLAY_STACK,
+      "--font-body": TEEN_BODY_STACK,
+      "--theme-radius": "16px",
+      "--success": dark ? "156 76% 57%" : "158 76% 33%",
+      "--success-foreground": dark ? "232 39% 9%" : "0 0% 100%",
+      "--coral": dark ? "6 100% 68%" : "5 65% 49%",
+      "--shadow-soft": dark ? "0 1px 0 rgba(255, 255, 255, 0.04)" : "0 1px 3px rgba(26, 29, 46, 0.08)",
+      fontFamily: TEEN_BODY_STACK,
+      colorScheme: dark ? "dark" : "light",
+    } as CSSProperties
+  }
   const id = getRewardThemeId(themeKey)
   const data = THEMES.find((theme) => theme.id === id) ?? THEMES[0]
   const pattern = `url("data:image/svg+xml,${encodeURIComponent(data.pattern.svg)}")`

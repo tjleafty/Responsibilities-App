@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { isTeenKey, teenColors, teenIsDark, TEEN_THEME_ID } from "./teen.js"
 
 export interface RewardThemeColors {
   bg: string
@@ -90,10 +91,19 @@ const legacyThemeMap: Record<string, string> = {
 }
 
 export function getRewardThemeId(themeKey: string): string {
+  if (isTeenKey(themeKey)) return TEEN_THEME_ID
   return legacyThemeMap[themeKey] ?? (REWARD_THEMES[themeKey] ? themeKey : "sunny-room")
 }
 
+/** Teen mode: the teen's accent color, dark or light, and a quiet celebration. */
+function teenTheme(themeKey: string): RewardTheme {
+  const colors = teenColors(themeKey)
+  return makeTheme(TEEN_THEME_ID, "Teen", teenIsDark(themeKey) ? "dark" : "light", "Space Grotesk", colors,
+    [colors.primary, colors.success, colors.ink], "none", "bolt", "XP", "Done.", "glow", 12)
+}
+
 export function getRewardTheme(themeKey: string): RewardTheme {
+  if (isTeenKey(themeKey)) return teenTheme(themeKey)
   return REWARD_THEMES[getRewardThemeId(themeKey)]
 }
 

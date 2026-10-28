@@ -6,18 +6,24 @@ import type { KidAppProps } from "@/components/kid/KidApp"
 import { isActive } from "@/lib/family"
 import { askForPrize, asksThisWeek, requestCost, requestState, requestedRewardId, type PrizeRequest } from "@/lib/prizeRequests"
 import { getKidTheme } from "@/lib/themes"
+import { isTeenKey } from "@/lib/teen"
 import { useFamilySettings } from "@/lib/familySettings"
 import { cn, parseUTC } from "@/lib/utils"
 
 interface KidPrizesProps extends KidAppProps {
   balance: number
   onRequested: (row: PrizeRequest) => void
+  /** Teen mode shows goals and rewards on separate tabs. */
+  show?: "all" | "goals" | "rewards"
 }
 
 const FREQUENCY_LABEL = { daily: "Today", weekly: "This week", monthly: "This month" } as const
 
-export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onRequested }: KidPrizesProps) {
+export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onRequested, show = "all" }: KidPrizesProps) {
   const theme = getKidTheme(profile.theme_key)
+  const teen = isTeenKey(profile.theme_key)
+  const showGoals = show !== "rewards"
+  const showRewards = show !== "goals"
   const { prizes: rules } = useFamilySettings()
   const overLimit = rules.maxAsksPerWeek !== null && asksThisWeek(profile.id, prizeRequests) >= rules.maxAsksPerWeek
   const [asking, setAsking] = useState<string | null>(null)
@@ -53,11 +59,11 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-semibold">My prizes</h1>
+        <h1 className="font-display text-3xl font-semibold">{!teen ? "My prizes" : show === "goals" ? "Goals" : "Rewards"}</h1>
         <TokenPill amount={balance} token={theme.token} className="bg-card px-4 py-2 text-lg shadow-soft" />
       </header>
 
-      {savingFor ? (
+      {showRewards && savingFor ? (
         <section className="flex items-center gap-5 rounded-[26px] bg-card p-5 shadow-soft">
           <Ring value={balance} max={Number(savingFor.points_required) || 1} size={104} stroke={10}>
             <span className="text-2xl" aria-hidden="true">{theme.token}</span>
@@ -70,9 +76,9 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
         </section>
       ) : null}
 
-      {recent.length > 0 ? (
+      {showRewards && recent.length > 0 ? (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Hand className="h-5 w-5 text-primary" />Prizes I asked for</h2>
+          <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Hand className="h-5 w-5 text-primary" />{teen ? "Requests" : "Prizes I asked for"}</h2>
           <ul className="space-y-2">
             {recent.map((row) => {
               const state = requestState(row)
@@ -84,7 +90,9 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                   <div className="min-w-0 flex-1">
                     <p className="font-display text-lg font-semibold leading-tight">{titleOf(row)}</p>
                     <p className="text-sm font-bold text-muted-foreground">
-                      {state === "granted" ? "You got it! Enjoy!" : state === "declined" ? `Not this time. Your ${requestCost(row)} ${theme.tokenName} are back.` : "Waiting for a grown-up to say yes"}
+                      {teen
+                        ? state === "granted" ? "Approved" : state === "declined" ? `Not now · ${requestCost(row)} XP returned` : "Pending"
+                        : state === "granted" ? "You got it! Enjoy!" : state === "declined" ? `Not this time. Your ${requestCost(row)} ${theme.tokenName} are back.` : "Waiting for a grown-up to say yes"}
                     </p>
                     {row.parent_feedback ? <p className="mt-1 text-sm">“{row.parent_feedback}”</p> : null}
                   </div>
@@ -96,9 +104,13 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
         </section>
       ) : null}
 
-      {myGoals.length > 0 ? (
+      {showGoals && teen && myGoals.length === 0 ? (
+        <p className="rounded-2xl bg-card p-6 text-center text-muted-foreground ring-1 ring-border">No goals yet. A parent can set one up for you.</p>
+      ) : null}
+
+      {showGoals && myGoals.length > 0 ? (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Target className="h-5 w-5 text-primary" />My goals</h2>
+          {teen ? null : <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Target className="h-5 w-5 text-primary" />My goals</h2>}
           {myGoals.map((goal) => {
             const progress = Math.min(goal.progress, goal.target_count)
             const reached = progress >= goal.target_count
@@ -114,7 +126,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                 <ProgressBar value={progress} max={goal.target_count} thick className="mt-3" color={reached ? "hsl(var(--success))" : undefined} />
                 {goal.prize ? (
                   <p className={cn("mt-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-bold", reached ? "bg-success/15 text-success" : "bg-secondary/15 text-foreground")}>
-                    <Gift className="h-4 w-4" />{reached ? `You won: ${goal.prize}` : `Prize: ${goal.prize}`}
+                    <Gift className="h-4 w-4" />{teen ? `Unlocks: ${goal.prize}` : reached ? `You won: ${goal.prize}` : `Prize: ${goal.prize}`}
                   </p>
                 ) : null}
               </article>
@@ -123,11 +135,12 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
         </section>
       ) : null}
 
-      <section className="space-y-3">
-        <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Sparkles className="h-5 w-5 text-primary" />Prize shelf</h2>
+      {showRewards ? <section className="space-y-3">
+        <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Sparkles className="h-5 w-5 text-primary" />{teen ? "Available" : "Prize shelf"}</h2>
         <ErrorNote>{error}</ErrorNote>
         {shelf.length === 0 ? (
-          <EmptyState emoji="🎁" title="No prizes yet">Ask a grown-up to add a prize you can save up for.</EmptyState>
+          teen ? <p className="rounded-2xl bg-card p-6 text-center text-muted-foreground ring-1 ring-border">No rewards yet. Ask a parent to add some.</p>
+            : <EmptyState emoji="🎁" title="No prizes yet">Ask a grown-up to add a prize you can save up for.</EmptyState>
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {shelf.map((reward) => {
@@ -137,7 +150,9 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
               return (
                 <li key={reward.id} className={cn("flex flex-col rounded-[22px] bg-card p-4 shadow-soft", ready && "ring-4 ring-accent")}>
                   <div className="flex items-start gap-3">
-                    <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-3xl" aria-hidden="true">🎁</span>
+                    {teen
+                      ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary" aria-hidden="true"><Gift className="h-5 w-5" /></span>
+                      : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-3xl" aria-hidden="true">🎁</span>}
                     <div className="min-w-0">
                       <p className="font-display text-lg font-semibold leading-tight">{reward.title}</p>
                       {reward.description ? <p className="mt-1 text-sm text-muted-foreground">{reward.description}</p> : null}
@@ -146,20 +161,20 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                   <div className="mt-4 flex items-center justify-between gap-2">
                     <TokenPill amount={cost} token={theme.token} />
                     {asked
-                      ? <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-3 py-1 text-sm font-extrabold"><Clock3 className="h-4 w-4" />Asked!</span>
+                      ? <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-3 py-1 text-sm font-extrabold"><Clock3 className="h-4 w-4" />{teen ? "Pending" : "Asked!"}</span>
                       : ready ? null
-                        : <span className="text-sm font-bold text-muted-foreground">{cost - balance} more</span>}
+                        : <span className="text-sm font-bold text-muted-foreground">{cost - balance} {teen ? "XP to go" : "more"}</span>}
                   </div>
                   {ready && (!rules.kidsCanAsk || overLimit)
-                    ? <p className="mt-3 rounded-2xl bg-muted px-3 py-2 text-center text-sm font-bold">{rules.kidsCanAsk ? "You've asked for lots of prizes this week. Try again soon!" : "You have enough! Tell a grown-up."}</p>
-                    : ready ? <Button onClick={() => void ask(reward)} disabled={asking !== null} className="mt-3 w-full"><Hand className="h-5 w-5" />{asking === reward.id ? "Asking..." : "Ask for it"}</Button>
+                    ? <p className="mt-3 rounded-2xl bg-muted px-3 py-2 text-center text-sm font-bold">{teen ? (rules.kidsCanAsk ? "Weekly request limit reached." : "You have enough XP. Let a parent know.") : rules.kidsCanAsk ? "You've asked for lots of prizes this week. Try again soon!" : "You have enough! Tell a grown-up."}</p>
+                    : ready ? <Button onClick={() => void ask(reward)} disabled={asking !== null} className="mt-3 w-full"><Hand className="h-5 w-5" />{asking === reward.id ? (teen ? "Requesting..." : "Asking...") : teen ? "Request" : "Ask for it"}</Button>
                     : !asked ? <ProgressBar value={balance} max={cost} className="mt-3" /> : null}
                 </li>
               )
             })}
           </ul>
         )}
-      </section>
+      </section> : null}
     </div>
   )
 }
