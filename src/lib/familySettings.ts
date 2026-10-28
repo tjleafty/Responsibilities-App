@@ -49,6 +49,10 @@ export interface FamilySettings {
     sounds: boolean
     allDoneTrophy: boolean
   }
+  setup: {
+    /** The first-run wizard was finished or skipped, so it doesn't open again. */
+    finished: boolean
+  }
 }
 
 export const DEFAULT_SETTINGS: FamilySettings = {
@@ -58,6 +62,7 @@ export const DEFAULT_SETTINGS: FamilySettings = {
   suggestions: { ageBased: true },
   celebrations: { animations: true, sounds: true, allDoneTrophy: true },
   reminders: { inApp: true, kidTimes: ["16:00", "19:00"], parentTime: "19:30", dueDayMorning: true, timeZone: localTimeZone() },
+  setup: { finished: false },
 }
 
 function localTimeZone() {
@@ -79,6 +84,7 @@ function withDefaults(stored: Stored | null | undefined): FamilySettings {
     suggestions: { ...DEFAULT_SETTINGS.suggestions, ...value.suggestions },
     celebrations: { ...DEFAULT_SETTINGS.celebrations, ...value.celebrations },
     reminders: { ...DEFAULT_SETTINGS.reminders, ...value.reminders },
+    setup: { ...DEFAULT_SETTINGS.setup, ...value.setup },
   }
 }
 
