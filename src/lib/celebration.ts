@@ -1,4 +1,5 @@
 import type { CelebrationStyle } from "@/components/CelebrationMoment"
+import { familySettings } from "@/lib/familySettings"
 import { REWARD_IDS, REWARD_RUNTIME_URL, REWARD_SOUND_RUNTIME_URL } from "@/lib/rewardThemes"
 
 export const CELEBRATION_EVENT = "chorereward:celebration"
@@ -83,6 +84,7 @@ export function prepareCelebration(options?: ChoreCelebrationOptions) {
 
   return (message: string, overrides?: ChoreCelebrationOptions) => {
     if (typeof window === "undefined") return
+    const { animations, sounds } = familySettings().celebrations
     const styles: CelebrationStyle[] = ["sparkle", "bounce", "spin", "pop"]
     const style = styles[Math.floor(Math.random() * styles.length)]
     const settings = { ...options, ...overrides }
@@ -96,7 +98,8 @@ export function prepareCelebration(options?: ChoreCelebrationOptions) {
       ...(settings.text ? { text: settings.text } : {}),
       ...(settings.themeKey || settings.reward || overrides ? { reward } : {}),
     }
-    window.dispatchEvent(new CustomEvent(CELEBRATION_EVENT, { detail }))
+    if (animations) window.dispatchEvent(new CustomEvent(CELEBRATION_EVENT, { detail }))
+    if (!sounds) return
     if (detail.reward) void playUploadedSound(detail.reward)
     else playCelebrationNotes(style)
   }

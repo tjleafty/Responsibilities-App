@@ -1,12 +1,14 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { Check, ChevronRight, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, UserRoundCog, Users } from "lucide-react"
+import { Check, ChevronRight, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { FamilyLogins } from "@/components/parent/FamilyLogins"
 import { ThemePicker } from "@/components/ThemePicker"
+import { FamilySettingsSheet } from "@/components/parent/FamilySettingsSheet"
+import { isAppAdmin } from "@/lib/catalog"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
 import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
 import { pointsBalance } from "@/lib/prizeRequests"
@@ -19,6 +21,9 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
   const [editing, setEditing] = useState<{ profile: FamilyProfile | null; type: ProfileType } | null>(null)
   const [support, setSupport] = useState(false)
   const [share, setShare] = useState(false)
+  const [rules, setRules] = useState(false)
+  const [admin, setAdmin] = useState(false)
+  useEffect(() => { void isAppAdmin().then(setAdmin) }, [])
   const [busy, setBusy] = useState<string | null>(null)
   const kids = kidsOf(profiles)
   const grownUps = grownUpsOf(profiles)
@@ -114,6 +119,8 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
           </div>
           <h2 className="pt-2 font-display text-xl font-semibold">More</h2>
           <ul className="overflow-hidden rounded-[22px] bg-card shadow-soft">
+            <MenuRow icon={<SlidersHorizontal className="h-5 w-5" />} label="Family settings" onClick={() => setRules(true)} />
+            {admin ? <li><Link to="/admin" className="flex min-h-14 items-center gap-3 border-t border-border px-4 font-semibold hover:bg-muted/60"><span className="text-primary"><ShieldCheck className="h-5 w-5" /></span><span className="flex-1">Admin: chore suggestions</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link></li> : null}
             <MenuRow icon={<LifeBuoy className="h-5 w-5" />} label="Help and ideas" onClick={() => setSupport(true)} />
             <MenuRow icon={<Share2 className="h-5 w-5" />} label="Share with a friend" onClick={() => setShare(true)} />
             <li><Link to="/settings" className="flex min-h-14 items-center gap-3 border-t border-border px-4 font-semibold hover:bg-muted/60"><span className="text-primary"><Settings className="h-5 w-5" /></span><span className="flex-1">Account settings</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link></li>
@@ -125,6 +132,7 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
 
       <ProfileSheet state={editing} onClose={() => setEditing(null)} profiles={profiles} onRefresh={onRefresh} />
       <SupportSheet open={support} onOpenChange={setSupport} />
+      <FamilySettingsSheet open={rules} onOpenChange={setRules} profiles={profiles} chores={chores} onRefresh={onRefresh} />
       <ShareSheet open={share} onOpenChange={setShare} />
     </div>
   )
@@ -147,6 +155,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
   const [themeKey, setThemeKey] = useState("sunny-room")
   const [pin, setPin] = useState("")
   const [clearPin, setClearPin] = useState(false)
+  const [birthYear, setBirthYear] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -157,6 +166,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     setThemeKey(profile?.theme_key ?? "sunny-room")
     setPin("")
     setClearPin(false)
+    setBirthYear(profile?.birth_year ? String(profile.birth_year) : "")
     setError(null)
     KID_THEME_IDS.forEach(ensureThemeFonts)
   }, [state, profile])
@@ -180,7 +190,12 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     if (!name.trim()) return setError("Add a name.")
     if (pin && !isValidPin(pin)) return setError("A PIN is 4 numbers.")
     const pinUpdate = pin ? { pin_hash: await hashPin(pin) } : clearPin ? { pin_hash: "" } : {}
-    const data = { display_name: name.trim(), profile_type: type, theme_key: themeKey, ...pinUpdate }
+    const year = Number(birthYear)
+    const thisYear = new Date().getFullYear()
+    if (birthYear && (!Number.isInteger(year) || year < thisYear - 25 || year > thisYear)) return setError("Enter a birth year like 2017.")
+    // Only sent when used, so profiles still save on a database without the birth_year column.
+    const yearUpdate = type === "child" && (birthYear || profile?.birth_year) ? { birth_year: birthYear ? year : null } : {}
+    const data = { display_name: name.trim(), profile_type: type, theme_key: themeKey, ...pinUpdate, ...yearUpdate }
     void run(() => profile ? db.family_profile.update(profile.id, data) : db.family_profile.create({ pin_hash: "", ...data, is_active: true }), "We couldn't save that profile.")
   }
 
@@ -213,6 +228,9 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
           <div className="space-y-2">
             <span className="block text-sm font-bold">Theme</span>
             <ThemePicker value={themeKey} onChange={setThemeKey} kidName={name.trim() || "Kid"} />
+            <Field label="Birth year (optional)" hint="Used to suggest chores that fit their age." className="max-w-48">
+              <input className={inputClass} value={birthYear} onChange={(event) => setBirthYear(event.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="2017" aria-label="Birth year" />
+            </Field>
           </div>
         ) : null}
         <div className="space-y-2 rounded-2xl bg-muted/60 p-4">

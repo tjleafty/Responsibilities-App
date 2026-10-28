@@ -2,6 +2,8 @@ import { db } from "@/lib/db"
 import { pointsEarned } from "@/lib/family"
 import type { ChoreCompletionRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
 import { parseUTC } from "@/lib/utils"
+import { familySettings } from "@/lib/familySettings"
+import { notifyGrownUps } from "@/lib/notify"
 
 /*
  * A kid asking for a prize is stored as a chore_completions row whose chore_id is
@@ -44,19 +46,31 @@ export function pointsBalance(profileId: string, completions: ChoreCompletionRec
   return pointsEarned(profileId, completions) - held
 }
 
+/** Prize asks a kid made in the last 7 days, for the family's weekly limit. */
+export function asksThisWeek(profileId: string, requests: PrizeRequest[], now = Date.now()) {
+  const weekAgo = now - 7 * 86_400_000
+  return requests.filter((row) => row.profile_id === profileId && parseUTC(row.completed_at ?? "").getTime() >= weekAgo).length
+}
+
+/** Records a prize ask. Cheap prizes under the family's auto-grant limit are granted right away. */
 export async function askForPrize(reward: FamilyReward, profile: FamilyProfile): Promise<PrizeRequest> {
   const now = new Date().toISOString()
+  const cost = Number(reward.points_required) || 0
+  const { autoGrantUpTo } = familySettings().prizes
+  const granted = autoGrantUpTo !== null && cost <= autoGrantUpTo
   const created = await db.chore_completion.create({
     chore_id: `${PREFIX}${reward.id}`,
     profile_id: profile.id,
     period_key: now.slice(0, 10),
     completed_task_ids: JSON.stringify([]),
-    status: "pending_verification",
-    review_status: "unreviewed",
+    status: granted ? "approved" : "pending_verification",
+    review_status: granted ? "approved" : "unreviewed",
     started_at: now,
     completed_at: now,
-    reward_points_snapshot: Number(reward.points_required) || 0,
+    verified_at: granted ? now : null,
+    reward_points_snapshot: cost,
   })
+  if (!granted) notifyGrownUps({ event: "prize_request", kid: profile.display_name, item: reward.title })
   return created as unknown as PrizeRequest
 }
 

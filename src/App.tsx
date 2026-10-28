@@ -14,6 +14,7 @@ import "@/App.css";
 const LoginPage = lazy(() => import("@/routes/login"));
 const SettingsPage = lazy(() => import("@/routes/settings"));
 const InvitePage = lazy(() => import("@/routes/invite"));
+const AdminPage = lazy(() => import("@/routes/admin"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,13 @@ function App() {
               <ProtectedRoute>
                 <Suspense fallback={<LoadingScreen text="Loading settings..." />}>
                   <SettingsPage />
+                </Suspense>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingScreen text="Loading suggestions..." />}>
+                  <AdminPage />
                 </Suspense>
               </ProtectedRoute>
             } />

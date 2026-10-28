@@ -12,6 +12,7 @@ import { signOut, useAuth } from "@/lib/auth"
 import { db, DEMO_MODE } from "@/lib/db"
 import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
 import { ensureFamily, pendingInvite } from "@/lib/familySharing"
+import { loadFamilySettings } from "@/lib/familySettings"
 
 // The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
 const ACTIVE_KEY = "responsibilities.activeProfile"
@@ -58,6 +59,7 @@ export function FamilyWorkspace() {
     }
     try {
       setSharingAvailable(await ensureFamily())
+      await loadFamilySettings()
       const profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       const [nextGoals, nextChores, nextCompletions, nextRewards] = await Promise.all([
         db.goal.list({ orderBy: "-created_at", all: true }),
