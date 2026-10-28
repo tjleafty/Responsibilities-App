@@ -18,7 +18,7 @@ const FREQUENCY = { daily: "Today", weekly: "This week", monthly: "This month" }
 
 function whenLabel(row: TodayRow) {
   const schedule = scheduleFor(row.chore, row.profile.id)
-  return schedule.weekday === null && schedule.every === 1 ? FREQUENCY[schedule.frequency] : scheduleLabel(schedule)
+  return schedule.days.length === 0 && schedule.every === 1 ? FREQUENCY[schedule.frequency] : scheduleLabel(schedule)
 }
 
 export function ParentToday(props: ParentScreenProps) {

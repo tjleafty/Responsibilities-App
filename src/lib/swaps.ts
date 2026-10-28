@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react"
 import { db } from "@/lib/db"
 import type { ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
-import { frequencyFor } from "@/lib/choreSchedule"
-import { getPeriodKey } from "@/lib/choreUtils"
+import { chorePeriodKey } from "@/lib/choreUtils"
 
 /*
  * Chore swaps and trades (chore_swaps, migration 20261029000000). A kid asks; a
@@ -68,7 +67,7 @@ export async function loadSwaps(): Promise<ChoreSwap[]> {
   return swaps
 }
 
-const periodOf = (chore: ChoreRecord, profileId: string, date = new Date()) => getPeriodKey(frequencyFor(chore, profileId), date)
+const periodOf = (chore: ChoreRecord, profileId: string, date = new Date()) => chorePeriodKey(chore, profileId, date)
 
 /** Who does a chore after approved swaps: the kid it moved to replaces the kid it moved from. */
 export function applySwaps(chore: ChoreRecord, kidIds: string[], date = new Date()): string[] {

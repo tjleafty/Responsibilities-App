@@ -1,7 +1,7 @@
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
 import { assigneesOf, choreState, isActive, kidsOf } from "@/lib/family"
-import { isOnWeek, scheduleFor, startOfWeek } from "@/lib/choreSchedule"
-import { getPeriodKey } from "@/lib/choreUtils"
+import { currentDueDay, isOnWeek, scheduleFor, startOfWeek } from "@/lib/choreSchedule"
+import { schedulePeriodKey } from "@/lib/choreUtils"
 import { requestCost, requestedRewardId, requestState, type PrizeRequest } from "@/lib/prizeRequests"
 import { parseUTC } from "@/lib/utils"
 
@@ -42,13 +42,16 @@ function expectedItems(chores: ChoreRecord[], completions: ChoreCompletionRecord
         const schedule = scheduleFor(chore, kidId)
         const first = day.getTime() === dayStart(from).getTime()
         // One item per period: on its first day, or on the range's first day for a period already underway.
+        // A weekly chore due on several days has one period per due day, starting that day.
+        const perDay = schedule.frequency === "weekly" && schedule.days.length > 1
         const starts = schedule.frequency === "daily" ? true
-          : schedule.frequency === "weekly" ? (day.getDay() === 1 || first) && isOnWeek(schedule, day)
-            : day.getDate() === 1 || first
+          : perDay ? isOnWeek(schedule, day) && (schedule.days.includes(day.getDay()) || (first && currentDueDay(schedule, day) !== null))
+            : schedule.frequency === "weekly" ? (day.getDay() === 1 || first) && isOnWeek(schedule, day)
+              : day.getDate() === 1 || first
         if (!starts) return
-        const periodStart = schedule.frequency === "daily" ? day : schedule.frequency === "weekly" ? startOfWeek(day) : new Date(day.getFullYear(), day.getMonth(), 1)
-        const key = getPeriodKey(schedule.frequency, day)
-        const open = key === getPeriodKey(schedule.frequency, today)
+        const periodStart = schedule.frequency === "daily" || perDay ? day : schedule.frequency === "weekly" ? startOfWeek(day) : new Date(day.getFullYear(), day.getMonth(), 1)
+        const key = schedulePeriodKey(schedule, day)
+        const open = key === schedulePeriodKey(schedule, today)
         items.push({ chore, kidId, date: periodStart < from ? dayStart(from) : periodStart, done: done.has(`${chore.id}|${kidId}|${key}`), open })
       })
     }

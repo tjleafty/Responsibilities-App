@@ -1,7 +1,7 @@
 import { applySwaps } from "@/lib/swaps"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
-import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "@/lib/choreUtils"
-import { dueStatus, frequencyFor, isTodayChore, scheduleFor } from "@/lib/choreSchedule"
+import { chorePeriodKey, getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "@/lib/choreUtils"
+import { dueStatus, isTodayChore, scheduleFor } from "@/lib/choreSchedule"
 import { parseUTC } from "@/lib/utils"
 
 export type ChoreState = "todo" | "in_progress" | "waiting" | "done" | "sent_back"
@@ -48,7 +48,7 @@ export function isLate(chore: ChoreRecord, profileId: string, date = new Date())
 }
 
 export function completionFor(chore: ChoreRecord, profileId: string, completions: ChoreCompletionRecord[], date = new Date()) {
-  const periodKey = getPeriodKey(frequencyFor(chore, profileId), date)
+  const periodKey = chorePeriodKey(chore, profileId, date)
   return completions.find((row) => row.chore_id === chore.id && row.profile_id === profileId && row.period_key === periodKey) ?? null
 }
 
