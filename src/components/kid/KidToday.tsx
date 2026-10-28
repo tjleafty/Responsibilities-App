@@ -8,6 +8,7 @@ import { parseChoreSubtasks, subtasksFor } from "@/lib/choreUtils"
 import { choreVideo } from "@/lib/choreIcons"
 import { themeCopy, type ThemeCopy } from "@/lib/themeCopy"
 import { cn } from "@/lib/utils"
+import { chorePoints } from "@/lib/difficulty"
 
 interface KidTodayProps extends KidAppProps {
   balance: number
@@ -104,7 +105,7 @@ function JourneyStop({ state, current, token, title }: { state: ChoreState; curr
 function HeroChore({ chore, state, note, token, copy, onOpen }: { chore: ChoreRecord; state: ChoreState; note?: string | null; token: string; copy: ThemeCopy; onOpen: () => void }) {
   const steps = parseChoreSubtasks(chore.subtasks).length
   const video = choreVideo(chore.title)
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
   return (
     <article className="overflow-hidden rounded-[26px] bg-card shadow-soft">
       <button type="button" onClick={onOpen} className="relative block h-44 w-full overflow-hidden bg-primary/10 sm:h-56" aria-label={`Open ${chore.title}`}>
@@ -140,7 +141,7 @@ function AllDone({ token, copy }: { token: string; copy: ThemeCopy }) {
 }
 
 function ChoreRow({ chore, state, token, onOpen }: { chore: ChoreRecord; state: ChoreState; token: string; onOpen: () => void }) {
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
   const steps = parseChoreSubtasks(chore.subtasks).length
   return (
     <button type="button" onClick={onOpen} className={cn(

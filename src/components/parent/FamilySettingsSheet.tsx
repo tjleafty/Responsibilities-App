@@ -7,6 +7,7 @@ import type { ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
 import { isActive, kidsOf } from "@/lib/family"
 import { db } from "@/lib/db"
 import { familySettings, familySettingsAvailable, saveFamilySettings, type FamilySettings } from "@/lib/familySettings"
+import { DIFFICULTIES } from "@/lib/difficulty"
 import { listMembers, type FamilyMember } from "@/lib/familySharing"
 
 const WEEKLY_LIMITS: Array<number | null> = [null, 1, 2, 3, 5]
@@ -82,6 +83,15 @@ export function FamilySettingsSheet({ open, onOpenChange, profiles, chores, onRe
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span><span className="block font-bold">New chores start at</span><span className="block text-sm text-muted-foreground">You can still change each chore.</span></span>
             <Stepper value={draft.points.defaultPoints} onChange={(value) => set("points", { defaultPoints: value })} max={500} label="points" />
+          </div>
+          <div className="space-y-2 rounded-2xl bg-muted/60 p-3">
+            <span><span className="block font-bold">Difficulty multipliers</span><span className="block text-sm text-muted-foreground">Chores marked easy, medium or hard earn their points times this.</span></span>
+            {DIFFICULTIES.map((option) => (
+              <div key={option.value} className="flex items-center justify-between gap-3">
+                <span className="font-semibold"><span aria-hidden="true">{option.emoji} </span>{option.label}</span>
+                <Stepper value={draft.points.multipliers[option.value]} onChange={(value) => set("points", { multipliers: { ...draft.points.multipliers, [option.value]: Math.round(value * 10) / 10 } })} min={0.5} max={5} step={0.5} suffix="×" label={`${option.label} multiplier`} />
+              </div>
+            ))}
           </div>
           {activeChores.length > 0 ? (
             <details className="rounded-2xl bg-muted/60 p-3">

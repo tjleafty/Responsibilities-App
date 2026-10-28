@@ -10,6 +10,7 @@ import { pendingRequests, requestedRewardId } from "@/lib/prizeRequests"
 import { getKidTheme } from "@/lib/themes"
 import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import type { FamilyProfile } from "@/lib/familyTypes"
+import { chorePoints } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 const FREQUENCY = { daily: "Today", weekly: "This week", monthly: "This month" } as const
@@ -97,7 +98,7 @@ export function ParentToday(props: ParentScreenProps) {
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <StepsDone row={row} profiles={profiles} />
-                  {Number(row.chore.reward_points) > 0 ? <TokenPill amount={Number(row.chore.reward_points)} token={getKidTheme(row.profile.theme_key).token} prefix="+" /> : null}
+                  {chorePoints(row.chore) > 0 ? <TokenPill amount={chorePoints(row.chore)} token={getKidTheme(row.profile.theme_key).token} prefix="+" /> : null}
                   <span className="flex-1" />
                   <button type="button" onClick={() => row.completion && review.sendBack(row.completion)} className="grid h-11 w-11 place-items-center rounded-full bg-coral/10 text-coral hover:bg-coral/20" aria-label={`Send back ${row.chore.title}`}><RotateCcw className="h-5 w-5" /></button>
                   <Button size="sm" disabled={review.busyId === row.completion?.id} onClick={() => row.completion && void review.approve(row.completion)}><Check className="h-4 w-4" />Approve</Button>

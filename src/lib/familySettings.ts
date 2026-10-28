@@ -12,6 +12,8 @@ export interface FamilySettings {
   points: {
     /** Points a new chore starts with. */
     defaultPoints: number
+    /** Points are multiplied by these for chores marked easy, medium or hard. */
+    multipliers: { easy: number; medium: number; hard: number }
   }
   prizes: {
     kidsCanAsk: boolean
@@ -38,7 +40,7 @@ export interface FamilySettings {
 }
 
 export const DEFAULT_SETTINGS: FamilySettings = {
-  points: { defaultPoints: 5 },
+  points: { defaultPoints: 5, multipliers: { easy: 1, medium: 1.5, hard: 2 } },
   prizes: { kidsCanAsk: true, maxAsksPerWeek: null, autoGrantUpTo: null },
   notifications: { approvalNeeded: false, prizeRequest: false, mutedUserIds: [] },
   suggestions: { ageBased: true },
@@ -50,7 +52,7 @@ type Stored = { [K in keyof FamilySettings]?: Partial<FamilySettings[K]> }
 function withDefaults(stored: Stored | null | undefined): FamilySettings {
   const value = stored ?? {}
   return {
-    points: { ...DEFAULT_SETTINGS.points, ...value.points },
+    points: { ...DEFAULT_SETTINGS.points, ...value.points, multipliers: { ...DEFAULT_SETTINGS.points.multipliers, ...value.points?.multipliers } },
     prizes: { ...DEFAULT_SETTINGS.prizes, ...value.prizes },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...value.notifications },
     suggestions: { ...DEFAULT_SETTINGS.suggestions, ...value.suggestions },

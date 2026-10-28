@@ -11,6 +11,7 @@ import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
 import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { getKidTheme } from "@/lib/themes"
 import type { ChoreCompletionRecord } from "@/lib/familyTypes"
+import { chorePoints } from "@/lib/difficulty"
 import { cn, parseUTC } from "@/lib/utils"
 
 const newestFirst = (field: "completed_at" | "verified_at") => (a: ChoreCompletionRecord, b: ChoreCompletionRecord) =>
@@ -66,7 +67,7 @@ export function ParentApprove(props: ParentScreenProps) {
             const theme = getKidTheme(kid.theme_key)
             const steps = subtasksFor(chore, kid.id, profiles, row.completed_at ? parseUTC(row.completed_at) : new Date())
             const checked = parseCompletedTaskIds(row.completed_task_ids)
-            const points = Number(row.reward_points_snapshot ?? chore.reward_points) || 0
+            const points = row.reward_points_snapshot != null ? Number(row.reward_points_snapshot) || 0 : chorePoints(chore)
             return (
               <li key={row.id} className="flex flex-col rounded-[26px] bg-card p-5 shadow-soft">
                 <div className="flex items-center gap-3">

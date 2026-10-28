@@ -54,7 +54,11 @@ export interface ChoreRecord {
   random_mode?: RandomMode | null
   /** "chore_and_subtasks" only: how many kids are picked each time. */
   random_group_size?: number | null
+  /** Easy, medium or hard: scales the points with the family's multipliers (lib/difficulty). */
+  difficulty?: Difficulty | null
 }
+
+export type Difficulty = "easy" | "medium" | "hard"
 
 export type ChoreSubtask = {
   id: string

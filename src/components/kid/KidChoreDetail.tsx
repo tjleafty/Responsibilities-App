@@ -10,6 +10,7 @@ import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { completeChore, saveChoreProgress } from "@/lib/choreActions"
 import { choreVideo } from "@/lib/choreIcons"
 import { getKidTheme } from "@/lib/themes"
+import { chorePoints } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 interface KidChoreDetailProps extends KidAppProps {
@@ -28,7 +29,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, chore, 
   const [error, setError] = useState<string | null>(null)
   const [sentTo, setSentTo] = useState<string | null>(null)
   const [watching, setWatching] = useState(false)
-  const points = Number(chore.reward_points) || 0
+  const points = chorePoints(chore)
   const video = choreVideo(chore.title)
   const locked = state === "waiting" || state === "done"
   const allChecked = steps.every((step) => checked.includes(step.id))
