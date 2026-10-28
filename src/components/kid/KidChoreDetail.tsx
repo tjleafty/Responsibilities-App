@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { ArrowLeft, ArrowLeftRight, Check, Clock3, Film, MessageCircle, PartyPopper, Play, RotateCcw, Send, Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, ChoreIconTile, ErrorNote, MASCOT, ProgressBar, TokenPill } from "@/components/kit"
+import { Avatar, ChoreIconTile, ErrorNote, MASCOT, ProgressBar, Ring, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
 import { KidVideoPlayer } from "@/components/kid/KidVideoPlayer"
 import type { ChoreCompletionRecord, ChoreRecord } from "@/lib/familyTypes"
@@ -10,6 +10,7 @@ import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
 import { completeChore, saveChoreProgress } from "@/lib/choreActions"
 import { choreVideo } from "@/lib/choreIcons"
 import { getKidTheme } from "@/lib/themes"
+import { isTeenKey } from "@/lib/teen"
 import { chorePoints } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 import { SwapSheet } from "@/components/kid/SwapSheet"
@@ -24,6 +25,7 @@ interface KidChoreDetailProps extends KidAppProps {
 
 export function KidChoreDetail({ profile, profiles, chores, completions, prizeRequests, chore, onBack, onSaved }: KidChoreDetailProps) {
   const theme = getKidTheme(profile.theme_key)
+  const teen = isTeenKey(profile.theme_key)
   const completion = completionFor(chore, profile.id, completions)
   const state = choreState(completion)
   const steps = subtasksFor(chore, profile.id, profiles)
@@ -78,6 +80,18 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
     return <KidVideoPlayer title={chore.title} kidName={firstName(profile)} video={video} onBack={() => setWatching(false)} onReady={() => setWatching(false)} />
   }
 
+  if (sentTo && teen) {
+    // Quiet: the ring closes, no confetti.
+    return (
+      <div className="mx-auto flex min-h-[80dvh] max-w-md flex-col items-center justify-center text-center">
+        <Ring value={1} max={1} size={120} stroke={10} color="hsl(var(--success))"><Check className="h-10 w-10 text-success" strokeWidth={3} /></Ring>
+        {points > 0 ? <p className="mt-6 font-display text-3xl font-bold text-primary">+{points} XP pending</p> : null}
+        <h1 className="mt-2 text-lg font-medium">Sent to {sentTo} for approval</h1>
+        <Button size="lg" onClick={onBack} className="mt-8 w-full">Back to today</Button>
+      </div>
+    )
+  }
+
   if (sentTo) {
     return (
       <div className="mx-auto flex min-h-[80dvh] max-w-md flex-col items-center justify-center text-center">
@@ -94,13 +108,15 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card shadow-soft" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
         <h1 className="min-w-0 flex-1 truncate font-display text-2xl font-semibold sm:text-3xl">{chore.title}</h1>
-        {points > 0 ? <TokenPill amount={points} token={theme.token} prefix="+" className="bg-card px-4 py-2 text-base shadow-soft" /> : null}
+        {points > 0 ? (teen
+          ? <span className="shrink-0 font-display text-lg font-semibold text-primary">+{points} XP</span>
+          : <TokenPill amount={points} token={theme.token} prefix="+" className="bg-card px-4 py-2 text-base shadow-soft" />) : null}
       </header>
 
       {state === "sent_back" ? (
         <section className="rounded-[22px] border-2 border-coral/40 bg-coral/10 p-4">
-          <p className="flex items-center gap-2 font-display text-xl font-semibold text-coral"><RotateCcw className="h-5 w-5" />Almost there!</p>
-          <p className="mt-1 font-semibold">{completion?.rejection_reason || "Let's give it another try."}</p>
+          <p className="flex items-center gap-2 font-display text-xl font-semibold text-coral"><RotateCcw className="h-5 w-5" />{teen ? "Redo requested" : "Almost there!"}</p>
+          <p className="mt-1 font-semibold">{completion?.rejection_reason || (teen ? "Take another pass." : "Let's give it another try.")}</p>
           {completion?.parent_feedback ? <ParentNote name={firstName(grownUp)} profile={grownUp} text={completion.parent_feedback} /> : null}
         </section>
       ) : null}
@@ -117,7 +133,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
           </span>
           <span className="flex items-center justify-between px-4 py-3 font-bold"><span className="flex items-center gap-2"><Film className="h-5 w-5 text-primary" />Watch how · {video.chapters.length} steps</span><span className="text-muted-foreground">{video.length}</span></span>
         </button>
-      ) : (
+      ) : teen ? null : (
         <section className="flex items-center gap-4 rounded-[22px] bg-card p-4 shadow-soft">
           <ChoreIconTile title={chore.title} size={64} />
           <div>
@@ -127,8 +143,8 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
         </section>
       )}
 
-      {state === "waiting" ? <StatusCard icon={<Clock3 className="h-6 w-6" />} title="Waiting for a grown-up" className="bg-accent/30">You finished this one. A grown-up will check it soon.</StatusCard> : null}
-      {state === "done" ? <StatusCard icon={<Check className="h-6 w-6" strokeWidth={3} />} title="All done!" className="bg-success/15 text-success">{points > 0 ? `You earned ${points} ${theme.tokenName}.` : "Nice work."}</StatusCard> : null}
+      {state === "waiting" ? <StatusCard icon={<Clock3 className="h-6 w-6" />} title={teen ? "Waiting for review" : "Waiting for a grown-up"} className="bg-accent/30">{teen ? "Submitted. A parent will review it." : "You finished this one. A grown-up will check it soon."}</StatusCard> : null}
+      {state === "done" ? <StatusCard icon={<Check className="h-6 w-6" strokeWidth={3} />} title={teen ? "Approved" : "All done!"} className="bg-success/15 text-success">{points > 0 ? (teen ? `+${points} XP` : `You earned ${points} ${theme.tokenName}.`) : teen ? "Done." : "Nice work."}</StatusCard> : null}
 
       {steps.length > 0 ? (
         <section className="space-y-3" aria-label="Steps">
@@ -181,14 +197,14 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
             <Button size="lg" onClick={() => void finish()} disabled={!allChecked || busy} className="w-full text-xl">
               {requiresApproval(chore)
                 ? <><Send className="h-6 w-6" />{busy ? "Sending..." : "Send for approval"}</>
-                : <><PartyPopper className="h-6 w-6" />{busy ? "Saving..." : "Done"}</>}
+                : <><PartyPopper className="h-6 w-6" />{busy ? "Saving..." : teen ? "Mark done" : "Done"}</>}
             </Button>
-            {!allChecked ? <p className="text-center text-sm font-bold text-muted-foreground">Check every step to finish.</p> : null}
+            {!allChecked ? <p className="text-center text-sm font-bold text-muted-foreground">{teen ? "Check off every step first." : "Check every step to finish."}</p> : null}
             {steps.length > 0 ? <Button variant="ghost" onClick={onBack} className="w-full">Save for later</Button> : null}
           </div>
         </div>
       ) : (
-        <Button size="lg" variant="outline" onClick={onBack} className="w-full">Back to my chores</Button>
+        <Button size="lg" variant="outline" onClick={onBack} className="w-full">{teen ? "Back to today" : "Back to my chores"}</Button>
       )}
     </div>
   )

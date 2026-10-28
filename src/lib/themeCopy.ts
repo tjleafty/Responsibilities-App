@@ -35,6 +35,21 @@ const base: ThemeCopy = {
 
 const COPY: Record<string, Partial<ThemeCopy>> = {
   "sunny-room": {},
+  // Teen mode: short and respectful, no exclamation marks on every line.
+  teen: {
+    greeting: () => "Today",
+    journey: "Today",
+    progress: (done, total) => `${done}/${total} done`,
+    upNext: "Up next",
+    start: "Start",
+    keepGoing: "Continue",
+    tryAgain: "Redo",
+    more: "Today's chores",
+    later: "This week",
+    allDone: "All done for today",
+    allDoneSub: "Nothing left on your list.",
+    cheer: () => "",
+  },
   "ocean-explorer": {
     greeting: (name, hour) => `${timeOfDay(hour)}, ${name}! 🌊`,
     journey: "Today's reef journey",

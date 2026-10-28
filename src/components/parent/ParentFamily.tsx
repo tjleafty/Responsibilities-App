@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { Check, ChevronRight, CreditCard, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib
 import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
 import { pointsBalance } from "@/lib/prizeRequests"
 import { KID_THEME_IDS, ensureThemeFonts, getKidTheme } from "@/lib/themes"
+import { isTeenKey, teenKey } from "@/lib/teen"
 import { getAuthToken } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
@@ -164,12 +165,16 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
   const [birthYear, setBirthYear] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The kid theme to go back to when switching off Teen mode.
+  const lastKidTheme = useRef("sunny-room")
+  const age = birthYear.length === 4 ? new Date().getFullYear() - Number(birthYear) : null
 
   useEffect(() => {
     if (!state) return
     setName(profile?.display_name ?? "")
     setType(profile?.profile_type ?? state.type)
     setThemeKey(profile?.theme_key ?? "sunny-room")
+    lastKidTheme.current = profile?.theme_key && !isTeenKey(profile.theme_key) ? profile.theme_key : "sunny-room"
     setPin("")
     setClearPin(false)
     setBirthYear(profile?.birth_year ? String(profile.birth_year) : "")
@@ -231,9 +236,21 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
           <Segmented value={type} onChange={setType} options={[{ value: "child", label: "Kid" }, { value: "parent", label: "Grown-up" }]} className="max-w-xs" />
         </div>
         {type === "child" ? (
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">Mode</span>
+            <Segmented value={isTeenKey(themeKey) ? "teen" : "kid"} onChange={(mode) => setThemeKey(mode === "teen" ? teenKey() : lastKidTheme.current)}
+              options={[{ value: "kid", label: "Kid (4–11)" }, { value: "teen", label: "Teen (12+)" }]} className="max-w-sm" />
+            <p className="text-sm text-muted-foreground">{isTeenKey(themeKey)
+              ? "A clean, dark look with XP instead of stars and no mascot. They can pick their own accent color."
+              : `Playful themes and a mascot.${age !== null && age >= 12 ? ` ${name.trim() || "They"} might prefer Teen mode.` : ""}`}</p>
+          </div>
+        ) : null}
+        {type === "child" ? (
           <div className="space-y-2">
-            <span className="block text-sm font-bold">Theme</span>
-            <ThemePicker value={themeKey} onChange={setThemeKey} kidName={name.trim() || "Kid"} />
+            {isTeenKey(themeKey) ? null : <>
+              <span className="block text-sm font-bold">Theme</span>
+              <ThemePicker value={themeKey} onChange={(key) => { lastKidTheme.current = key; setThemeKey(key) }} kidName={name.trim() || "Kid"} />
+            </>}
             <Field label="Birth year (optional)" hint="Used to suggest chores that fit their age." className="max-w-48">
               <input className={inputClass} value={birthYear} onChange={(event) => setBirthYear(event.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" placeholder="2017" aria-label="Birth year" />
             </Field>

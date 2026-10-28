@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Gift, LogOut, Smile, Sun } from "lucide-react"
+import { CircleCheckBig, Flag, Gift, LogOut, Smile, Sun, Trophy, UserRound } from "lucide-react"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
 import type { FamilyReward } from "@/lib/familyTypes"
 import { Avatar } from "@/components/kit"
@@ -10,6 +10,9 @@ import { KidToday } from "@/components/kid/KidToday"
 import { KidChoreDetail } from "@/components/kid/KidChoreDetail"
 import { KidPrizes } from "@/components/kid/KidPrizes"
 import { KidMe } from "@/components/kid/KidMe"
+import { TeenToday } from "@/components/kid/TeenToday"
+import { TeenProfile } from "@/components/kid/TeenProfile"
+import { isTeenKey } from "@/lib/teen"
 
 export interface KidAppProps {
   profile: FamilyProfile
@@ -24,12 +27,20 @@ export interface KidAppProps {
   onThemeChange: (themeKey: string) => Promise<void>
 }
 
-type Tab = "today" | "prizes" | "me"
+type Tab = "today" | "prizes" | "goals" | "me"
 
-const TABS: Array<{ id: Tab; label: string; icon: typeof Sun }> = [
+const KID_TABS: Array<{ id: Tab; label: string; icon: typeof Sun }> = [
   { id: "today", label: "Today", icon: Sun },
   { id: "prizes", label: "Prizes", icon: Gift },
   { id: "me", label: "Me", icon: Smile },
+]
+
+// Teen mode splits goals from rewards, like the Stitch teen screens.
+const TEEN_TABS: Array<{ id: Tab; label: string; icon: typeof Sun }> = [
+  { id: "today", label: "Today", icon: CircleCheckBig },
+  { id: "goals", label: "Goals", icon: Flag },
+  { id: "prizes", label: "Rewards", icon: Trophy },
+  { id: "me", label: "Profile", icon: UserRound },
 ]
 
 export function KidApp(props: KidAppProps) {
@@ -40,6 +51,8 @@ export function KidApp(props: KidAppProps) {
   const [completions, setCompletions] = useState(props.completions)
   const [prizeRequests, setPrizeRequests] = useState(props.prizeRequests)
   const theme = getKidTheme(profile.theme_key)
+  const teen = isTeenKey(profile.theme_key)
+  const TABS = teen ? TEEN_TABS : KID_TABS
 
   useEffect(() => { setCompletions(props.completions) }, [props.completions])
   useEffect(() => { setPrizeRequests(props.prizeRequests) }, [props.prizeRequests])
@@ -81,9 +94,11 @@ export function KidApp(props: KidAppProps) {
           {openChore ? (
             <KidChoreDetail {...shared} chore={openChore} onBack={() => setOpenChoreId(null)} onSaved={upsert} />
           ) : tab === "today" ? (
-            <KidToday {...shared} balance={balance} token={theme.token} onOpenChore={setOpenChoreId} />
-          ) : tab === "prizes" ? (
-            <KidPrizes {...shared} balance={balance} onRequested={addRequest} />
+            teen ? <TeenToday {...shared} balance={balance} onOpenChore={setOpenChoreId} /> : <KidToday {...shared} balance={balance} token={theme.token} onOpenChore={setOpenChoreId} />
+          ) : tab === "prizes" || tab === "goals" ? (
+            <KidPrizes {...shared} balance={balance} onRequested={addRequest} show={teen ? (tab === "goals" ? "goals" : "rewards") : "all"} />
+          ) : teen ? (
+            <TeenProfile {...shared} />
           ) : (
             <KidMe {...shared} />
           )}

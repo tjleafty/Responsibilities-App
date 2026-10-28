@@ -4,6 +4,7 @@ import { serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 import { dueStatus, isTodayChore, scheduleFor } from "../../src/lib/choreSchedule.js"
 import { chorePeriodKey, getAssignedProfileIds, getRandomGroup, isRandomAssignmentEnabled, schedulePeriodKey } from "../../src/lib/choreUtils.js"
 import { kidNudge, parentSummary } from "../../src/lib/nudges.js"
+import { isTeenKey } from "../../src/lib/teen.js"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "../../src/lib/familyTypes.js"
 
 /*
@@ -133,7 +134,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         const birthYear = (row.kid as FamilyProfile & { birth_year?: number | null }).birth_year
         const age = birthYear ? clock.getFullYear() - birthYear : null
         const first = row.chores.find((item) => item.late) ?? row.chores[0]
-        await push(devices, kidNudge({ name: row.kid.display_name.split(" ")[0], age, left: row.chores.length, first: first.chore.title, late: first.late, evening: kind === "evening" }), `kid-${row.kid.id}`)
+        await push(devices, kidNudge({ name: row.kid.display_name.split(" ")[0], age, left: row.chores.length, first: first.chore.title, late: first.late, evening: kind === "evening", teen: isTeenKey(row.kid.theme_key) }), `kid-${row.kid.id}`)
       }
     }
   }
