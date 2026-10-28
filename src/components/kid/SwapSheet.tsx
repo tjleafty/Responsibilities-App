@@ -68,7 +68,7 @@ export function SwapSheet({ open, onOpenChange, profile, profiles, chores, compl
   }
 
   const KINDS: Array<{ value: SwapKind; icon: typeof Check; title: string; text: string }> = chore ? [
-    { value: "swap", icon: ArrowLeftRight, title: "Swap chores", text: `You do one of ${sibling ? firstName(sibling) : "their"} chores, they do this one.` },
+    { value: "swap", icon: ArrowLeftRight, title: "Swap chores", text: `You do one of ${sibling ? `${firstName(sibling)}'s` : "their"} chores, they do this one.` },
     { value: "handoff", icon: HandCoins, title: "Pay them to do it", text: `${sibling ? firstName(sibling) : "They"} does this one and gets some of your ${token}.` },
   ] : []
 
