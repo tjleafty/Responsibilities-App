@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { ArrowRight, Check, Gift, Home, KeyRound, Lightbulb, Minus, Plus, Smartphone, Sparkles, Trash2, Users } from "lucide-react"
+import { ArrowRight, Check, Gift, Home, KeyRound, Lightbulb, Minus, Plus, Sparkles, Trash2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, Chip, ErrorNote, Field, inputClass } from "@/components/kit"
 import type { ChoreRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
@@ -27,6 +27,7 @@ interface SetupWizardProps {
   onFinish: (next: "kids" | "parent") => void
 }
 
+const STEP_NAMES = ["Kids", "Chores", "Rewards", "Ready"]
 const SKIP_KEY = "responsibilities.setupFinished"
 
 /** Whether to show the wizard: a family with no kids that hasn't finished or skipped it. */
@@ -110,19 +111,44 @@ export function SetupWizard({ profile, profiles, chores, rewards, onRefresh, onF
   }
 
   return (
-    <main className="min-h-dvh bg-background px-4 pb-10 pt-5 text-foreground">
-      <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-between">
-          <ol className="flex items-center gap-1.5" aria-label={`Step ${step + 1} of 4`}>
-            {[0, 1, 2, 3].map((index) => <li key={index} className={cn("h-2 rounded-full transition-all", index === step ? "w-10 bg-primary" : index < step ? "w-2 bg-primary" : "w-2 bg-primary/25")} />)}
+    <main className="min-h-dvh bg-background px-4 pb-10 pt-5 text-foreground md:px-8 md:pt-8 lg:px-10">
+      <div className="mx-auto max-w-2xl md:max-w-3xl lg:grid lg:max-w-6xl lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
+        {/* Phones and tablets: dots (with step names from tablet up). Computers: a step list on the left. */}
+        <div className="flex items-center justify-between lg:hidden">
+          <ol className="flex items-center gap-1.5 md:gap-4" aria-label={`Step ${step + 1} of 4`}>
+            {STEP_NAMES.map((label, index) => (
+              <li key={label} className="flex items-center gap-2">
+                <span className={cn("h-2 rounded-full transition-all", index === step ? "w-10 bg-primary" : index < step ? "w-2 bg-primary" : "w-2 bg-primary/25")} />
+                <span className={cn("hidden text-sm font-bold md:inline", index === step ? "text-foreground" : "text-muted-foreground")}>{label}</span>
+              </li>
+            ))}
           </ol>
           {step < 3 ? <button type="button" onClick={() => void skip()} disabled={busy} className="text-sm font-bold text-muted-foreground hover:text-foreground">Skip for now</button> : null}
         </div>
+        <aside className="hidden lg:block">
+          <div className="sticky top-10 space-y-6 rounded-[26px] bg-card p-6 shadow-soft">
+            <div>
+              <p className="font-display text-2xl font-semibold">Set up your family</p>
+              <p className="mt-1 text-sm text-muted-foreground">About 3 minutes. Everything can be changed later.</p>
+            </div>
+            <ol className="space-y-1">
+              {STEP_NAMES.map((label, index) => (
+                <li key={label} className={cn("flex items-center gap-3 rounded-2xl px-3 py-2.5 font-bold", index === step ? "bg-primary/10 text-foreground" : "text-muted-foreground")} aria-current={index === step ? "step" : undefined}>
+                  <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm", index < step ? "bg-primary text-primary-foreground" : index === step ? "bg-primary text-primary-foreground" : "bg-muted")}>{index < step ? <Check className="h-4 w-4" strokeWidth={3} /> : index + 1}</span>
+                  {label}
+                </li>
+              ))}
+            </ol>
+            {step < 3 ? <button type="button" onClick={() => void skip()} disabled={busy} className="text-sm font-bold text-muted-foreground hover:text-foreground">Skip for now</button> : null}
+          </div>
+        </aside>
 
+        <div className="min-w-0">
         {step === 0 ? <KidsStep kids={kids} busy={busy} error={error} run={run} onRefresh={onRefresh} onNext={() => { setError(null); setStep(1) }} /> : null}
         {step === 1 ? <ChoresStep kids={kids} chores={chores} busy={busy} error={error} run={run} onRefresh={onRefresh} onNext={() => { setError(null); setStep(2) }} /> : null}
         {step === 2 ? <RewardStep rewards={rewards} busy={busy} error={error} run={run} onRefresh={onRefresh} onNext={() => { setError(null); setStep(3) }} /> : null}
         {step === 3 ? <ReadyStep profile={profile} kids={kids} chores={chores} rewards={rewards} busy={busy} onFinish={async (next) => { setBusy(true); await markFinished(); onFinish(next) }} /> : null}
+        </div>
       </div>
     </main>
   )
@@ -132,7 +158,7 @@ type Run = (action: () => Promise<unknown>, failure: string) => Promise<boolean>
 
 function StepHeader({ step, title, children }: { step: number; title: string; children: ReactNode }) {
   return (
-    <header className="mt-6 space-y-1">
+    <header className="mt-6 space-y-1 lg:mt-0">
       <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-primary">Step {step} of 4</p>
       <h1 className="font-display text-3xl font-semibold">{title}</h1>
       <p className="text-muted-foreground">{children}</p>
@@ -169,6 +195,7 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
   return (
     <>
       <StepHeader step={1} title="Add your kids">Each kid gets their own profile, chores and points.</StepHeader>
+      <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] md:items-start md:gap-6">
       <section className="mt-5 space-y-4 rounded-[22px] bg-card p-5 shadow-soft">
         <Field label="Kid's name"><input className={inputClass} value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void add() }} placeholder="Sammy" maxLength={40} /></Field>
         <div className="space-y-1.5">
@@ -201,7 +228,7 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
       </section>
 
       {kids.length > 0 ? (
-        <section className="mt-5 space-y-2">
+        <section className="mt-5 space-y-2 md:sticky md:top-8">
           <h2 className="flex items-center gap-2 font-display text-xl font-semibold">Kids in your family<span className="rounded-full bg-primary/10 px-2 text-base text-primary">{kids.length}</span></h2>
           <ul className="space-y-2">
             {kids.map((kid) => {
@@ -219,11 +246,16 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
             })}
           </ul>
         </section>
-      ) : null}
+      ) : (
+        <p className="mt-5 hidden rounded-[22px] border-2 border-dashed border-border p-6 text-center text-muted-foreground md:block">Kids you add show up here.</p>
+      )}
+      </div>
 
       <ErrorNote>{error}</ErrorNote>
-      <Button size="lg" onClick={onNext} disabled={busy || kids.length === 0} className="mt-6 w-full">Next: pick chores<ArrowRight className="h-5 w-5" /></Button>
-      <p className="mt-2 text-center text-sm text-muted-foreground">{kids.length === 0 ? "Add at least one kid to keep going." : "You can add or change kids any time in Family."}</p>
+      <div className="mt-6 md:flex md:flex-row-reverse md:items-center md:justify-between md:gap-4">
+        <Button size="lg" onClick={onNext} disabled={busy || kids.length === 0} className="w-full md:w-auto md:min-w-64">Next: pick chores<ArrowRight className="h-5 w-5" /></Button>
+        <p className="mt-2 text-center text-sm text-muted-foreground md:mt-0 md:text-left">{kids.length === 0 ? "Add at least one kid to keep going." : "You can add or change kids any time in Family."}</p>
+      </div>
     </>
   )
 }
@@ -285,7 +317,7 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
         {groups.map((group) => (
           <section key={group.name} className="space-y-2">
             <h2 className="flex items-center justify-between font-display text-xl font-semibold">{group.name}<span className="text-sm font-bold text-muted-foreground">{group.items.filter((item) => picked[item.title]?.length).length || ""}{group.items.some((item) => picked[item.title]?.length) ? " picked" : ""}</span></h2>
-            <ul className="grid gap-2 sm:grid-cols-2">
+            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {group.items.map((item) => {
                 const on = (picked[item.title]?.length ?? 0) > 0
                 const fits = kidsFor(item)
@@ -318,9 +350,9 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
       </div>
       <p className="mt-5 flex items-start gap-3 rounded-[22px] bg-accent/25 p-4 text-sm"><Lightbulb className="h-5 w-5 shrink-0 text-accent-foreground" />Starting with 3 to 5 simple chores helps kids build the habit without feeling swamped.</p>
       <ErrorNote>{error}</ErrorNote>
-      <div className="sticky bottom-0 -mx-4 mt-5 flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur pb-safe">
+      <div className="sticky bottom-0 -mx-4 mt-5 flex items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur pb-safe md:mx-0 md:mb-2 md:rounded-[22px] md:border md:px-5 md:shadow-soft">
         <span className="flex-1 font-bold">{count} {count === 1 ? "chore" : "chores"} picked</span>
-        <Button onClick={() => void save()} disabled={busy}>{busy ? "Adding..." : count ? "Next: rewards" : "Skip chores"}<ArrowRight className="h-5 w-5" /></Button>
+        <Button onClick={() => void save()} disabled={busy} className="md:min-w-48">{busy ? "Adding..." : count ? "Next: rewards" : "Skip chores"}<ArrowRight className="h-5 w-5" /></Button>
       </div>
     </>
   )
@@ -349,13 +381,13 @@ function RewardStep({ rewards, busy, error, run, onRefresh, onNext }: { rewards:
   return (
     <>
       <StepHeader step={3} title="Set a first reward">Give your kids something to save their points for. Every kid can earn these.</StepHeader>
-      <ul className="mt-5 space-y-2">
+      <ul className="mt-5 grid gap-2 md:grid-cols-2">
         {REWARD_IDEAS.map((idea) => {
           const on = picked.includes(idea.title)
           return (
             <li key={idea.title}>
               <button type="button" onClick={() => setPicked((current) => on ? current.filter((title) => title !== idea.title) : [...current, idea.title])} aria-pressed={on}
-                className={cn("flex w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-soft", on && "ring-2 ring-primary")}>
+                className={cn("flex h-full w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-soft", on && "ring-2 ring-primary")}>
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-secondary"><Gift className="h-6 w-6" /></span>
                 <span className="min-w-0 flex-1">
                   <span className="block font-display text-lg font-semibold leading-tight">{idea.title}</span>
@@ -368,9 +400,9 @@ function RewardStep({ rewards, busy, error, run, onRefresh, onNext }: { rewards:
           )
         })}
       </ul>
-      <section className="mt-4 space-y-3 rounded-[22px] bg-card p-4 shadow-soft">
-        <Field label="Or write your own"><input className={inputClass} value={ownTitle} onChange={(event) => setOwnTitle(event.target.value)} placeholder="Choose weekend breakfast" maxLength={80} /></Field>
-        <div className="flex items-center justify-between">
+      <section className="mt-4 space-y-3 rounded-[22px] bg-card p-4 shadow-soft md:flex md:items-end md:gap-6 md:space-y-0">
+        <div className="md:flex-1"><Field label="Or write your own"><input className={inputClass} value={ownTitle} onChange={(event) => setOwnTitle(event.target.value)} placeholder="Choose weekend breakfast" maxLength={80} /></Field></div>
+        <div className="flex items-center justify-between md:gap-4 md:pb-1">
           <span className="text-sm font-bold">Points needed</span>
           <span className="flex items-center gap-2 rounded-full bg-accent/30 p-1">
             <button type="button" onClick={() => setOwnCost((cost) => Math.max(5, cost - 5))} className="grid h-8 w-8 place-items-center rounded-full bg-card" aria-label="Fewer points"><Minus className="h-4 w-4" /></button>
@@ -380,7 +412,7 @@ function RewardStep({ rewards, busy, error, run, onRefresh, onNext }: { rewards:
         </div>
       </section>
       <ErrorNote>{error}</ErrorNote>
-      <Button size="lg" onClick={() => void save()} disabled={busy} className="mt-6 w-full">{busy ? "Saving..." : "Review and finish"}<ArrowRight className="h-5 w-5" /></Button>
+      <Button size="lg" onClick={() => void save()} disabled={busy} className="mt-6 w-full md:ml-auto md:flex md:w-auto md:min-w-64">{busy ? "Saving..." : "Review and finish"}<ArrowRight className="h-5 w-5" /></Button>
     </>
   )
 }
@@ -391,12 +423,12 @@ function ReadyStep({ profile, kids, chores, rewards, busy, onFinish }: { profile
   const names = kids.map(firstName)
   const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "your kids"
   return (
-    <div className="mt-6 text-center">
+    <div className="mt-6 text-center lg:mt-0">
       <span className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-accent/40"><Sparkles className="h-11 w-11 text-accent-foreground" /></span>
       <h1 className="mt-4 font-display text-3xl font-semibold">Your family is ready!</h1>
       <p className="mt-1 text-muted-foreground">Everything is set up for {list} to start.</p>
 
-      <section className="mt-6 space-y-4 rounded-[26px] bg-card p-5 text-left shadow-soft">
+      <section className="mt-6 grid gap-4 rounded-[26px] bg-card p-5 text-left shadow-soft md:grid-cols-2 md:gap-6 md:p-6">
         <SummaryRow icon={<Users className="h-5 w-5" />} title={`${kids.length} ${kids.length === 1 ? "kid" : "kids"}`}>
           <div className="flex flex-wrap gap-2">{kids.map((kid) => <span key={kid.id} className="inline-flex items-center gap-2 rounded-full bg-muted/70 py-1 pl-1 pr-3 text-sm font-bold"><Avatar profile={kid} size={28} />{kid.display_name}<span className="font-normal text-muted-foreground">{isTeenKey(kid.theme_key) ? "Teen" : getKidTheme(kid.theme_key).name}</span></span>)}</div>
         </SummaryRow>
@@ -411,8 +443,11 @@ function ReadyStep({ profile, kids, chores, rewards, busy, onFinish }: { profile
         </SummaryRow>
       </section>
 
-      <Button size="lg" onClick={() => onFinish("kids")} disabled={busy} className="mt-6 w-full"><Smartphone className="h-5 w-5" />Hand the phone to your kids<ArrowRight className="h-5 w-5" /></Button>
-      <Button variant="ghost" onClick={() => onFinish("parent")} disabled={busy} className="mt-2 w-full">Open the parent dashboard instead</Button>
+      <div className="mt-6 md:flex md:flex-row-reverse md:justify-center md:gap-3">
+        <Button size="lg" onClick={() => onFinish("kids")} disabled={busy} className="w-full md:w-auto"><Users className="h-5 w-5" />Switch to kid mode<ArrowRight className="h-5 w-5" /></Button>
+        <Button variant="ghost" size="lg" onClick={() => onFinish("parent")} disabled={busy} className="mt-2 w-full md:mt-0 md:w-auto">Open the parent dashboard instead</Button>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">On a shared tablet or computer, kids pick their profile on the Who's here screen.</p>
     </div>
   )
 }
