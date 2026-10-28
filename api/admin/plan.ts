@@ -1,5 +1,5 @@
-import { getUser, payloadOf, userDb, type ApiRequest, type ApiResponse } from "../_lib/server"
-import { stripe, stripeReady } from "../_lib/stripe"
+import { getUser, payloadOf, userDb, type ApiRequest, type ApiResponse } from "../_lib/server.js"
+import { stripe, stripeReady } from "../_lib/stripe.js"
 
 interface PlanInput {
   id: string

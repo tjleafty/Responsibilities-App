@@ -1,5 +1,5 @@
-import { payloadOf, serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server"
-import { statusFromStripe, stripe, stripeReady, type StripeSubscription } from "../_lib/stripe"
+import { payloadOf, serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server.js"
+import { statusFromStripe, stripe, stripeReady, type StripeSubscription } from "../_lib/stripe.js"
 
 const iso = (seconds?: number | null) => (seconds ? new Date(seconds * 1000).toISOString() : null)
 

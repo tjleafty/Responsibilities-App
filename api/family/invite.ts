@@ -1,4 +1,4 @@
-import { getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server"
+import { getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ success: false, error: "Method not allowed." })

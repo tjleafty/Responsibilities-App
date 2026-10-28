@@ -1,6 +1,6 @@
 // Relative so the server (api/reminders) can use this file too.
-import { frequencyFor } from "./choreSchedule"
-import type { ChoreCompletionRecord, ChoreRecord, ChoreSubtask, GoalFrequency, FamilyProfile, RandomMode } from "./familyTypes"
+import { frequencyFor } from "./choreSchedule.js"
+import type { ChoreCompletionRecord, ChoreRecord, ChoreSubtask, GoalFrequency, FamilyProfile, RandomMode } from "./familyTypes.js"
 
 export function getAssignedProfileIds(chore: ChoreRecord): string[] {
   if (chore.assigned_profile_ids) {
