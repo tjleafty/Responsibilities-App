@@ -1,7 +1,8 @@
 import { useState } from "react"
-import { ArrowRight, Check, ChevronDown, Clock3, Gift, MessageSquareText, Plus, RotateCcw } from "lucide-react"
+import { ArrowRight, BarChart3, Check, Clock3, Gift, MessageSquareText, Plus, RotateCcw, Sun } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, ChoreIconTile, EmptyState, ErrorNote, Ring, SectionTitle, StateChip, TokenPill } from "@/components/kit"
+import { Avatar, Chip, ChoreIconTile, EmptyState, ErrorNote, Ring, Segmented, StateChip, TokenPill } from "@/components/kit"
+import { ParentInsights } from "@/components/parent/ParentInsights"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
 import { familyRows, firstName, isLate, isTodayFor, kidsOf, pointsToday, relativeTime, type TodayRow } from "@/lib/family"
@@ -22,16 +23,15 @@ function whenLabel(row: TodayRow) {
 
 export function ParentToday(props: ParentScreenProps) {
   const { profile, profiles, chores, completions, prizeRequests, rewards, onNavigate, onAddChore } = props
-  const [showDone, setShowDone] = useState(false)
+  const [filter, setFilter] = useState<BoardFilter>("all")
+  const [view, setView] = useState<"today" | "insights">("today")
   const review = useReview(props)
   const rows = familyRows(chores, completions, profiles)
   const kids = kidsOf(profiles)
   const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
   const dailyDone = daily.filter((row) => row.state === "done").length
   const waiting = rows.filter((row) => row.state === "waiting")
-  const toDo = rows.filter((row) => row.state === "todo" || row.state === "in_progress" || row.state === "sent_back")
-    .sort((a, b) => order(a) - order(b))
-  const done = rows.filter((row) => row.state === "done")
+  const board = rows.filter((row) => FILTERS.find((option) => option.value === filter)!.match(row.state)).sort((a, b) => order(a) - order(b))
   const waitingNames = [...new Set(waiting.map((row) => firstName(row.profile)))]
   const prizeAsks = pendingRequests(prizeRequests).filter((row) => profiles.some((kid) => kid.id === row.profile_id))
   const firstAsk = prizeAsks[0]
@@ -46,6 +46,13 @@ export function ParentToday(props: ParentScreenProps) {
         </div>
         <Button onClick={onAddChore} className="hidden lg:inline-flex"><Plus className="h-5 w-5" />Add chore</Button>
       </header>
+
+      <Segmented value={view} onChange={setView} size="lg" className="max-w-md" options={[
+        { value: "today", label: <span className="inline-flex items-center gap-1.5"><Sun className="h-4 w-4" />Today</span> },
+        { value: "insights", label: <span className="inline-flex items-center gap-1.5"><BarChart3 className="h-4 w-4" />Insights</span> },
+      ]} />
+
+      {view === "insights" ? <ParentInsights {...props} /> : <>
 
       {kids.length === 0 ? (
         <EmptyState title="Add your first kid" action={<Button onClick={() => onNavigate("family")}>Go to Family</Button>}>Kids get their own profile, theme and chores.</EmptyState>
@@ -81,77 +88,26 @@ export function ParentToday(props: ParentScreenProps) {
 
       <ErrorNote>{review.error}</ErrorNote>
 
-      <div className="space-y-6 xl:grid xl:grid-cols-3 xl:items-start xl:gap-4 xl:space-y-0">
-      {waiting.length > 0 ? (
+      {rows.length > 0 ? (
         <section className="space-y-3">
-          <SectionTitle count={waiting.length}><span className="h-2.5 w-2.5 rounded-full bg-accent" aria-hidden="true" />Waiting for you</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-            {waiting.map((row) => (
-              <li key={`${row.chore.id}-${row.profile.id}`} className="rounded-[22px] bg-card p-4 shadow-soft">
-                <div className="flex items-start gap-3">
-                  <ChoreIconTile title={row.chore.title} size={48} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-lg font-semibold">{row.chore.title}</p>
-                    <p className="text-sm text-muted-foreground">{row.profile.display_name} · {relativeTime(row.completion?.completed_at)}</p>
-                  </div>
-                  <StateChip state="waiting" label="Ready" />
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <StepsDone row={row} profiles={profiles} />
-                  {chorePoints(row.chore) > 0 ? <TokenPill amount={chorePoints(row.chore)} token={getKidTheme(row.profile.theme_key).token} prefix="+" /> : null}
-                  <span className="flex-1" />
-                  <button type="button" onClick={() => row.completion && review.sendBack(row.completion)} className="grid h-11 w-11 place-items-center rounded-full bg-coral/10 text-coral hover:bg-coral/20" aria-label={`Send back ${row.chore.title}`}><RotateCcw className="h-5 w-5" /></button>
-                  <Button size="sm" disabled={review.busyId === row.completion?.id} onClick={() => row.completion && void review.approve(row.completion)}><Check className="h-4 w-4" />Approve</Button>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-xl font-semibold">Chore board</h2>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+              {FILTERS.map((option) => {
+                const count = rows.filter((row) => option.match(row.state)).length
+                return <Chip key={option.value} active={filter === option.value} onClick={() => setFilter(option.value)}>{option.label} ({count})</Chip>
+              })}
+            </div>
+          </div>
+          {board.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">Nothing here right now.</p> : (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+              {board.map((row) => <ChoreTile key={`${row.chore.id}-${row.profile.id}`} row={row} profiles={profiles} review={review} />)}
+            </ul>
+          )}
         </section>
       ) : null}
 
-      {toDo.length > 0 ? (
-        <section className="space-y-3">
-          <SectionTitle count={toDo.length}><span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" aria-hidden="true" />Still to do</SectionTitle>
-          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-1">
-            {toDo.map((row) => (
-              <li key={`${row.chore.id}-${row.profile.id}`} className={cn("rounded-[22px] bg-card p-4 shadow-soft", row.state === "sent_back" && "border-l-[6px] border-coral")}>
-                <div className="flex items-center gap-3">
-                  <ChoreIconTile title={row.chore.title} size={44} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-display text-lg font-semibold">{row.chore.title}</p>
-                    <p className="text-sm text-muted-foreground">{row.profile.display_name} · {whenLabel(row)}{isLate(row.chore, row.profile.id) ? <span className="font-bold text-coral"> · Late</span> : null}</p>
-                  </div>
-                  <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : undefined} />
-                </div>
-                {row.state === "sent_back" && row.completion?.parent_feedback ? <p className="mt-2 rounded-xl bg-muted px-3 py-2 text-sm">Note: “{row.completion.parent_feedback}”</p> : null}
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {done.length > 0 ? (
-        <section className="rounded-[22px] bg-card shadow-soft">
-          <button type="button" onClick={() => setShowDone((open) => !open)} aria-expanded={showDone} className="flex w-full items-center gap-3 p-4 text-left">
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-success/15 text-success"><Check className="h-5 w-5" strokeWidth={3} /></span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-lg font-semibold">{done.length} {done.length === 1 ? "chore" : "chores"} done</span>
-              <span className="block text-sm text-muted-foreground">{doneSummary(done)}</span>
-            </span>
-            <ChevronDown className={cn("h-5 w-5 transition-transform xl:hidden", showDone && "rotate-180")} />
-          </button>
-          <ul className={cn("space-y-2 px-4 pb-4", !showDone && "hidden xl:block")}>
-            {done.map((row) => (
-              <li key={`${row.chore.id}-${row.profile.id}`} className="flex items-center gap-3 rounded-2xl bg-muted/60 px-3 py-2">
-                <Avatar profile={row.profile} size={32} />
-                <span className="min-w-0 flex-1 truncate font-semibold">{row.chore.title}</span>
-                <span className="text-sm text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-      </div>
+      </>}
 
       <button type="button" onClick={onAddChore} className="fixed bottom-24 right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 lg:hidden" aria-label="Add chore"><Plus className="h-8 w-8" /></button>
       {review.sheet}
@@ -159,19 +115,51 @@ export function ParentToday(props: ParentScreenProps) {
   )
 }
 
+type BoardFilter = "all" | "waiting" | "todo" | "done"
+
+const FILTERS: Array<{ value: BoardFilter; label: string; match: (state: TodayRow["state"]) => boolean }> = [
+  { value: "all", label: "All", match: () => true },
+  { value: "waiting", label: "Needs OK", match: (state) => state === "waiting" },
+  { value: "todo", label: "To do", match: (state) => state === "todo" || state === "in_progress" || state === "sent_back" },
+  { value: "done", label: "Done", match: (state) => state === "done" },
+]
+
+const ORDER: Record<TodayRow["state"], number> = { waiting: 0, sent_back: 1, in_progress: 2, todo: 3, done: 4 }
 function order(row: TodayRow) {
-  return row.state === "sent_back" ? 0 : row.state === "in_progress" ? 1 : 2
+  return ORDER[row.state]
+}
+
+/** One chore for one kid, small enough to fit several in a row. */
+function ChoreTile({ row, profiles, review }: { row: TodayRow; profiles: FamilyProfile[]; review: ReturnType<typeof useReview> }) {
+  const points = chorePoints(row.chore)
+  const late = row.state !== "done" && isLate(row.chore, row.profile.id)
+  return (
+    <li className={cn("flex flex-col gap-2 rounded-[20px] bg-card p-3 shadow-soft", row.state === "done" && "opacity-75", row.state === "sent_back" && "ring-2 ring-coral/60", row.state === "waiting" && "ring-2 ring-accent")}>
+      <div className="flex items-start justify-between gap-2">
+        <ChoreIconTile title={row.chore.title} size={40} className="rounded-xl" />
+        <Avatar profile={row.profile} size={28} />
+      </div>
+      <p className="line-clamp-2 min-h-[2.5rem] font-display font-semibold leading-tight">{row.chore.title}</p>
+      <p className="truncate text-xs font-bold text-muted-foreground">{firstName(row.profile)} · {whenLabel(row)}{late ? <span className="text-coral"> · Late</span> : null}</p>
+      <div className="mt-auto flex flex-wrap items-center gap-1.5">
+        <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : row.state === "waiting" ? "Ready" : undefined} />
+        {row.state === "waiting" ? <StepsDone row={row} profiles={profiles} /> : null}
+        {points > 0 && row.state !== "done" ? <TokenPill amount={points} token={getKidTheme(row.profile.theme_key).token} prefix="+" className="px-2 py-0.5 text-xs" /> : null}
+      </div>
+      {row.state === "done" ? <p className="text-xs text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</p> : null}
+      {row.state === "waiting" ? (
+        <div className="flex gap-2">
+          <button type="button" onClick={() => row.completion && review.sendBack(row.completion)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-coral/10 text-coral hover:bg-coral/20" aria-label={`Send back ${row.chore.title}`}><RotateCcw className="h-4 w-4" /></button>
+          <Button size="sm" disabled={review.busyId === row.completion?.id} onClick={() => row.completion && void review.approve(row.completion)} className="flex-1"><Check className="h-4 w-4" />OK</Button>
+        </div>
+      ) : null}
+    </li>
+  )
 }
 
 function listNames(names: string[]) {
   if (names.length <= 1) return names[0] ?? ""
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
-}
-
-function doneSummary(rows: TodayRow[]) {
-  const counts = new Map<string, number>()
-  rows.forEach((row) => counts.set(firstName(row.profile), (counts.get(firstName(row.profile)) ?? 0) + 1))
-  return [...counts].map(([name, count]) => `${name} (${count})`).join(", ")
 }
 
 function StepsDone({ row, profiles }: { row: TodayRow; profiles: FamilyProfile[] }) {

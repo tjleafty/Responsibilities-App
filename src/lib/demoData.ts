@@ -33,7 +33,7 @@ export function demoTables(): Record<string, Row[]> {
   const chore = (id: string, title: string, kids: string[], extra: Row = {}): Row => ({
     id, title, frequency: "daily", target_profile_id: kids[0], assigned_profile_ids: JSON.stringify(kids), subtasks: "[]",
     reward: "", reward_points: 5, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false,
-    assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true, created_at: ago(5000), ...extra,
+    assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true, created_at: ago(60 * 24 * 60), ...extra,
   })
   const chores: Row[] = [
     chore("bed", "Make your bed", ["mia", "leo", "ava"], { subtasks: steps("Pillows off", "Pull the sheet up", "Smooth the blanket", "Pillows and stuffy back"), requires_verification: true }),
@@ -62,14 +62,36 @@ export function demoTables(): Record<string, Row[]> {
     done("c8", "violin", "ava", 60, 10, { status: "in_progress", review_status: "unreviewed", completed_at: null, verified_at: null, completed_task_ids: JSON.stringify(["s1"]) }),
     done("c9", "trash", "ava", 90, 10, { period_key: week, status: "pending_verification", review_status: "unreviewed", verified_at: null }),
   ]
-  // A few past days so streaks, totals and history have something to show.
-  for (let day = 1; day <= 6; day += 1) {
-    for (const kid of ["mia", "leo", "ava"]) {
-      if (kid === "leo" && day === 3) continue
-      const when = daysAgo(day).toISOString()
-      completions.push({ id: `h-${kid}-${day}`, chore_id: "teeth", profile_id: kid, period_key: getPeriodKey("daily", daysAgo(day)), completed_task_ids: "[]", status: "approved", review_status: "approved", completed_at: when, verified_at: when, reward_points_snapshot: day % 2 ? 5 : 3, parent_feedback: "" })
-    }
+  // A month of history so streaks, totals and insights have something to show.
+  // Each kid has a steady "how likely" per chore, so some chores clearly work better than others.
+  const likely: Record<string, number> = { teeth: 0.95, bed: 0.8, violin: 0.75, fish: 0.9, table: 0.6, toys: 0.45, dishes: 0.55, trash: 0.85, laundry: 0.5 }
+  const keen: Record<string, number> = { mia: 1, ava: 1.05, leo: 0.8 }
+  const roll = (seed: string) => {
+    let hash = 2166136261
+    for (const char of seed) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+    hash = Math.imul(hash ^ (hash >>> 15), 2246822507)
+    return ((hash ^ (hash >>> 13)) >>> 0) / 4294967296
   }
+  const history = (choreId: string, kid: string, date: Date, frequency: "daily" | "weekly", points: number) => {
+    const key = getPeriodKey(frequency, date)
+    // Kids get better over the month: older days are a little less likely.
+    const odds = (likely[choreId] ?? 0.7) * (keen[kid] ?? 1) * (1 - Math.min(30, Math.round((Date.now() - date.getTime()) / 86400000)) / 150)
+    if (roll(`${choreId}${kid}${key}`) > odds) return
+    const when = date.toISOString()
+    completions.push({ id: `h-${choreId}-${kid}-${key}`, chore_id: choreId, profile_id: kid, period_key: key, completed_task_ids: "[]", status: "approved", review_status: "approved", completed_at: when, verified_at: when, reward_points_snapshot: points, parent_feedback: "" })
+  }
+  for (let day = 1; day <= 34; day += 1) {
+    chores.filter((row) => row.is_active && row.frequency === "daily" && row.id !== "dishes").forEach((row) => {
+      JSON.parse(String(row.assigned_profile_ids)).forEach((kid: string) => history(String(row.id), kid, daysAgo(day), "daily", Number(row.reward_points)))
+    })
+    history("dishes", day % 2 ? "leo" : "ava", daysAgo(day), "daily", 10)
+    if (day % 7 === 3) ["trash:ava", "laundry:ava", "laundry:leo"].forEach((pair) => { const [id, kid] = pair.split(":"); history(id, kid, daysAgo(day), "weekly", id === "trash" ? 10 : 15) })
+  }
+  // Prizes the kids already cashed in.
+  ;[["ava", "r3", 6, 30], ["leo", "r3", 12, 30], ["mia", "r1", 9, 50], ["ava", "r2", 20, 75], ["mia", "r3", 3, 30]].forEach(([kid, reward, day, cost]) => {
+    const when = daysAgo(Number(day)).toISOString()
+    completions.push({ id: `p-${kid}-${day}`, chore_id: `prize:${reward}`, profile_id: kid, period_key: getPeriodKey("daily", daysAgo(Number(day))), completed_task_ids: "[]", status: "approved", review_status: "approved", completed_at: when, verified_at: when, reward_points_snapshot: cost, parent_feedback: "" })
+  })
   completions.push({ id: "h-sent", chore_id: "bed", profile_id: "leo", period_key: getPeriodKey("daily", daysAgo(2)), status: "rejected", review_status: "rejected", rejection_reason: "Not fully completed", completed_at: daysAgo(2, 8).toISOString(), verified_at: daysAgo(2, 9).toISOString(), reward_points_snapshot: 5, parent_feedback: "" })
   const family_rewards: Row[] = [
     { id: "r1", title: "Pick the family movie", description: "Choose Friday's movie and the popcorn.", reward_type: "chore", target_profile_id: "", points_required: 50, is_active: true, created_at: ago(4000) },
