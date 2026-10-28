@@ -45,3 +45,24 @@ export function payloadOf(req: ApiRequest): Record<string, unknown> {
   }
   return (req.body as Record<string, unknown>) ?? {}
 }
+
+/** A database client that acts as the signed-in login, so row-level security applies. */
+export function userDb(req: ApiRequest) {
+  const header = req.headers.authorization
+  return createClient(process.env.VITE_SUPABASE_URL!, process.env.VITE_SUPABASE_PUBLISHABLE_KEY!, {
+    global: { headers: { Authorization: typeof header === "string" ? header : "" } },
+  })
+}
+
+/** A database client with the service key, for writes no login may make (billing). Null until the key is set. */
+export function serviceDb() {
+  const url = process.env.VITE_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null
+}
+
+export function appUrl(req: ApiRequest) {
+  if (process.env.APP_URL) return process.env.APP_URL.replace(/\/$/, "")
+  const host = req.headers["x-forwarded-host"] ?? req.headers.host
+  return host ? `https://${host}` : "https://responsibilities-app.vercel.app"
+}

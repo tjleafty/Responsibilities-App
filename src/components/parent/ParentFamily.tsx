@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { Check, ChevronRight, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
+import { Check, ChevronRight, CreditCard, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
@@ -8,6 +8,8 @@ import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { FamilyLogins } from "@/components/parent/FamilyLogins"
 import { ThemePicker } from "@/components/ThemePicker"
 import { FamilySettingsSheet } from "@/components/parent/FamilySettingsSheet"
+import { BillingSheet } from "@/components/parent/Billing"
+import { useBilling } from "@/lib/billing"
 import { isAppAdmin } from "@/lib/catalog"
 import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
 import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
@@ -23,6 +25,8 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
   const [share, setShare] = useState(false)
   const [rules, setRules] = useState(false)
   const [admin, setAdmin] = useState(false)
+  const [billing, setBilling] = useState(false)
+  const { billingOn, subscription } = useBilling()
   useEffect(() => { void isAppAdmin().then(setAdmin) }, [])
   const [busy, setBusy] = useState<string | null>(null)
   const kids = kidsOf(profiles)
@@ -120,7 +124,8 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
           <h2 className="pt-2 font-display text-xl font-semibold">More</h2>
           <ul className="overflow-hidden rounded-[22px] bg-card shadow-soft">
             <MenuRow icon={<SlidersHorizontal className="h-5 w-5" />} label="Family settings" onClick={() => setRules(true)} />
-            {admin ? <li><Link to="/admin" className="flex min-h-14 items-center gap-3 border-t border-border px-4 font-semibold hover:bg-muted/60"><span className="text-primary"><ShieldCheck className="h-5 w-5" /></span><span className="flex-1">Admin: chore suggestions</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link></li> : null}
+            {billingOn || subscription ? <MenuRow icon={<CreditCard className="h-5 w-5" />} label="Plan and billing" onClick={() => setBilling(true)} /> : null}
+            {admin ? <li><Link to="/admin" className="flex min-h-14 items-center gap-3 border-t border-border px-4 font-semibold hover:bg-muted/60"><span className="text-primary"><ShieldCheck className="h-5 w-5" /></span><span className="flex-1">Company admin</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link></li> : null}
             <MenuRow icon={<LifeBuoy className="h-5 w-5" />} label="Help and ideas" onClick={() => setSupport(true)} />
             <MenuRow icon={<Share2 className="h-5 w-5" />} label="Share with a friend" onClick={() => setShare(true)} />
             <li><Link to="/settings" className="flex min-h-14 items-center gap-3 border-t border-border px-4 font-semibold hover:bg-muted/60"><span className="text-primary"><Settings className="h-5 w-5" /></span><span className="flex-1">Account settings</span><ChevronRight className="h-5 w-5 text-muted-foreground" /></Link></li>
@@ -132,6 +137,7 @@ export function ParentFamily({ profiles, inactiveProfiles, chores, completions, 
 
       <ProfileSheet state={editing} onClose={() => setEditing(null)} profiles={profiles} onRefresh={onRefresh} />
       <SupportSheet open={support} onOpenChange={setSupport} />
+      <BillingSheet open={billing} onOpenChange={setBilling} />
       <FamilySettingsSheet open={rules} onOpenChange={setRules} profiles={profiles} chores={chores} onRefresh={onRefresh} />
       <ShareSheet open={share} onOpenChange={setShare} />
     </div>

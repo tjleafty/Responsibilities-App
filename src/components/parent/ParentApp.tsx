@@ -11,6 +11,7 @@ import { ParentApprove } from "@/components/parent/ParentApprove"
 import { ParentChores } from "@/components/parent/ParentChores"
 import { ParentRewards } from "@/components/parent/ParentRewards"
 import { ParentFamily } from "@/components/parent/ParentFamily"
+import { BillingBanner, BillingSheet } from "@/components/parent/Billing"
 
 export interface ParentAppProps {
   profile: FamilyProfile
@@ -41,6 +42,7 @@ const TABS: Array<{ id: ParentTab; label: string; icon: typeof Sun }> = [
 export function ParentApp(props: ParentAppProps) {
   const [tab, setTab] = useState<ParentTab>("today")
   const [newChore, setNewChore] = useState(0)
+  const [billing, setBilling] = useState(false)
   const choreIds = new Set(props.chores.map((chore) => chore.id))
   const waiting = awaitingReview(props.completions).filter((row) => choreIds.has(row.chore_id)).length + pendingRequests(props.prizeRequests).length
 
@@ -71,6 +73,8 @@ export function ParentApp(props: ParentAppProps) {
         </nav>
 
         <main className="min-w-0 flex-1 px-4 pb-32 pt-5 sm:px-6 lg:px-10 lg:pb-12 lg:pt-8">
+          <BillingBanner onOpen={() => setBilling(true)} />
+          <BillingSheet open={billing} onOpenChange={setBilling} />
           {tab === "today" ? <ParentToday {...shared} />
             : tab === "approve" ? <ParentApprove {...shared} />
               : tab === "chores" ? <ParentChores {...shared} openNew={newChore} />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Check, Eye, EyeOff, Inbox, ListChecks, Plus, X } from "lucide-react"
+import { ArrowLeft, Check, CreditCard, Eye, EyeOff, Inbox, LayoutDashboard, ListChecks, Plus, Users, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Chip, ChoreIconTile, EmptyState, ErrorNote, Field, inputClass, MASCOT, Segmented, Stepper } from "@/components/kit"
 import {
@@ -11,6 +11,11 @@ import { makeTaskId } from "@/lib/choreUtils"
 import type { ChoreSubtask, GoalFrequency } from "@/lib/familyTypes"
 import { relativeTime } from "@/lib/family"
 import { cn } from "@/lib/utils"
+import { listFamilies, listPlans, type FamilyAccount } from "@/lib/companyAdmin"
+import type { Plan } from "@/lib/billing"
+import { AdminOverview } from "@/components/admin/AdminOverview"
+import { AdminFamilies } from "@/components/admin/AdminFamilies"
+import { AdminPlans } from "@/components/admin/AdminPlans"
 
 const FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = [
   { value: "daily", label: "Daily" },
@@ -38,9 +43,77 @@ function groupSuggestions(rows: ChoreSuggestion[]): Group[] {
   return [...groups.values()].sort((a, b) => b.rows.length - a.rows.length)
 }
 
+type AdminTab = "overview" | "families" | "plans" | "chores"
+
 export default function AdminPage() {
   const navigate = useNavigate()
   const [allowed, setAllowed] = useState<boolean | null>(null)
+  const [tab, setTab] = useState<AdminTab>("overview")
+  const [focusId, setFocusId] = useState<string | null>(null)
+  const [families, setFamilies] = useState<FamilyAccount[]>([])
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [error, setError] = useState<string | null>(null)
+
+  const loadAccounts = useCallback(async () => {
+    try {
+      const [rows, items] = await Promise.all([listFamilies(), listPlans()])
+      setFamilies(rows)
+      setPlans(items)
+      setError(null)
+    } catch (caught) {
+      console.error("Loading families failed:", caught)
+      setError("We couldn't load families and plans. Has the latest database update been run?")
+    }
+  }, [])
+
+  useEffect(() => {
+    void isAppAdmin().then((ok) => {
+      setAllowed(ok)
+      if (ok) void loadAccounts()
+    })
+  }, [loadAccounts])
+
+  if (allowed === null) return <main className="grid min-h-dvh place-items-center bg-background"><span className="float-soft text-6xl" aria-hidden="true">{MASCOT}</span></main>
+  if (!allowed) {
+    return (
+      <main className="grid min-h-dvh place-items-center bg-background px-4">
+        <EmptyState title="This page is for the app's team" action={<Button onClick={() => navigate("/dashboard")}>Back to the app</Button>}>Your login isn't on the company team.</EmptyState>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-dvh bg-background px-4 py-6 text-foreground">
+      <div className="mx-auto max-w-4xl space-y-5">
+        <header className="flex items-center gap-3">
+          <button type="button" onClick={() => navigate("/dashboard")} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card shadow-soft" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
+          <div>
+            <h1 className="font-display text-3xl font-semibold">Company admin</h1>
+            <p className="text-muted-foreground">Every family, their subscriptions, pricing, and the starter chore list.</p>
+          </div>
+        </header>
+
+        <div className="-mx-4 overflow-x-auto px-4">
+          <Segmented value={tab} onChange={(next) => { setFocusId(null); setTab(next) }} options={[
+            { value: "overview", label: <span className="inline-flex items-center gap-1.5"><LayoutDashboard className="hidden h-4 w-4 sm:block" />Overview</span> },
+            { value: "families", label: <span className="inline-flex items-center gap-1.5"><Users className="hidden h-4 w-4 sm:block" />Families</span> },
+            { value: "plans", label: <span className="inline-flex items-center gap-1.5"><CreditCard className="hidden h-4 w-4 sm:block" />Plans</span> },
+            { value: "chores", label: <span className="inline-flex items-center gap-1.5"><ListChecks className="hidden h-4 w-4 sm:block" />Chore list</span> },
+          ]} size="lg" />
+        </div>
+
+        <ErrorNote>{tab === "chores" ? null : error}</ErrorNote>
+
+        {tab === "overview" ? <AdminOverview families={families} plans={plans} onOpenFamilies={(id) => { setFocusId(id); setTab("families") }} /> : null}
+        {tab === "families" ? <AdminFamilies families={families} plans={plans} focusId={focusId} onChanged={loadAccounts} /> : null}
+        {tab === "plans" ? <AdminPlans plans={plans} onChanged={loadAccounts} /> : null}
+        {tab === "chores" ? <ChoreSuggestions /> : null}
+      </div>
+    </main>
+  )
+}
+
+function ChoreSuggestions() {
   const [tab, setTab] = useState<"waiting" | "list">("waiting")
   const [pending, setPending] = useState<ChoreSuggestion[]>([])
   const [catalog, setCatalog] = useState<CatalogChore[]>([])
@@ -58,68 +131,45 @@ export default function AdminPage() {
     }
   }, [])
 
-  useEffect(() => {
-    void isAppAdmin().then((ok) => {
-      setAllowed(ok)
-      if (ok) void load()
-    })
-  }, [load])
+  useEffect(() => { void load() }, [load])
 
   const groups = useMemo(() => groupSuggestions(pending), [pending])
 
-  if (allowed === null) return <main className="grid min-h-dvh place-items-center bg-background"><span className="float-soft text-6xl" aria-hidden="true">{MASCOT}</span></main>
-  if (!allowed) {
-    return (
-      <main className="grid min-h-dvh place-items-center bg-background px-4">
-        <EmptyState title="This page is for the app's team" action={<Button onClick={() => navigate("/dashboard")}>Back to the app</Button>}>Your login can't review chore suggestions.</EmptyState>
-      </main>
-    )
-  }
-
   return (
-    <main className="min-h-dvh bg-background px-4 py-6 text-foreground">
-      <div className="mx-auto max-w-3xl space-y-5">
-        <header className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate("/dashboard")} className="grid h-12 w-12 place-items-center rounded-full bg-card shadow-soft" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
-          <div>
-            <h1 className="font-display text-3xl font-semibold">Chore suggestions</h1>
-            <p className="text-muted-foreground">New chores and steps parents made. Approved ones join the starter list for every family.</p>
-          </div>
-        </header>
+    <div className="space-y-5">
+      <p className="text-muted-foreground">New chores and steps parents made. Approved ones join the starter list for every family.</p>
+      <Segmented value={tab} onChange={setTab} options={[
+        { value: "waiting", label: <span className="inline-flex items-center gap-1.5"><Inbox className="h-4 w-4" />Waiting ({groups.length})</span> },
+        { value: "list", label: <span className="inline-flex items-center gap-1.5"><ListChecks className="h-4 w-4" />Starter list ({catalog.filter((item) => item.is_active).length})</span> },
+      ]} />
 
-        <Segmented value={tab} onChange={setTab} options={[
-          { value: "waiting", label: <span className="inline-flex items-center gap-1.5"><Inbox className="h-4 w-4" />Waiting ({groups.length})</span> },
-          { value: "list", label: <span className="inline-flex items-center gap-1.5"><ListChecks className="h-4 w-4" />Starter list ({catalog.filter((item) => item.is_active).length})</span> },
-        ]} size="lg" />
+      <ErrorNote>{error}</ErrorNote>
 
-        <ErrorNote>{error}</ErrorNote>
-
-        {tab === "waiting" ? (
-          groups.length === 0
-            ? <EmptyState emoji="🎉" title="Nothing waiting">New chores parents create will show up here.</EmptyState>
-            : <ul className="space-y-4">{groups.map((group) => <li key={group.key}><SuggestionCard group={group} catalog={catalog} onDone={load} /></li>)}</ul>
-        ) : (
-          <ul className="space-y-2">
-            {catalog.map((item) => (
-              <li key={item.id} className={cn("flex items-center gap-3 rounded-[20px] bg-card p-3 shadow-soft", !item.is_active && "opacity-60")}>
-                <ChoreIconTile title={item.title} size={40} className="rounded-xl" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-semibold">{item.title}</span>
-                  <span className="block text-xs font-bold text-muted-foreground">
-                    {FREQUENCIES.find((option) => option.value === item.frequency)?.label}
-                    {item.subtasks.length ? ` · ${item.subtasks.length} steps` : ""}
-                    {item.min_age !== null || item.max_age !== null ? ` · Ages ${item.min_age ?? "any"}-${item.max_age ?? "any"}` : ""}
-                  </span>
+      {tab === "waiting" ? (
+        groups.length === 0
+          ? <EmptyState emoji="🎉" title="Nothing waiting">New chores parents create will show up here.</EmptyState>
+          : <ul className="space-y-4">{groups.map((group) => <li key={group.key}><SuggestionCard group={group} catalog={catalog} onDone={load} /></li>)}</ul>
+      ) : (
+        <ul className="space-y-2">
+          {catalog.map((item) => (
+            <li key={item.id} className={cn("flex items-center gap-3 rounded-[20px] bg-card p-3 shadow-soft", !item.is_active && "opacity-60")}>
+              <ChoreIconTile title={item.title} size={40} className="rounded-xl" />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{item.title}</span>
+                <span className="block text-xs font-bold text-muted-foreground">
+                  {FREQUENCIES.find((option) => option.value === item.frequency)?.label}
+                  {item.subtasks.length ? ` · ${item.subtasks.length} steps` : ""}
+                  {item.min_age !== null || item.max_age !== null ? ` · Ages ${item.min_age ?? "any"}-${item.max_age ?? "any"}` : ""}
                 </span>
-                <Button size="sm" variant="outline" onClick={() => void setCatalogActive(item.id, !item.is_active).then(load)}>
-                  {item.is_active ? <><EyeOff className="h-4 w-4" />Hide</> : <><Eye className="h-4 w-4" />Show</>}
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </main>
+              </span>
+              <Button size="sm" variant="outline" onClick={() => void setCatalogActive(item.id, !item.is_active).then(load)}>
+                {item.is_active ? <><EyeOff className="h-4 w-4" />Hide</> : <><Eye className="h-4 w-4" />Show</>}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   )
 }
 
