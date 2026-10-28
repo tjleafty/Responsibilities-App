@@ -1,9 +1,8 @@
 import { db } from "@/lib/db"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
-import { areDailyChoresApproved, getPeriodKey, subtasksFor } from "@/lib/choreUtils"
+import { areDailyChoresApproved, chorePeriodKey, subtasksFor } from "@/lib/choreUtils"
 import { prepareCelebration } from "@/lib/celebration"
 import { firstName, requiresApproval } from "@/lib/family"
-import { frequencyFor } from "@/lib/choreSchedule"
 import { familySettings } from "@/lib/familySettings"
 import { chorePoints } from "@/lib/difficulty"
 import { notifyGrownUps } from "@/lib/notify"
@@ -19,7 +18,7 @@ export const SEND_BACK_REASONS = [
 async function startChore(chore: ChoreRecord, profile: FamilyProfile, existing: ChoreCompletionRecord | null): Promise<ChoreCompletionRecord> {
   if (existing) return existing
   const now = new Date()
-  const periodKey = getPeriodKey(frequencyFor(chore, profile.id))
+  const periodKey = chorePeriodKey(chore, profile.id)
   const deadline = chore.time_limit_minutes ? new Date(now.getTime() + Number(chore.time_limit_minutes) * 60_000) : null
   const created = await db.chore_completion.create({
     chore_id: chore.id,

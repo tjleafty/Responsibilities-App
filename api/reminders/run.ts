@@ -2,7 +2,7 @@ import webpush from "web-push"
 import { serviceDb, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 // Shared with the app (relative imports, no "@/" alias, so the server bundle can use them).
 import { dueStatus, isTodayChore, scheduleFor } from "../../src/lib/choreSchedule.js"
-import { getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "../../src/lib/choreUtils.js"
+import { chorePeriodKey, getAssignedProfileIds, getRandomGroup, isRandomAssignmentEnabled, schedulePeriodKey } from "../../src/lib/choreUtils.js"
 import { kidNudge, parentSummary } from "../../src/lib/nudges.js"
 import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "../../src/lib/familyTypes.js"
 
@@ -42,7 +42,7 @@ const inWindow = (time: string, clock: Date) => {
 
 function assignees(chore: ChoreRecord, profiles: FamilyProfile[], swaps: Swap[], date: Date) {
   let kids = isRandomAssignmentEnabled(chore) ? getRandomGroup(chore, profiles, date) : getAssignedProfileIds(chore)
-  const key = (kid: string) => getPeriodKey(scheduleFor(chore, kid).frequency, date)
+  const key = (kid: string) => chorePeriodKey(chore, kid, date)
   swaps.forEach((swap) => {
     if (swap.give_chore_id === chore.id && kids.includes(swap.from_profile_id) && swap.give_period_key === key(swap.from_profile_id)) kids = kids.map((id) => (id === swap.from_profile_id ? swap.to_profile_id : id))
     if (swap.take_chore_id === chore.id && kids.includes(swap.to_profile_id) && swap.take_period_key === key(swap.to_profile_id)) kids = kids.map((id) => (id === swap.to_profile_id ? swap.from_profile_id : id))
@@ -56,8 +56,8 @@ function choresLeft(kid: FamilyProfile, chores: ChoreRecord[], completions: Chor
     if (chore.is_active === false || !assignees(chore, profiles, swaps, clock).includes(kid.id)) return false
     const schedule = scheduleFor(chore, kid.id)
     const status = dueStatus(schedule, clock)
-    if (dueTodayOnly ? !(schedule.frequency === "weekly" && schedule.weekday === clock.getDay()) : !(status === "late" || (status === "due" && isTodayChore(schedule)))) return false
-    const key = getPeriodKey(schedule.frequency, clock)
+    if (dueTodayOnly ? !(schedule.frequency === "weekly" && schedule.days.includes(clock.getDay())) : !(status === "late" || (status === "due" && isTodayChore(schedule)))) return false
+    const key = schedulePeriodKey(schedule, clock)
     const row = completions.find((item) => item.chore_id === chore.id && item.profile_id === kid.id && item.period_key === key)
     return !row || row.status === "in_progress" || row.status === "rejected"
   }).map((chore) => ({ chore, late: dueStatus(scheduleFor(chore, kid.id), clock) === "late" }))

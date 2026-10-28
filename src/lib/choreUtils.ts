@@ -1,5 +1,5 @@
 // Relative so the server (api/reminders) can use this file too.
-import { frequencyFor } from "./choreSchedule.js"
+import { frequencyFor, periodSuffix, scheduleFor, type ChoreSchedule } from "./choreSchedule.js"
 import type { ChoreCompletionRecord, ChoreRecord, ChoreSubtask, GoalFrequency, FamilyProfile, RandomMode } from "./familyTypes.js"
 
 export function getAssignedProfileIds(chore: ChoreRecord): string[] {
@@ -178,6 +178,16 @@ export function getPeriodKey(frequency: GoalFrequency, date = new Date()): strin
   const firstThursday = new Date(weekYear, 0, 4)
   const weekNumber = 1 + Math.round(((thursday.getTime() - firstThursday.getTime()) / 86400000 - 3 + ((firstThursday.getDay() + 6) % 7)) / 7)
   return `${weekYear}-W${String(weekNumber).padStart(2, "0")}`
+}
+
+/** The period a schedule's current turn belongs to; a weekly chore due on several days gets one per day. */
+export function schedulePeriodKey(schedule: ChoreSchedule, date = new Date()): string {
+  return getPeriodKey(schedule.frequency, date) + periodSuffix(schedule, date)
+}
+
+/** The completion period for a kid's turn at a chore on `date`. */
+export function chorePeriodKey(chore: ChoreRecord, profileId: string | null | undefined, date = new Date()): string {
+  return schedulePeriodKey(scheduleFor(chore, profileId), date)
 }
 
 export function makeTaskId(): string {

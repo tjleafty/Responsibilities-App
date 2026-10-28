@@ -9,7 +9,7 @@ import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMod
 import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
 import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
 import { choreVideo } from "@/lib/choreIcons"
-import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
+import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, sortDays, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
 import { db } from "@/lib/db"
 import { suggestFromChore } from "@/lib/catalog"
 import { familySettings } from "@/lib/familySettings"
@@ -342,7 +342,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   )
 }
 
-const DEFAULT_SCHEDULE: ChoreSchedule = { frequency: "daily", weekday: null, every: 1, anchor: null }
+const DEFAULT_SCHEDULE: ChoreSchedule = { frequency: "daily", days: [], every: 1, anchor: null }
 
 /** How often a chore repeats; weekly chores can have a due day and repeat every week or every other week. */
 function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (next: ChoreSchedule) => void }) {
@@ -359,12 +359,19 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
       {value.frequency === "weekly" ? (
         <>
           <div className="space-y-1.5">
-            <span className="block text-sm font-bold">Due day</span>
+            <span className="block text-sm font-bold">Due days</span>
             <div className="flex flex-wrap gap-2">
-              <Chip active={value.weekday === null} onClick={() => onChange({ ...value, weekday: null })}>Any day</Chip>
-              {WEEKDAYS.map((day) => <Chip key={day.value} active={value.weekday === day.value} onClick={() => onChange({ ...value, weekday: day.value })}>{day.short}</Chip>)}
+              <Chip active={value.days.length === 0} onClick={() => onChange({ ...value, days: [] })}>Any day</Chip>
+              {WEEKDAYS.map((day) => {
+                const picked = value.days.includes(day.value)
+                return <Chip key={day.value} active={picked} onClick={() => onChange({ ...value, days: sortDays(picked ? value.days.filter((item) => item !== day.value) : [...value.days, day.value]) })}>{day.short}</Chip>
+              })}
             </div>
-            <p className="text-xs text-muted-foreground">{value.weekday === null ? "Kids can do it any day that week." : "Shows up on that day. If it's not done, it stays on the list as late until the week ends."}</p>
+            <p className="text-xs text-muted-foreground">{value.days.length === 0
+              ? "Kids can do it any day that week. Pick one or more days to set when it's due."
+              : value.days.length === 1
+                ? "Shows up on that day. If it's not done, it stays on the list as late until the week ends."
+                : `Done ${value.days.length} times a week, once on each day. If one isn't done, it stays on the list as late until the next one.`}</p>
           </div>
           <div className="space-y-1.5">
             <span className="block text-sm font-bold">Repeats</span>
