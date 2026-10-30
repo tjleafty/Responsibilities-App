@@ -16,6 +16,7 @@ import { loadFamilySettings } from "@/lib/familySettings"
 import { loadBilling, useBilling } from "@/lib/billing"
 import { loadSwaps } from "@/lib/swaps"
 import { BillingWall } from "@/components/parent/Billing"
+import { SetupWizard, needsSetupWizard } from "@/components/parent/SetupWizard"
 
 // The open profile survives a page refresh in this tab, so a kid isn't sent back to the picker mid-chore.
 const ACTIVE_KEY = "responsibilities.activeProfile"
@@ -51,6 +52,8 @@ export function FamilyWorkspace() {
   const [activeId, setActiveId] = useState<string | null>(readActiveId)
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading")
   const [sharingAvailable, setSharingAvailable] = useState(false)
+  // The setup wizard stays open once it starts, even after its first step adds kids.
+  const [wizard, setWizard] = useState<"unknown" | "open" | "closed">("unknown")
 
   const loadData = useCallback(async () => {
     if (!userId) return
@@ -116,6 +119,9 @@ export function FamilyWorkspace() {
     if (profile) setAllProfiles((current) => current.map((item) => item.id === profile.id ? { ...item, ...profile } : item))
   }
 
+  const showWizard = active?.profile_type === "parent" && (wizard === "open" || (wizard === "unknown" && needsSetupWizard(profiles)))
+  useEffect(() => { if (showWizard && wizard === "unknown") setWizard("open") }, [showWizard, wizard])
+
   // Every login gets its own parent profile with a PIN; until then it goes through setup.
   const needsSetup = !profiles.some((profile) => profile.profile_type === "parent" && profile.owner_id === userId)
 
@@ -179,6 +185,13 @@ export function FamilyWorkspace() {
 
   if (!active) {
     return <WhoIsHere profiles={profiles} completions={completions} prizeRequests={prizeRequests} onUnlocked={open} onSetPin={setPin} onSignOut={() => void leave()} />
+  }
+
+  if (showWizard) {
+    return (
+      <SetupWizard profile={active} profiles={profiles} chores={chores} rewards={rewards} onRefresh={loadData}
+        onFinish={(next) => { setWizard("closed"); if (next === "kids") open(null) }} />
+    )
   }
 
   if (active.profile_type === "parent") {
