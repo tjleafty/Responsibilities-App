@@ -1,3 +1,4 @@
+import { byTitle } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { DEMO_MODE } from "@/lib/db"
 import { CHORE_PRESETS } from "@/lib/chorePresets"
@@ -64,13 +65,13 @@ let cached: Promise<CatalogChore[]> | null = null
 export function loadCatalog(force = false): Promise<CatalogChore[]> {
   if (force || !cached) {
     cached = (async () => {
-      if (DEMO_MODE) return demo.catalog.filter((item) => item.is_active)
+      if (DEMO_MODE) return byTitle(demo.catalog.filter((item) => item.is_active))
       const { data, error } = await supabase.from("chore_catalog").select("*").eq("is_active", true).order("title")
       if (error) {
         if (!missing(error)) console.error("Loading the chore list failed:", error)
-        return builtIn()
+        return byTitle(builtIn())
       }
-      return data.length > 0 ? (data as CatalogRow[]).map(fromCatalogRow) : builtIn()
+      return byTitle(data.length > 0 ? (data as CatalogRow[]).map(fromCatalogRow) : builtIn())
     })()
   }
   return cached

@@ -10,10 +10,12 @@ import { DEMO_MODE } from "@/lib/db"
 
 export interface FamilySettings {
   points: {
-    /** Points a new chore starts with. */
+    /** Points a new chore with custom points starts with. */
     defaultPoints: number
-    /** Points are multiplied by these for chores marked easy, medium or hard. */
-    multipliers: { easy: number; medium: number; hard: number }
+    /** Points earned by chores marked easy, medium or hard. */
+    difficultyPoints: { easy: number; medium: number; hard: number }
+    /** Old multiplier setting (before difficulty points); kept only so saved settings still load. */
+    multipliers?: { easy: number; medium: number; hard: number }
   }
   prizes: {
     kidsCanAsk: boolean
@@ -29,7 +31,7 @@ export interface FamilySettings {
     mutedUserIds: string[]
   }
   suggestions: {
-    /** Sort and badge chore ideas by each kid's age. */
+    /** Badge chore ideas with the kids whose age they fit. */
     ageBased: boolean
   }
   reminders: {
@@ -56,7 +58,7 @@ export interface FamilySettings {
 }
 
 export const DEFAULT_SETTINGS: FamilySettings = {
-  points: { defaultPoints: 5, multipliers: { easy: 1, medium: 1.5, hard: 2 } },
+  points: { defaultPoints: 1, difficultyPoints: { easy: 1, medium: 2, hard: 3 } },
   prizes: { kidsCanAsk: true, maxAsksPerWeek: null, autoGrantUpTo: null },
   notifications: { approvalNeeded: false, prizeRequest: false, mutedUserIds: [] },
   suggestions: { ageBased: true },
@@ -78,7 +80,7 @@ type Stored = { [K in keyof FamilySettings]?: Partial<FamilySettings[K]> }
 function withDefaults(stored: Stored | null | undefined): FamilySettings {
   const value = stored ?? {}
   return {
-    points: { ...DEFAULT_SETTINGS.points, ...value.points, multipliers: { ...DEFAULT_SETTINGS.points.multipliers, ...value.points?.multipliers } },
+    points: { ...DEFAULT_SETTINGS.points, ...value.points, difficultyPoints: { ...DEFAULT_SETTINGS.points.difficultyPoints, ...value.points?.difficultyPoints } },
     prizes: { ...DEFAULT_SETTINGS.prizes, ...value.prizes },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...value.notifications },
     suggestions: { ...DEFAULT_SETTINGS.suggestions, ...value.suggestions },

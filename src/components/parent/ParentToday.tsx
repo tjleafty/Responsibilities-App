@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { ArrowRight, BarChart3, Check, Clock3, Gift, MessageSquareText, Plus, RotateCcw, Sun } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { ArrowRight, BarChart3, Check, ChevronDown, Clock3, Gift, MessageSquareText, Plus, RotateCcw, Sun, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, Chip, ChoreIconTile, EmptyState, ErrorNote, Ring, Segmented, StateChip, TokenPill } from "@/components/kit"
 import { ParentInsights } from "@/components/parent/ParentInsights"
@@ -31,7 +31,21 @@ export function ParentToday(props: ParentScreenProps) {
   const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
   const dailyDone = daily.filter((row) => row.state === "done").length
   const waiting = rows.filter((row) => row.state === "waiting")
-  const board = rows.filter((row) => FILTERS.find((option) => option.value === filter)!.match(row.state)).sort((a, b) => order(a) - order(b))
+  // One kid's chores at a time: tap a kid to open their list. A family with one kid sees it straight away.
+  const [picked, setPicked] = useState<string | null>(null)
+  const openId = kids.length === 1 ? kids[0].id : kids.some((kid) => kid.id === picked) ? picked : null
+  const openKid = kids.find((kid) => kid.id === openId) ?? null
+  const kidRows = openKid ? rows.filter((row) => row.profile.id === openKid.id) : []
+  const board = kidRows.filter((row) => FILTERS.find((option) => option.value === filter)!.match(row.state))
+    .sort((a, b) => a.chore.title.localeCompare(b.chore.title, undefined, { sensitivity: "base", numeric: true }))
+  const boardRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (picked) boardRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+  }, [picked])
+  const toggleKid = (id: string) => {
+    setPicked((current) => current === id ? null : id)
+    setFilter("all")
+  }
   const waitingNames = [...new Set(waiting.map((row) => firstName(row.profile)))]
   const prizeAsks = pendingRequests(prizeRequests).filter((row) => profiles.some((kid) => kid.id === row.profile_id))
   const firstAsk = prizeAsks[0]
@@ -58,9 +72,35 @@ export function ParentToday(props: ParentScreenProps) {
         <EmptyState title="Add your first kid" action={<Button onClick={() => onNavigate("family")}>Go to Family</Button>}>Kids get their own profile, theme and chores.</EmptyState>
       ) : (
         <ul className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
-          {kids.map((kid) => <KidCard key={kid.id} kid={kid} rows={rows.filter((row) => row.profile.id === kid.id)} points={pointsToday(kid.id, completions)} />)}
+          {kids.map((kid) => <KidCard key={kid.id} kid={kid} rows={rows.filter((row) => row.profile.id === kid.id)} points={pointsToday(kid.id, completions)} open={kid.id === openId} onToggle={kids.length > 1 ? () => toggleKid(kid.id) : undefined} />)}
         </ul>
       )}
+      {kids.length > 1 && !openKid && rows.length > 0 ? <p className="-mt-2 text-center text-sm font-semibold text-muted-foreground">Tap a kid to see their chores.</p> : null}
+
+      {openKid ? (
+        <section ref={boardRef} className="scroll-mt-4 space-y-3" aria-label={`${firstName(openKid)}'s chores`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 font-display text-xl font-semibold">
+              <Avatar profile={openKid} size={32} />{firstName(openKid)}'s chores
+              {kids.length > 1 ? <button type="button" onClick={() => setPicked(null)} className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted" aria-label={`Close ${firstName(openKid)}'s chores`}><X className="h-5 w-5" /></button> : null}
+            </h2>
+            {kidRows.length > 0 ? (
+              <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+                {FILTERS.map((option) => {
+                  const count = kidRows.filter((row) => option.match(row.state)).length
+                  return <Chip key={option.value} active={filter === option.value} onClick={() => setFilter(option.value)}>{option.label} ({count})</Chip>
+                })}
+              </div>
+            ) : null}
+          </div>
+          {kidRows.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">No chores for {firstName(openKid)} right now.</p>
+            : board.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">Nothing here right now.</p> : (
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+                {board.map((row) => <ChoreTile key={`${row.chore.id}-${row.profile.id}`} row={row} profiles={profiles} review={review} />)}
+              </ul>
+            )}
+        </section>
+      ) : null}
 
       {waiting.length > 0 ? (
         <section className="flex flex-col gap-4 rounded-[22px] bg-card p-5 shadow-soft sm:flex-row sm:items-center">
@@ -88,25 +128,6 @@ export function ParentToday(props: ParentScreenProps) {
 
       <ErrorNote>{review.error}</ErrorNote>
 
-      {rows.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-display text-xl font-semibold">Chore board</h2>
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-              {FILTERS.map((option) => {
-                const count = rows.filter((row) => option.match(row.state)).length
-                return <Chip key={option.value} active={filter === option.value} onClick={() => setFilter(option.value)}>{option.label} ({count})</Chip>
-              })}
-            </div>
-          </div>
-          {board.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">Nothing here right now.</p> : (
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-              {board.map((row) => <ChoreTile key={`${row.chore.id}-${row.profile.id}`} row={row} profiles={profiles} review={review} />)}
-            </ul>
-          )}
-        </section>
-      ) : null}
-
       </>}
 
       <button type="button" onClick={onAddChore} className="fixed bottom-24 right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 lg:hidden" aria-label="Add chore"><Plus className="h-8 w-8" /></button>
@@ -124,11 +145,6 @@ const FILTERS: Array<{ value: BoardFilter; label: string; match: (state: TodayRo
   { value: "done", label: "Done", match: (state) => state === "done" },
 ]
 
-const ORDER: Record<TodayRow["state"], number> = { waiting: 0, sent_back: 1, in_progress: 2, todo: 3, done: 4 }
-function order(row: TodayRow) {
-  return ORDER[row.state]
-}
-
 /** One chore for one kid, small enough to fit several in a row. */
 function ChoreTile({ row, profiles, review }: { row: TodayRow; profiles: FamilyProfile[]; review: ReturnType<typeof useReview> }) {
   const points = chorePoints(row.chore)
@@ -137,10 +153,9 @@ function ChoreTile({ row, profiles, review }: { row: TodayRow; profiles: FamilyP
     <li className={cn("flex flex-col gap-2 rounded-[20px] bg-card p-3 shadow-soft", row.state === "done" && "opacity-75", row.state === "sent_back" && "ring-2 ring-coral/60", row.state === "waiting" && "ring-2 ring-accent")}>
       <div className="flex items-start justify-between gap-2">
         <ChoreIconTile title={row.chore.title} size={40} className="rounded-xl" />
-        <Avatar profile={row.profile} size={28} />
       </div>
       <p className="line-clamp-2 min-h-[2.5rem] font-display font-semibold leading-tight">{row.chore.title}</p>
-      <p className="truncate text-xs font-bold text-muted-foreground">{firstName(row.profile)} · {whenLabel(row)}{late ? <span className="text-coral"> · Late</span> : null}</p>
+      <p className="truncate text-xs font-bold text-muted-foreground">{whenLabel(row)}{late ? <span className="text-coral"> · Late</span> : null}</p>
       <div className="mt-auto flex flex-wrap items-center gap-1.5">
         <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : row.state === "waiting" ? "Ready" : undefined} />
         {row.state === "waiting" ? <StepsDone row={row} profiles={profiles} /> : null}
@@ -169,15 +184,20 @@ function StepsDone({ row, profiles }: { row: TodayRow; profiles: FamilyProfile[]
   return <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-muted px-2.5 py-1 text-xs font-bold"><Check className="h-3.5 w-3.5" />{checked}/{steps.length} steps</span>
 }
 
-function KidCard({ kid, rows, points }: { kid: TodayRow["profile"]; rows: TodayRow[]; points: number }) {
+function KidCard({ kid, rows, points, open, onToggle }: { kid: TodayRow["profile"]; rows: TodayRow[]; points: number; open: boolean; onToggle?: () => void }) {
   const theme = getKidTheme(kid.theme_key)
   const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
   const doneCount = daily.filter((row) => row.state === "done").length
   const waiting = rows.filter((row) => row.state === "waiting").length
   const sentBack = rows.filter((row) => row.state === "sent_back").length
   const left = rows.filter((row) => row.state === "todo" || row.state === "in_progress").length
+  const Body = onToggle ? "button" : "div"
   return (
-    <li className="w-[78%] shrink-0 snap-start rounded-[22px] bg-card p-4 shadow-soft sm:w-auto">
+    <li className="w-[78%] shrink-0 snap-start sm:w-auto">
+      <Body
+        {...(onToggle ? { type: "button" as const, onClick: onToggle, "aria-expanded": open, "aria-label": `${open ? "Hide" : "Show"} ${kid.display_name}'s chores` } : {})}
+        className={cn("block h-full w-full rounded-[22px] bg-card p-4 text-left shadow-soft transition-shadow", onToggle && "hover:outline hover:outline-2 hover:outline-primary/30", open && onToggle && "outline outline-[3px] outline-primary")}
+      >
       <div className="flex items-start justify-between gap-3">
         <Avatar profile={kid} size={52} />
         <Ring value={doneCount} max={daily.length} size={52} color={theme.colors.primary}>{doneCount}/{daily.length}</Ring>
@@ -193,7 +213,9 @@ function KidCard({ kid, rows, points }: { kid: TodayRow["profile"]; rows: TodayR
           : sentBack ? <><RotateCcw className="h-4 w-4" />{sentBack} trying again</>
             : left ? <>{left} still to do</>
               : <><Check className="h-4 w-4" />All caught up</>}
+        {onToggle ? <ChevronDown className={cn("ml-auto h-4 w-4 shrink-0 transition-transform", open && "rotate-180")} aria-hidden="true" /> : null}
       </p>
+      </Body>
     </li>
   )
 }

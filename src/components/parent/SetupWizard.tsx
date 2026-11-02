@@ -264,7 +264,7 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
   const [catalog, setCatalog] = useState<CatalogChore[] | null>(null)
   // Chore title -> the kids it goes to.
   const [picked, setPicked] = useState<Record<string, string[]>>({})
-  const points = familySettings().points.defaultPoints
+  const points = familySettings().points.difficultyPoints.easy
   const kidsFor = (item: CatalogChore) => kids.filter((kid) => fitsAge(item, ageFromBirthYear(kid.birth_year))).map((kid) => kid.id)
 
   useEffect(() => {

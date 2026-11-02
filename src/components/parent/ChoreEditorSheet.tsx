@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import { Check, Pause, Play, Plus, ShieldCheck, Timer, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { DIFFICULTIES, difficultyOf, formatMultiplier, pointsFor } from "@/lib/difficulty"
+import { DIFFICULTIES, difficultyOf, difficultyPoints, pointsLabel } from "@/lib/difficulty"
 import { Avatar, Chip, ChoreIconTile, ErrorNote, Field, inputClass, Segmented, Sheet, Stepper, TokenPill } from "@/components/kit"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMode, Difficulty } from "@/lib/familyTypes"
@@ -81,7 +81,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
     setGroupSize(Number(chore?.random_group_size) || 2)
     setSteps(chore ? parseChoreSubtasks(chore.subtasks) : seed?.steps?.map((step) => ({ ...step, id: makeTaskId() })) ?? [])
     setPoints(chore ? Number(chore.reward_points) || 0 : familySettings().points.defaultPoints)
-    setDifficulty(chore ? difficultyOf(chore) : null)
+    // New chores start as easy; existing ones keep what they have (no difficulty = custom points).
+    setDifficulty(chore ? difficultyOf(chore) : "easy")
     setRewardId(chore?.reward_id ?? "")
     setApproval(chore ? requiresApproval(chore) : false)
     setTimeLimit(Number(chore?.time_limit_minutes) || 0)
@@ -89,8 +90,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
     setError(null)
   }, [open, chore, seed])
 
-  const multipliers = familySettings().points.multipliers
-  const earned = pointsFor(points, difficulty)
+  const earned = difficulty ? difficultyPoints(difficulty) : Math.max(0, points)
   const kidsPicked = assigned.filter((id) => kidsOf(profiles).some((kid) => kid.id === id))
   const cleanSteps = steps.map((step) => ({ ...step, title: step.title.trim() })).filter((step) => step.title)
   const kidsForSchedules = kidsPicked.length > 1 && !takeTurns ? kidsPicked : []
@@ -131,7 +131,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       subtasks: JSON.stringify(cleanSteps),
       reward: reward?.title ?? "",
       reward_id: rewardId,
-      reward_points: Math.max(0, points),
+      // A rated chore also stores its points, so anything reading reward_points directly agrees.
+      reward_points: earned,
       // Only sent when used, so chores still save on a database without the difficulty column.
       ...(difficulty || chore?.difficulty ? { difficulty } : {}),
       time_limit_minutes: timeLimit || null,
@@ -272,22 +273,26 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
           </Section>
 
           <Section number={4} title="Reward">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span><span className="block font-bold">{difficulty ? "Base points" : "Points earned"}</span><span className="block text-sm text-muted-foreground">Shown in each kid's theme (stars, shells, coins...)</span></span>
-              <Stepper value={points} onChange={setPoints} max={500} label="points" />
-            </div>
             <div className="space-y-1.5">
               <span className="block text-sm font-bold">How hard is it?</span>
               <div className="flex flex-wrap gap-2">
-                <Chip active={!difficulty} onClick={() => setDifficulty(null)}>Not set</Chip>
                 {DIFFICULTIES.map((option) => (
                   <Chip key={option.value} active={difficulty === option.value} onClick={() => setDifficulty(option.value)}>
-                    <span aria-hidden="true">{option.emoji}</span>{option.label} {formatMultiplier(multipliers[option.value])}
+                    <span aria-hidden="true">{option.emoji}</span>{option.label} · {difficultyPoints(option.value)}
                   </Chip>
                 ))}
+                <Chip active={!difficulty} onClick={() => setDifficulty(null)}>Custom</Chip>
               </div>
-              {difficulty ? <p className="text-sm font-semibold text-muted-foreground">{points} {formatMultiplier(multipliers[difficulty])} = <span className="text-primary">{earned} points</span> each time. Change multipliers in Family settings.</p> : null}
+              <p className="text-sm font-semibold text-muted-foreground">
+                {difficulty ? <>Earns <span className="text-primary">{pointsLabel(difficultyPoints(difficulty))}</span> each time, shown in each kid's theme (stars, shells, coins...).</> : "Pick any number of points for this chore."}
+              </p>
             </div>
+            {!difficulty ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="block font-bold">Custom points</span>
+                <Stepper value={points} onChange={setPoints} max={500} label="points" />
+              </div>
+            ) : null}
             {rewards.length > 0 ? (
               <Field label="Linked prize (optional)">
                 <select className={inputClass} value={rewardId} onChange={(event) => setRewardId(event.target.value)}>
