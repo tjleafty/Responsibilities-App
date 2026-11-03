@@ -46,7 +46,7 @@ export function TeenToday({ profile, profiles, chores, completions, balance, onO
       <header className="flex items-end gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">{new Intl.DateTimeFormat("en-US", { weekday: "long", month: "short", day: "numeric" }).format(new Date())}</p>
-          <h1 className="font-display text-3xl font-bold tracking-tight">Today</h1>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">Today</h1>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 font-display text-sm font-semibold tabular-nums ring-1 ring-border"><Zap className="h-4 w-4 text-primary" />{balance} XP</span>
         <span className="md:hidden"><Avatar profile={profile} size={36} /></span>
@@ -55,13 +55,13 @@ export function TeenToday({ profile, profiles, chores, completions, balance, onO
       <section className="flex items-center gap-5 rounded-2xl bg-card p-5 ring-1 ring-border" aria-label="Today's progress">
         <Ring value={finished} max={Math.max(1, today.length)} size={112} stroke={10} color="hsl(var(--success))">
           <span className="flex flex-col items-center leading-none">
-            <span className="font-display text-2xl font-bold">{finished}/{today.length}</span>
+            <span className="font-display text-xl font-semibold">{finished}/{today.length}</span>
             <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">done</span>
           </span>
         </Ring>
         <div className="min-w-0 space-y-2">
           {streak > 0 ? <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-3 py-1 text-sm font-semibold text-success"><Flame className="h-4 w-4" />{streak}-day streak</span> : null}
-          <p className="text-muted-foreground"><span className="font-display text-xl font-bold text-primary">+{xpToday} XP</span> today</p>
+          <p className="text-muted-foreground"><span className="font-display text-lg font-semibold text-primary">+{xpToday} XP</span> today</p>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground"><Clock3 className="h-4 w-4" />{today.length === 0 ? "Nothing due today" : left === 0 ? "Everything's in" : `${left} left today`}</p>
         </div>
       </section>

@@ -53,7 +53,7 @@ export function TeenProfile({ profile, chores, completions, onThemeChange, onSwi
       <header className="flex items-center gap-4 rounded-2xl bg-card p-5 ring-1 ring-border">
         <Avatar profile={profile} size={64} />
         <div className="min-w-0">
-          <h1 className="truncate font-display text-2xl font-bold tracking-tight">{profile.display_name}</h1>
+          <h1 className="truncate font-display text-xl font-semibold tracking-tight">{profile.display_name}</h1>
           <p className="text-sm text-muted-foreground">{profile.birth_year ? `Age ${new Date().getFullYear() - profile.birth_year}` : "Teen mode"}</p>
         </div>
       </header>
@@ -62,14 +62,14 @@ export function TeenProfile({ profile, chores, completions, onThemeChange, onSwi
         {stats.map((stat) => (
           <li key={stat.label} className="rounded-2xl bg-card p-4 ring-1 ring-border">
             <p className="flex items-center justify-between text-sm text-muted-foreground">{stat.label}<span className="text-primary">{stat.icon}</span></p>
-            <p className="mt-2 font-display text-2xl font-bold tabular-nums">{stat.value}</p>
+            <p className="mt-2 font-display text-xl font-semibold tabular-nums">{stat.value}</p>
             {stat.sub ? <p className="text-sm text-muted-foreground">{stat.sub}</p> : null}
           </li>
         ))}
       </ul>
 
       <section className="space-y-4 rounded-2xl bg-card p-5 ring-1 ring-border">
-        <h2 className="font-display text-lg font-semibold">Personalize</h2>
+        <h2 className="font-display text-base font-medium">Personalize</h2>
         <div className="space-y-2">
           <p className="flex items-center justify-between text-sm text-muted-foreground">Accent color<span className="font-medium text-primary">{TEEN_ACCENTS.find((item) => item.id === prefs.accent)?.name}</span></p>
           <div className="grid grid-cols-6 gap-2">
@@ -95,7 +95,7 @@ export function TeenProfile({ profile, chores, completions, onThemeChange, onSwi
 
       {recent.length > 0 ? (
         <section className="space-y-2 rounded-2xl bg-card p-5 ring-1 ring-border">
-          <h2 className="flex items-center justify-between font-display text-lg font-semibold">Recent activity<span className="text-sm font-normal text-muted-foreground">Last 7 days</span></h2>
+          <h2 className="flex items-center justify-between font-display text-base font-medium">Recent activity<span className="text-sm font-normal text-muted-foreground">Last 7 days</span></h2>
           <ul className="divide-y divide-border">
             {recent.map((row) => {
               const state = choreState(row)
