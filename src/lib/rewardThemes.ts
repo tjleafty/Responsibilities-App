@@ -66,13 +66,13 @@ export const REWARD_THEMES: Record<string, RewardTheme> = {
   "pixel-arcade": makeTheme("pixel-arcade", "Pixel Arcade", "dark", "Silkscreen", {
     bg: "#101626", pattern: "#1E2842", surface: "#1A2238", ink: "#F2F5FF", inkSoft: "#9AA6C8", primary: "#36E27B", secondary: "#FF4D9D", accent: "#4DC3FF", success: "#36E27B", reward: "#FFD23F", rewardStroke: "#E09A00", onPrimary: "#101626", onSecondary: "#101626", onAccent: "#101626", onSuccess: "#101626",
   }, ["#36E27B", "#FF4D9D", "#FFD23F", "#4DC3FF", "#FFFFFF"], "pixels", "coin", "coins", "LEVEL UP!", "pixels", 80),
-  "superhero-city": makeTheme("superhero-city", "Superhero City", "light", "Bangers", {
+  "superhero-city": makeTheme("superhero-city", "Superhero City", "light", "Comic Neue", {
     bg: "#EAF2FF", pattern: "#D2E1FF", surface: "#FFFFFF", ink: "#1A1F3D", inkSoft: "#525A80", primary: "#D62839", secondary: "#1D4ED8", accent: "#FFD60A", success: "#1A7F45", reward: "#FFD60A", rewardStroke: "#1A1F3D", onPrimary: "#FFFFFF", onSecondary: "#FFFFFF", onAccent: "#1A1F3D", onSuccess: "#FFFFFF",
   }, ["#D62839", "#1D4ED8", "#FFD60A", "#FFFFFF", "#1A1F3D"], "halftone", "bolt", "power bolts", "POW! Chore defeated!", "bursts", 26),
   "rainbow-sky": makeTheme("rainbow-sky", "Rainbow Sky", "light", "Grandstander", {
     bg: "#EEF5FF", pattern: "#DCE9FF", surface: "#FFFFFF", ink: "#33305A", inkSoft: "#6E6B94", primary: "#CF2F58", secondary: "#4DA3FF", accent: "#FFC93C", success: "#187A56", reward: "#FF5E7E", rewardStroke: "#D63B5E", onPrimary: "#FFFFFF", onSecondary: "#33305A", onAccent: "#33305A", onSuccess: "#FFFFFF",
   }, ["#FF5E7E", "#FF9F43", "#FFD43B", "#4CD97B", "#4DA3FF", "#9B7BFF"], "clouds", "heart", "hearts", "You shine!", "hearts", 70),
-  "construction-zone": makeTheme("construction-zone", "Construction Zone", "light", "Bowlby One", {
+  "construction-zone": makeTheme("construction-zone", "Construction Zone", "light", "Baloo 2", {
     bg: "#FFF8E1", pattern: "#FBEAB8", surface: "#FFFFFF", ink: "#26221A", inkSoft: "#6A6252", primary: "#F2A000", secondary: "#3F4A5A", accent: "#E8641A", success: "#22804A", reward: "#C9CED6", rewardStroke: "#5B6573", onPrimary: "#26221A", onSecondary: "#FFFFFF", onAccent: "#26221A", onSuccess: "#FFFFFF",
   }, ["#F2A000", "#E8641A", "#3F4A5A", "#C9CED6", "#FFD43B"], "hazard", "nut", "bolts", "Built it!", "nuts", 40),
   "arctic-friends": makeTheme("arctic-friends", "Arctic Friends", "light", "Quicksand", {
