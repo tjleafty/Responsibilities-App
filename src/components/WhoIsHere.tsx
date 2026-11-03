@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, MASCOT, inputClass } from "@/components/kit"
 import { useAuth, verifyPassword } from "@/lib/auth"
 import { hashPin, type FamilyProfile } from "@/lib/familyTypes"
-import { firstName, grownUpsOf, kidsOf } from "@/lib/family"
+import { firstName, grownUpsOf, kidsOf, parentRoleLabel } from "@/lib/family"
 import { pointsBalance, type PrizeRequest } from "@/lib/prizeRequests"
 import { ensureThemeFonts, getKidTheme, kidThemeStyle } from "@/lib/themes"
 import type { ChoreCompletionRecord } from "@/lib/familyTypes"
@@ -84,7 +84,7 @@ export function WhoIsHere({ profiles, completions, prizeRequests, onUnlocked, on
                     <Avatar profile={parent} size={44} />
                     <span className="min-w-0">
                       <span className="block truncate font-display text-lg font-semibold">{parent.display_name}</span>
-                      <span className="block text-xs font-bold text-primary">Parent mode</span>
+                      <span className="block text-xs font-bold text-primary">{parentRoleLabel(parent) ?? "Parent mode"}</span>
                     </span>
                     {parent.pin_hash ? <Lock className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" aria-label="Has a PIN" /> : null}
                   </button>

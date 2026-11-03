@@ -8,7 +8,7 @@ import { ParentSetup } from "@/components/ParentSetup"
 import { KidApp } from "@/components/kid/KidApp"
 import { ParentApp } from "@/components/parent/ParentApp"
 import type { FamilyReward } from "@/lib/familyTypes"
-import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord } from "@/lib/familyTypes"
+import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, GoalRecord, ParentRole } from "@/lib/familyTypes"
 import { signOut, useAuth } from "@/lib/auth"
 import { db, DEMO_MODE } from "@/lib/db"
 import { splitCompletions, type PrizeRequest } from "@/lib/prizeRequests"
@@ -127,8 +127,9 @@ export function FamilyWorkspace() {
   // Every login gets its own parent profile with a PIN; until then it goes through setup.
   const needsSetup = !profiles.some((profile) => profile.profile_type === "parent" && profile.owner_id === userId)
 
-  const saveOwnProfile = async ({ displayName, pinHash, claimId }: { displayName: string; pinHash: string; claimId: string | null }) => {
-    const data = { display_name: displayName, pin_hash: pinHash }
+  const saveOwnProfile = async ({ displayName, pinHash, claimId, parentRole }: { displayName: string; pinHash: string; claimId: string | null; parentRole?: ParentRole | null }) => {
+    // The role is left out when undefined, so setup still works on a database without the parent_role column.
+    const data = { display_name: displayName, pin_hash: pinHash, ...(parentRole !== undefined ? { parent_role: parentRole } : {}) }
     const row = claimId
       ? await db.family_profile.update(claimId, { ...data, owner_id: userId })
       : await db.family_profile.create({ ...data, profile_type: "parent", theme_key: "sunny-room", is_active: true, ...(DEMO_MODE ? { owner_id: userId } : {}) })

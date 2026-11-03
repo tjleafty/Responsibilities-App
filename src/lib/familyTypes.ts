@@ -1,6 +1,8 @@
 import { getRewardThemeId } from "./rewardThemes.js"
 
 export type ProfileType = "parent" | "child"
+/** A grown-up's role. Any number of each, so two moms or two dads both work. */
+export type ParentRole = "mom" | "dad"
 export type GoalFrequency = "daily" | "weekly" | "monthly"
 export type RandomMode = "chore" | "chore_and_subtasks" | "subtasks"
 
@@ -16,6 +18,8 @@ export interface FamilyProfile {
   owner_id?: string | null
   /** Kids only: for age-appropriate chore ideas. */
   birth_year?: number | null
+  /** Grown-ups only: Mom or Dad. Null for anyone who didn't pick (e.g. a grandparent). */
+  parent_role?: ParentRole | null
 }
 
 export interface GoalRecord {

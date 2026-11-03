@@ -11,8 +11,8 @@ import { FamilySettingsSheet } from "@/components/parent/FamilySettingsSheet"
 import { BillingSheet } from "@/components/parent/Billing"
 import { useBilling } from "@/lib/billing"
 import { isAppAdmin } from "@/lib/catalog"
-import { hashPin, isValidPin, type FamilyProfile, type ProfileType } from "@/lib/familyTypes"
-import { choresFor, grownUpsOf, kidsOf } from "@/lib/family"
+import { hashPin, isValidPin, type FamilyProfile, type ParentRole, type ProfileType } from "@/lib/familyTypes"
+import { PARENT_ROLE_OPTIONS, choresFor, grownUpsOf, kidsOf, parentRoleLabel, type ParentRoleChoice } from "@/lib/family"
 import { pointsBalance } from "@/lib/prizeRequests"
 import { KID_THEME_IDS, ensureThemeFonts, getKidTheme } from "@/lib/themes"
 import { isTeenKey, teenKey } from "@/lib/teen"
@@ -91,7 +91,7 @@ export function ParentFamily({ profile, profiles, inactiveProfiles, chores, comp
                     <Avatar profile={parent} size={48} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-display text-lg font-semibold">{parent.display_name}</span>
-                      <span className="block text-sm text-muted-foreground">{parent.pin_hash ? "PIN on" : "No PIN"}</span>
+                      <span className="block text-sm text-muted-foreground">{[parentRoleLabel(parent), parent.pin_hash ? "PIN on" : "No PIN"].filter(Boolean).join(" · ")}</span>
                     </span>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </button>
@@ -163,6 +163,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
   const [pin, setPin] = useState("")
   const [clearPin, setClearPin] = useState(false)
   const [birthYear, setBirthYear] = useState("")
+  const [role, setRole] = useState<ParentRoleChoice>("other")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   // The kid theme to go back to when switching off Teen mode.
@@ -178,6 +179,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     setPin("")
     setClearPin(false)
     setBirthYear(profile?.birth_year ? String(profile.birth_year) : "")
+    setRole(profile?.parent_role ?? "other")
     setError(null)
     KID_THEME_IDS.forEach(ensureThemeFonts)
   }, [state, profile])
@@ -206,7 +208,10 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     if (birthYear && (!Number.isInteger(year) || year < thisYear - 25 || year > thisYear)) return setError("Enter a birth year like 2017.")
     // Only sent when used, so profiles still save on a database without the birth_year column.
     const yearUpdate = type === "child" && (birthYear || profile?.birth_year) ? { birth_year: birthYear ? year : null } : {}
-    const data = { display_name: name.trim(), profile_type: type, theme_key: themeKey, ...pinUpdate, ...yearUpdate }
+    // Same for parent_role: sent when picked, or to clear an old one (also when a grown-up becomes a kid).
+    const parentRole: ParentRole | null = type === "parent" && role !== "other" ? role : null
+    const roleUpdate = parentRole || profile?.parent_role ? { parent_role: parentRole } : {}
+    const data = { display_name: name.trim(), profile_type: type, theme_key: themeKey, ...pinUpdate, ...yearUpdate, ...roleUpdate }
     void run(() => profile ? db.family_profile.update(profile.id, data) : db.family_profile.create({ pin_hash: "", ...data, is_active: true }), "We couldn't save that profile.")
   }
 
@@ -235,6 +240,13 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
           <span className="block text-sm font-bold">Profile type</span>
           <Segmented value={type} onChange={setType} options={[{ value: "child", label: "Kid" }, { value: "parent", label: "Grown-up" }]} className="max-w-xs" />
         </div>
+        {type === "parent" ? (
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">Role</span>
+            <Segmented value={role} onChange={setRole} options={PARENT_ROLE_OPTIONS} className="max-w-sm" />
+            <p className="text-sm text-muted-foreground">Two moms or two dads both work. Pick Other for a grandparent or sitter.</p>
+          </div>
+        ) : null}
         {type === "child" ? (
           <div className="space-y-1.5">
             <span className="block text-sm font-bold">Mode</span>
