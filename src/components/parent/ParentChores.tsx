@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { ChevronDown, ChevronRight, Lightbulb, PencilLine, Plus, Repeat, Search, ShieldCheck, Timer, Video } from "lucide-react"
+import { ChevronDown, ChevronRight, LayoutGrid, Lightbulb, List, PencilLine, Plus, Repeat, Search, ShieldCheck, Timer, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, Chip, ChoreIconTile, EmptyState, ErrorNote, Segmented, Sheet, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
@@ -16,12 +16,33 @@ import { chorePoints, DIFFICULTIES, difficultyOf } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
 
 type View = "chore" | "kid"
+type Layout = "tiles" | "list"
+const LAYOUT_KEY = "responsibilities.choreLayout"
+
+function savedLayout(): Layout {
+  try {
+    return localStorage.getItem(LAYOUT_KEY) === "list" ? "list" : "tiles"
+  } catch {
+    return "tiles"
+  }
+}
+
+const byTitle = (a: ChoreRecord, b: ChoreRecord) => a.title.localeCompare(b.title, undefined, { sensitivity: "base", numeric: true })
 type FrequencyFilter = "all" | GoalFrequency
 const FREQUENCY_LABEL: Record<GoalFrequency, string> = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" }
 
 export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   const { profiles, chores, rewards, onRefresh, openNew } = props
   const [view, setView] = useState<View>("chore")
+  const [layout, setLayoutState] = useState<Layout>(savedLayout)
+  const setLayout = (next: Layout) => {
+    setLayoutState(next)
+    try {
+      localStorage.setItem(LAYOUT_KEY, next)
+    } catch {
+      // Storage can be blocked; the choice just won't be remembered.
+    }
+  }
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<FrequencyFilter>("all")
   const [showPaused, setShowPaused] = useState(false)
@@ -36,7 +57,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   const active = chores.filter(isActive)
   const paused = chores.filter((chore) => !isActive(chore))
   const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
-  const shown = active.filter(matches)
+  const shown = active.filter(matches).sort(byTitle)
   const kids = kidsOf(profiles)
 
   const edit = (chore: ChoreRecord) => { setEditing(chore); setSeed(null); setEditorOpen(true) }
@@ -69,6 +90,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
                 </Chip>
               ))}
             </div>
+            <LayoutToggle value={layout} onChange={setLayout} />
           </div>
 
           {active.length === 0 ? (
@@ -82,6 +104,8 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
             </EmptyState>
           ) : shown.length === 0 ? (
             <p className="rounded-[22px] bg-card p-6 text-center text-muted-foreground shadow-soft">No chores match that search.</p>
+          ) : layout === "list" ? (
+            <ChoreList chores={shown} profiles={profiles} onOpen={edit} />
           ) : (
             <ul className="grid gap-3 md:grid-cols-2">
               {shown.map((chore) => <li key={chore.id}><ChoreRow chore={chore} profiles={profiles} onOpen={() => edit(chore)} /></li>)}
@@ -123,7 +147,9 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
           <button type="button" onClick={() => setShowPaused((open) => !open)} aria-expanded={showPaused} className="flex w-full items-center gap-3 p-4 font-display text-lg font-semibold">
             Paused chores ({paused.length})<ChevronDown className={cn("ml-auto h-5 w-5 transition-transform", showPaused && "rotate-180")} />
           </button>
-          {showPaused ? <ul className="grid gap-3 px-4 pb-4 md:grid-cols-2">{paused.map((chore) => <li key={chore.id}><ChoreRow chore={chore} profiles={profiles} onOpen={() => edit(chore)} /></li>)}</ul> : null}
+          {showPaused ? (view === "chore" && layout === "list"
+            ? <div className="px-4 pb-4"><ChoreList chores={[...paused].sort(byTitle)} profiles={profiles} onOpen={edit} /></div>
+            : <ul className="grid gap-3 px-4 pb-4 md:grid-cols-2">{[...paused].sort(byTitle).map((chore) => <li key={chore.id}><ChoreRow chore={chore} profiles={profiles} onOpen={() => edit(chore)} /></li>)}</ul>) : null}
         </section>
       ) : null}
 
@@ -140,27 +166,115 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   )
 }
 
-function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: FamilyProfile[]; onOpen: () => void }) {
+/** The kids on a chore and, when they take turns, whose turn it is now. */
+function choreDetails(chore: ChoreRecord, profiles: FamilyProfile[]) {
   const people = getAssignedProfileIds(chore).map((id) => profiles.find((profile) => profile.id === id)).filter((profile): profile is FamilyProfile => Boolean(profile))
   const turns = isRandomAssignmentEnabled(chore)
-  const upNow = turns ? profiles.find((profile) => assigneesOf(chore, profiles).includes(profile.id)) : null
-  const points = chorePoints(chore)
-  const level = DIFFICULTIES.find((option) => option.value === difficultyOf(chore))
+  const upNow = turns ? profiles.find((profile) => assigneesOf(chore, profiles).includes(profile.id)) ?? null : null
+  return { people, turns, upNow, points: chorePoints(chore), level: DIFFICULTIES.find((option) => option.value === difficultyOf(chore)) }
+}
+
+function People({ people, size = 24, max = 4 }: { people: FamilyProfile[]; size?: number; max?: number }) {
+  return (
+    <span className="flex shrink-0 items-center -space-x-1.5" title={people.map((person) => person.display_name).join(", ")}>
+      {people.slice(0, max).map((person) => <Avatar key={person.id} profile={person} size={size} className="ring-2 ring-card" />)}
+      {people.length > max ? <span className="grid shrink-0 place-items-center rounded-full bg-muted text-[11px] font-bold ring-2 ring-card" style={{ width: size, height: size }}>+{people.length - max}</span> : null}
+      <span className="sr-only">{people.map((person) => person.display_name).join(", ")}</span>
+    </span>
+  )
+}
+
+function ChoreFlags({ chore }: { chore: ChoreRecord }) {
+  return (
+    <>
+      {requiresApproval(chore) ? <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Needs approval" /> : null}
+      {chore.time_limit_minutes ? <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-bold"><Timer className="h-3 w-3" />{chore.time_limit_minutes}m</span> : null}
+      {choreVideo(chore.title) ? <Video className="h-4 w-4 shrink-0 text-secondary" aria-label="Has a how-to video" /> : null}
+    </>
+  )
+}
+
+function LayoutToggle({ value, onChange }: { value: Layout; onChange: (layout: Layout) => void }) {
+  const options = [
+    { value: "tiles" as const, label: "Tiles", icon: LayoutGrid },
+    { value: "list" as const, label: "List", icon: List },
+  ]
+  return (
+    <div className="flex shrink-0 self-start rounded-full bg-card p-1 shadow-soft sm:self-auto" role="radiogroup" aria-label="Show chores as">
+      {options.map(({ value: option, label, icon: Icon }) => (
+        <button key={option} type="button" role="radio" aria-checked={value === option} onClick={() => onChange(option)}
+          className={cn("inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-bold transition-colors", value === option ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+          <Icon className="h-4 w-4" />{label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Every chore on one line each, A to Z, with the same details as the tiles. */
+function ChoreList({ chores, profiles, onOpen }: { chores: ChoreRecord[]; profiles: FamilyProfile[]; onOpen: (chore: ChoreRecord) => void }) {
+  const columns = "md:grid-cols-[minmax(0,1fr)_6.5rem_6.5rem_6rem_8.5rem_3rem_1.25rem]"
+  return (
+    <div className="overflow-hidden rounded-[22px] bg-card shadow-soft">
+      <div className={cn("hidden gap-3 border-b border-border px-4 py-2.5 text-xs font-extrabold uppercase tracking-[0.08em] text-muted-foreground md:grid", columns)} aria-hidden="true">
+        <span>Chore</span><span>Schedule</span><span>Difficulty</span><span>Who</span><span>Turn</span><span className="text-right">Points</span><span />
+      </div>
+      <ul>
+        {chores.map((chore) => {
+          const { people, turns, upNow, points, level } = choreDetails(chore, profiles)
+          return (
+            <li key={chore.id} className="border-t border-border first:border-t-0">
+              <button type="button" onClick={() => onOpen(chore)} className={cn("grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-muted/50 md:gap-y-0", columns, !isActive(chore) && "opacity-60")}>
+                <span className="flex min-w-0 items-center gap-3">
+                  <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
+                  <span className="truncate font-display font-semibold">{chore.title}</span>
+                  <span className="hidden md:contents"><ChoreFlags chore={chore} /></span>
+                </span>
+                {/* Phones: one line of details under the title. */}
+                <span className="flex items-center gap-2 md:hidden">
+                  <People people={people} size={22} max={3} />
+                  {points > 0 ? <span className="text-sm font-bold tabular-nums">⭐ {points}</span> : null}
+                </span>
+                <span className="col-span-2 flex flex-wrap items-center gap-1.5 pl-12 text-xs font-bold text-muted-foreground md:hidden">
+                  <span>{choreScheduleLabel(chore)}</span>
+                  {level ? <span>· {level.label}</span> : null}
+                  <ChoreFlags chore={chore} />
+                  {turns ? <span className="inline-flex items-center gap-0.5">· <Repeat className="h-3 w-3" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</span> : null}
+                </span>
+                {/* Tablets and computers: columns. */}
+                <span className="hidden truncate text-sm font-semibold md:block">{choreScheduleLabel(chore)}</span>
+                <span className="hidden truncate text-sm font-semibold md:block">{level ? <><span aria-hidden="true">{level.emoji} </span>{level.label}</> : "—"}</span>
+                <span className="hidden md:block"><People people={people} /></span>
+                <span className="hidden min-w-0 items-center gap-1.5 text-sm md:flex">
+                  {turns ? <>{upNow ? <Avatar profile={upNow} size={22} /> : <Repeat className="h-4 w-4 text-primary" />}<span className="truncate">{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</span></> : <span className="text-muted-foreground">—</span>}
+                </span>
+                <span className="hidden text-right font-display text-sm font-semibold tabular-nums md:block">{points > 0 ? `⭐ ${points}` : "—"}</span>
+                <ChevronRight className="hidden h-5 w-5 text-muted-foreground md:block" />
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
+}
+
+function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: FamilyProfile[]; onOpen: () => void }) {
+  const { people, turns, upNow, points, level } = choreDetails(chore, profiles)
   return (
     <button type="button" onClick={onOpen} className={cn("flex w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-soft transition-transform active:scale-[0.99]", !isActive(chore) && "opacity-60")}>
       <ChoreIconTile title={chore.title} size={52} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate font-display text-lg font-semibold">{chore.title}</span>
-          {requiresApproval(chore) ? <ShieldCheck className="h-4 w-4 shrink-0 text-primary" aria-label="Needs approval" /> : null}
-          {chore.time_limit_minutes ? <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-muted px-2 py-0.5 text-xs font-bold"><Timer className="h-3 w-3" />{chore.time_limit_minutes}m</span> : null}
-          {choreVideo(chore.title) ? <Video className="h-4 w-4 shrink-0 text-secondary" aria-label="Has a how-to video" /> : null}
+          <ChoreFlags chore={chore} />
         </span>
-        <span className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground">{choreScheduleLabel(chore)}</span>
-          {level ? <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground"><span aria-hidden="true">{level.emoji} </span>{level.label}</span> : null}
-          <span className="flex -space-x-1.5">{people.slice(0, 4).map((person) => <Avatar key={person.id} profile={person} size={24} className="ring-2 ring-card" />)}</span>
-          <span className="truncate">{turns ? <><Repeat className="mr-0.5 inline h-3.5 w-3.5" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</> : people.map((person) => person.display_name).join(", ")}</span>
+        <span className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-muted-foreground">
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground">{choreScheduleLabel(chore)}</span>
+          {level ? <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground"><span aria-hidden="true">{level.emoji} </span>{level.label}</span> : null}
+          <People people={people} />
+          {/* Who has it is shown by the photos; only "whose turn" gets words, so every tile is one height. */}
+          {turns ? <span className="min-w-0 truncate"><Repeat className="mr-0.5 inline h-3.5 w-3.5" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</span> : null}
         </span>
       </span>
       {points > 0 ? <TokenPill amount={points} prefix="+" /> : null}

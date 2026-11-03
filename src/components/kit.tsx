@@ -26,7 +26,9 @@ export function Avatar({ profile, size = 44, ring = false, className }: { profil
       }}
       aria-hidden="true"
     >
-      {profile.display_name.trim().charAt(0).toUpperCase() || "?"}
+      {profile.photo_url
+        ? <img src={profile.photo_url} alt="" className="h-full w-full rounded-full object-cover" draggable={false} />
+        : profile.display_name.trim().charAt(0).toUpperCase() || "?"}
       {isKid && size >= 40 && theme.id !== "teen" ? (
         <span className="absolute -bottom-1 -right-1 grid place-items-center rounded-full bg-white shadow-soft" style={{ width: size * 0.42, height: size * 0.42, fontSize: size * 0.24 }}>{theme.token}</span>
       ) : null}
