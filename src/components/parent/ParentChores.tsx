@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { ChevronDown, ChevronRight, LayoutGrid, Lightbulb, List, PencilLine, Plus, Repeat, Search, ShieldCheck, Timer, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, Chip, ChoreIconTile, EmptyState, ErrorNote, Segmented, Sheet, TokenPill } from "@/components/kit"
+import { Avatar, Chip, FitText, ChoreIconTile, EmptyState, ErrorNote, Segmented, Sheet, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { ChoreEditorSheet, type ChoreDraftSeed } from "@/components/parent/ChoreEditorSheet"
 import type { ChoreRecord, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
@@ -227,7 +227,7 @@ function ChoreList({ chores, profiles, onOpen }: { chores: ChoreRecord[]; profil
               <button type="button" onClick={() => onOpen(chore)} className={cn("grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 text-left hover:bg-muted/50 md:gap-y-0", columns, !isActive(chore) && "opacity-60")}>
                 <span className="flex min-w-0 items-center gap-3">
                   <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
-                  <span className="truncate font-display font-semibold">{chore.title}</span>
+                  <FitText max={16} min={11} className="font-display font-semibold">{chore.title}</FitText>
                   <span className="hidden md:contents"><ChoreFlags chore={chore} /></span>
                 </span>
                 {/* Phones: one line of details under the title. */}
@@ -266,7 +266,7 @@ function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: F
       <ChoreIconTile title={chore.title} size={52} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="truncate font-display text-lg font-semibold">{chore.title}</span>
+          <FitText max={18} min={12} className="font-display font-semibold">{chore.title}</FitText>
           <ChoreFlags chore={chore} />
         </span>
         <span className="mt-1 flex min-w-0 items-center gap-1.5 overflow-hidden text-sm text-muted-foreground">
@@ -274,7 +274,7 @@ function ChoreRow({ chore, profiles, onOpen }: { chore: ChoreRecord; profiles: F
           {level ? <span className="shrink-0 whitespace-nowrap rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-foreground"><span aria-hidden="true">{level.emoji} </span>{level.label}</span> : null}
           <People people={people} />
           {/* Who has it is shown by the photos; only "whose turn" gets words, so every tile is one height. */}
-          {turns ? <span className="min-w-0 truncate"><Repeat className="mr-0.5 inline h-3.5 w-3.5" />{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</span> : null}
+          {turns ? <span className="flex min-w-0 items-center gap-0.5"><Repeat className="h-3.5 w-3.5 shrink-0" /><FitText max={14} min={10}>{upNow ? `${upNow.display_name}'s turn` : "Takes turns"}</FitText></span> : null}
         </span>
       </span>
       {points > 0 ? <TokenPill amount={points} prefix="+" /> : null}
