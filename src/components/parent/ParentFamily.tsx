@@ -18,6 +18,8 @@ import { KID_THEME_IDS, ensureThemeFonts, getKidTheme } from "@/lib/themes"
 import { isTeenKey, teenKey } from "@/lib/teen"
 import { getAuthToken } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { PhotoPicker } from "@/components/PhotoPicker"
+import { PhotoSaveError, saveProfilePhoto } from "@/lib/profilePhoto"
 import { cn } from "@/lib/utils"
 
 export function ParentFamily({ profile, profiles, inactiveProfiles, chores, completions, prizeRequests, sharingAvailable, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
@@ -164,7 +166,9 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
   const [clearPin, setClearPin] = useState(false)
   const [birthYear, setBirthYear] = useState("")
   const [role, setRole] = useState<ParentRoleChoice>("other")
+  const [photo, setPhoto] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const createdId = useRef<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   // The kid theme to go back to when switching off Teen mode.
   const lastKidTheme = useRef("sunny-room")
@@ -180,6 +184,8 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     setClearPin(false)
     setBirthYear(profile?.birth_year ? String(profile.birth_year) : "")
     setRole(profile?.parent_role ?? "other")
+    setPhoto(profile?.photo_url ?? null)
+    createdId.current = null
     setError(null)
     KID_THEME_IDS.forEach(ensureThemeFonts)
   }, [state, profile])
@@ -193,7 +199,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
       onClose()
     } catch (caught) {
       console.error(failure, caught)
-      setError(failure)
+      setError(caught instanceof PhotoSaveError ? caught.message : failure)
     } finally {
       setSaving(false)
     }
@@ -212,7 +218,15 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     const parentRole: ParentRole | null = type === "parent" && role !== "other" ? role : null
     const roleUpdate = parentRole || profile?.parent_role ? { parent_role: parentRole } : {}
     const data = { display_name: name.trim(), profile_type: type, theme_key: themeKey, ...pinUpdate, ...yearUpdate, ...roleUpdate }
-    void run(() => profile ? db.family_profile.update(profile.id, data) : db.family_profile.create({ pin_hash: "", ...data, is_active: true }), "We couldn't save that profile.")
+    // The photo saves on its own, so profiles still save on a database without the photo_url column.
+    const photoChanged = photo !== (profile?.photo_url ?? null)
+    void run(async () => {
+      // If only the photo failed last time, the new profile already exists: update it rather than add a second one.
+      const existingId = profile?.id ?? createdId.current
+      const saved = existingId ? await db.family_profile.update(existingId, data) : await db.family_profile.create({ pin_hash: "", ...data, is_active: true })
+      if (!profile) createdId.current = String(saved.id)
+      if (photoChanged) await saveProfilePhoto(String(saved.id), photo)
+    }, "We couldn't save that profile.")
   }
 
   const turnOff = () => {
@@ -233,7 +247,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
     }>
       <div className="space-y-5">
         <div className="flex items-center gap-4">
-          <Avatar profile={{ id: "preview", display_name: name || "?", profile_type: type, theme_key: themeKey }} size={72} />
+          {type === "child" ? null : <Avatar profile={{ id: "preview", display_name: name || "?", profile_type: type, theme_key: themeKey }} size={72} />}
           <Field label="Name" className="flex-1"><input className={inputClass} value={name} onChange={(event) => setName(event.target.value)} placeholder={type === "child" ? "Ava" : "Sarah"} maxLength={40} /></Field>
         </div>
         <div className="space-y-1.5">
@@ -245,6 +259,12 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
             <span className="block text-sm font-bold">Role</span>
             <Segmented value={role} onChange={setRole} options={PARENT_ROLE_OPTIONS} className="max-w-sm" />
             <p className="text-sm text-muted-foreground">Two moms or two dads both work. Pick Other for a grandparent or sitter.</p>
+          </div>
+        ) : null}
+        {type === "child" ? (
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">Photo</span>
+            <PhotoPicker profile={{ id: profile?.id ?? "preview", display_name: name || "?", profile_type: type, theme_key: themeKey, photo_url: photo }} onChange={setPhoto} busy={saving} />
           </div>
         ) : null}
         {type === "child" ? (

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react"
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { useTheme } from "next-themes"
 import { Check, Clock3, Minus, Monitor, Moon, Plus, RotateCcw, Sun, X } from "lucide-react"
@@ -26,12 +26,41 @@ export function Avatar({ profile, size = 44, ring = false, className }: { profil
       }}
       aria-hidden="true"
     >
-      {profile.display_name.trim().charAt(0).toUpperCase() || "?"}
+      {profile.photo_url
+        ? <img src={profile.photo_url} alt="" className="h-full w-full rounded-full object-cover" draggable={false} />
+        : profile.display_name.trim().charAt(0).toUpperCase() || "?"}
       {isKid && size >= 40 && theme.id !== "teen" ? (
         <span className="absolute -bottom-1 -right-1 grid place-items-center rounded-full bg-white shadow-soft" style={{ width: size * 0.42, height: size * 0.42, fontSize: size * 0.24 }}>{theme.token}</span>
       ) : null}
     </span>
   )
+}
+
+/**
+ * One line of text that shrinks its font (down to `min` px) until it fits the
+ * space it has, so long names show in full instead of being cut off with "...".
+ */
+export function FitText({ children, max, min = 12, className }: { children: string; max: number; min?: number; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const fit = () => {
+      let size = max
+      element.style.fontSize = `${size}px`
+      while (size > min && element.scrollWidth > element.clientWidth + 0.5) {
+        size -= 0.5
+        element.style.fontSize = `${size}px`
+      }
+    }
+    fit()
+    const parent = element.parentElement
+    const observer = typeof ResizeObserver === "undefined" || !parent ? null : new ResizeObserver(fit)
+    if (parent) observer?.observe(parent)
+    void document.fonts?.ready.then(fit)
+    return () => observer?.disconnect()
+  }, [children, max, min])
+  return <span ref={ref} title={children} className={cn("block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap", className)} style={{ fontSize: max }}>{children}</span>
 }
 
 export function TokenPill({ amount, token = "⭐", className, prefix = "" }: { amount: number; token?: string; className?: string; prefix?: string }) {

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { ArrowRight, Check, Gift, Home, KeyRound, Lightbulb, Minus, Plus, Sparkles, Trash2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, ChoreIconTile, Chip, ErrorNote, Field, inputClass } from "@/components/kit"
+import { PhotoPicker } from "@/components/PhotoPicker"
+import { saveProfilePhoto } from "@/lib/profilePhoto"
 import type { ChoreRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
 import { firstName, isActive, kidsOf } from "@/lib/family"
 import { db } from "@/lib/db"
@@ -170,21 +172,49 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
   const [name, setName] = useState("")
   const [band, setBand] = useState<AgeBandId>("7-9")
   const [world, setWorld] = useState("sunny-room")
+  const [photo, setPhoto] = useState<string | null>(null)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [photoBusy, setPhotoBusy] = useState<string | null>(null)
   const teen = band === "13+"
   useEffect(() => { WORLDS.forEach(ensureThemeFonts) }, [])
 
   const add = async () => {
     if (!name.trim()) return
     const age = AGE_BANDS.find((item) => item.id === band)?.age ?? 8
+    setPhotoError(null)
     const ok = await run(async () => {
-      await db.family_profile.create({
+      const created = await db.family_profile.create({
         display_name: name.trim(), profile_type: "child", theme_key: teen ? teenKey() : world, pin_hash: "", is_active: true,
         // An estimate from the age band; parents can set the real year later. Used for age-fit chore ideas.
         birth_year: new Date().getFullYear() - age,
       })
+      // Saved on its own so the kid is still added if the photo can't be.
+      if (photo) {
+        try {
+          await saveProfilePhoto(String(created.id), photo)
+        } catch (caught) {
+          setPhotoError(caught instanceof Error ? caught.message : String(caught))
+        }
+      }
       await onRefresh()
     }, "We couldn't add that kid. Try again.")
-    if (ok) setName("")
+    if (ok) {
+      setName("")
+      setPhoto(null)
+    }
+  }
+
+  const changePhoto = async (kid: FamilyProfile, next: string | null) => {
+    setPhotoBusy(kid.id)
+    setPhotoError(null)
+    try {
+      await saveProfilePhoto(kid.id, next)
+      await onRefresh()
+    } catch (caught) {
+      setPhotoError(caught instanceof Error ? caught.message : String(caught))
+    } finally {
+      setPhotoBusy(null)
+    }
   }
 
   const remove = (kid: FamilyProfile) => void run(async () => {
@@ -198,6 +228,10 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
       <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] md:items-start md:gap-6">
       <section className="mt-5 space-y-4 rounded-[22px] bg-card p-5 shadow-soft">
         <Field label="Kid's name"><input className={inputClass} value={name} onChange={(event) => setName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void add() }} placeholder="Sammy" maxLength={40} /></Field>
+        <div className="space-y-1.5">
+          <span className="flex items-center justify-between text-sm font-bold">Photo<span className="font-normal text-muted-foreground">Optional</span></span>
+          <PhotoPicker profile={{ id: "new-kid", display_name: name || "?", profile_type: "child", theme_key: teen ? teenKey() : world, photo_url: photo }} onChange={setPhoto} size={72} busy={busy} />
+        </div>
         <div className="space-y-1.5">
           <span className="flex items-center justify-between text-sm font-bold">Age<span className="font-normal text-muted-foreground">Used to suggest chores that fit</span></span>
           <div className="grid grid-cols-4 gap-2">
@@ -235,10 +269,10 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
               const age = ageFromBirthYear(kid.birth_year)
               return (
                 <li key={kid.id} className="flex items-center gap-3 rounded-[22px] bg-card p-3 shadow-soft">
-                  <Avatar profile={kid} size={48} />
+                  <PhotoPicker compact profile={kid} size={48} busy={busy || photoBusy === kid.id} onChange={(next) => void changePhoto(kid, next)} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-display text-lg font-semibold">{kid.display_name}</span>
-                    <span className="block text-sm text-muted-foreground">{getKidTheme(kid.theme_key).name}{age !== null ? ` · about ${age}` : ""}</span>
+                    <span className="block text-sm text-muted-foreground">{getKidTheme(kid.theme_key).name}{age !== null ? ` · about ${age}` : ""}{kid.photo_url ? "" : " · Tap to add a photo"}</span>
                   </span>
                   <button type="button" onClick={() => remove(kid)} disabled={busy} className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground hover:bg-coral/10 hover:text-coral" aria-label={`Remove ${kid.display_name}`}><Trash2 className="h-4 w-4" /></button>
                 </li>
@@ -251,7 +285,7 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
       )}
       </div>
 
-      <ErrorNote>{error}</ErrorNote>
+      <ErrorNote>{error ?? photoError}</ErrorNote>
       <div className="mt-6 md:flex md:flex-row-reverse md:items-center md:justify-between md:gap-4">
         <Button size="lg" onClick={onNext} disabled={busy || kids.length === 0} className="w-full md:w-auto md:min-w-64">Next: pick chores<ArrowRight className="h-5 w-5" /></Button>
         <p className="mt-2 text-center text-sm text-muted-foreground md:mt-0 md:text-left">{kids.length === 0 ? "Add at least one kid to keep going." : "You can add or change kids any time in Family."}</p>

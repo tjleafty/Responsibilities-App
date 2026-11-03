@@ -20,6 +20,8 @@ export interface FamilyProfile {
   birth_year?: number | null
   /** Grown-ups only: Mom or Dad. Null for anyone who didn't pick (e.g. a grandparent). */
   parent_role?: ParentRole | null
+  /** A small square photo (a data URL) shown instead of the initial wherever the profile appears. */
+  photo_url?: string | null
 }
 
 export interface GoalRecord {
