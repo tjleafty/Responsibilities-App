@@ -1,16 +1,17 @@
 import { useRef, useState } from "react"
 import { ArrowRight, UserRoundPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, ErrorNote, Field, MASCOT, inputClass } from "@/components/kit"
+import { Avatar, ErrorNote, Field, MASCOT, Segmented, inputClass } from "@/components/kit"
 import { PinScreen } from "@/components/WhoIsHere"
-import type { FamilyProfile } from "@/lib/familyTypes"
-import { grownUpsOf } from "@/lib/family"
+import type { FamilyProfile, ParentRole } from "@/lib/familyTypes"
+import { PARENT_ROLE_OPTIONS, grownUpsOf, type ParentRoleChoice } from "@/lib/family"
 
 interface ParentSetupProps {
   profiles: FamilyProfile[]
   suggestedName: string
   /** Creates this login's parent profile, or claims an existing one when claimId is set. */
-  onSave: (details: { displayName: string; pinHash: string; claimId: string | null }) => Promise<FamilyProfile>
+  /** parentRole: Mom or Dad, null to clear it, or left out to leave it as it is. */
+  onSave: (details: { displayName: string; pinHash: string; claimId: string | null; parentRole?: ParentRole | null }) => Promise<FamilyProfile>
   onDone: (profile: FamilyProfile) => void
   onSignOut: () => void
 }
@@ -36,20 +37,25 @@ export function ParentSetup({ profiles, suggestedName, onSave, onDone, onSignOut
   const claimable = claimableProfiles(profiles)
   const [claim, setClaim] = useState<FamilyProfile | null>(null)
   const [name, setName] = useState(suggestedName)
+  const [role, setRole] = useState<ParentRoleChoice | null>(null)
   const [step, setStep] = useState<"name" | "pin">("name")
   const [problem, setProblem] = useState<string | null>(null)
   const saved = useRef<FamilyProfile | null>(null)
 
+  const parentRole: ParentRole | null = role === "mom" || role === "dad" ? role : null
+  // Only send the role when there's something to save or clear.
+  const roleUpdate = parentRole || claim?.parent_role ? { parentRole } : {}
+
   if (step === "pin") {
     const draft: FamilyProfile = claim
-      ? { ...claim, display_name: name.trim(), pin_hash: "" }
-      : { id: "new-parent", display_name: name.trim(), profile_type: "parent", theme_key: "sunny-room", pin_hash: "" }
+      ? { ...claim, display_name: name.trim(), parent_role: parentRole, pin_hash: "" }
+      : { id: "new-parent", display_name: name.trim(), profile_type: "parent", parent_role: parentRole, theme_key: "sunny-room", pin_hash: "" }
     return (
       <PinScreen
         profile={draft}
         onBack={() => setStep("name")}
         onSetPin={async (_id, pinHash) => {
-          saved.current = await onSave({ displayName: name.trim(), pinHash, claimId: claim?.id ?? null })
+          saved.current = await onSave({ displayName: name.trim(), pinHash, claimId: claim?.id ?? null, ...roleUpdate })
         }}
         onUnlocked={() => { if (saved.current) onDone(saved.current) }}
       />
@@ -58,6 +64,7 @@ export function ParentSetup({ profiles, suggestedName, onSave, onDone, onSignOut
 
   const next = () => {
     if (!name.trim()) return setProblem("Add your name so the family knows who you are.")
+    if (!role) return setProblem("Pick Mom, Dad or Other.")
     setProblem(null)
     setStep("pin")
   }
@@ -79,7 +86,7 @@ export function ParentSetup({ profiles, suggestedName, onSave, onDone, onSignOut
                 <li key={profile.id}>
                   <button
                     type="button"
-                    onClick={() => { setClaim(profile); setName(profile.display_name) }}
+                    onClick={() => { setClaim(profile); setName(profile.display_name); setRole(profile.parent_role ?? null) }}
                     aria-pressed={claim?.id === profile.id}
                     className={`flex w-full items-center gap-3 rounded-[18px] border-2 p-3 text-left transition-colors ${claim?.id === profile.id ? "border-primary bg-primary/10" : "border-transparent bg-muted/70"}`}
                   >
@@ -91,7 +98,7 @@ export function ParentSetup({ profiles, suggestedName, onSave, onDone, onSignOut
               <li>
                 <button
                   type="button"
-                  onClick={() => { setClaim(null); setName(suggestedName) }}
+                  onClick={() => { setClaim(null); setName(suggestedName); setRole(null) }}
                   aria-pressed={!claim}
                   className={`flex w-full items-center gap-3 rounded-[18px] border-2 p-3 text-left transition-colors ${!claim ? "border-primary bg-primary/10" : "border-transparent bg-muted/70"}`}
                 >
@@ -107,6 +114,11 @@ export function ParentSetup({ profiles, suggestedName, onSave, onDone, onSignOut
           <Field label="Your name" hint="Kids see this on the Who's here? screen.">
             <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="given-name" placeholder="Sarah" className={inputClass} />
           </Field>
+          <div className="space-y-1.5">
+            <span className="block text-sm font-bold">I'm a</span>
+            <Segmented value={role ?? ("" as ParentRoleChoice)} onChange={setRole} options={PARENT_ROLE_OPTIONS} size="lg" />
+            <p className="text-sm text-muted-foreground">Two moms or two dads? Each grown-up picks their own.</p>
+          </div>
           <ErrorNote>{problem}</ErrorNote>
           <Button type="submit" size="lg" className="w-full">Next: create your PIN<ArrowRight className="h-5 w-5" /></Button>
         </form>

@@ -1,5 +1,5 @@
 import { applySwaps } from "@/lib/swaps"
-import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
+import type { ChoreCompletionRecord, ChoreRecord, FamilyProfile, ParentRole } from "@/lib/familyTypes"
 import { chorePeriodKey, getAssignedProfileIds, getPeriodKey, getRandomGroup, isRandomAssignmentEnabled } from "@/lib/choreUtils"
 import { dueStatus, isTodayChore, scheduleFor } from "@/lib/choreSchedule"
 import { parseUTC } from "@/lib/utils"
@@ -21,6 +21,22 @@ export function kidsOf(profiles: FamilyProfile[]): FamilyProfile[] {
 export function grownUpsOf(profiles: FamilyProfile[]): FamilyProfile[] {
   return profiles.filter((profile) => profile.profile_type === "parent" && isActive(profile))
 }
+
+const PARENT_ROLE_LABELS: Record<ParentRole, string> = { mom: "Mom", dad: "Dad" }
+
+/** "Mom", "Dad", or null when a grown-up hasn't picked one. */
+export function parentRoleLabel(profile: Pick<FamilyProfile, "profile_type" | "parent_role">): string | null {
+  if (profile.profile_type !== "parent" || !profile.parent_role) return null
+  return PARENT_ROLE_LABELS[profile.parent_role] ?? null
+}
+
+/** Picker choices for a grown-up's role; "other" saves as no role. */
+export type ParentRoleChoice = ParentRole | "other"
+export const PARENT_ROLE_OPTIONS: Array<{ value: ParentRoleChoice; label: string }> = [
+  { value: "mom", label: "Mom" },
+  { value: "dad", label: "Dad" },
+  { value: "other", label: "Other" },
+]
 
 /** Who a chore belongs to for the period that contains `date` (random assignment picks one kid or a group). */
 export function assigneesOf(chore: ChoreRecord, profiles: FamilyProfile[], date = new Date()): string[] {
