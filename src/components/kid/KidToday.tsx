@@ -49,7 +49,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
       <header className="flex items-center gap-3">
         <span className="md:hidden"><Avatar profile={profile} size={52} /></span>
         <div className="min-w-0 flex-1">
-          <h1 className="font-display text-2xl font-semibold leading-tight sm:text-3xl">{copy.greeting(firstName(profile), new Date().getHours())}</h1>
+          <h1 className="font-display text-xl font-medium leading-tight sm:text-2xl">{copy.greeting(firstName(profile), new Date().getHours())}</h1>
           <p className="text-muted-foreground">{new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date())}</p>
         </div>
         <TokenPill amount={balance} token={token} className="bg-card px-4 py-2 text-lg shadow-soft" />
@@ -62,7 +62,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           {daily.length > 0 ? (
             <section className="rounded-[22px] bg-card p-5 shadow-soft" aria-label="Today's progress">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-xl font-semibold">{copy.journey}</h2>
+                <h2 className="font-display text-lg font-medium">{copy.journey}</h2>
                 <span className="rounded-full bg-primary/10 px-3 py-1 font-display text-sm font-semibold text-primary">{copy.progress(doneCount, daily.length)}</span>
               </div>
               <ol className="mt-4 flex items-center" aria-label="Chores in order">
@@ -79,17 +79,17 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
           {nudge ? (
             <p role="status" className="flex items-start gap-3 rounded-[22px] bg-accent/40 px-4 py-3">
               <BellRing className="mt-1 h-5 w-5 shrink-0 text-primary" />
-              <span><span className="block font-display text-lg font-semibold">{nudge.title}</span><span className="block text-foreground/80">{nudge.body}</span></span>
+              <span><span className="block font-display text-base font-medium">{nudge.title}</span><span className="block text-foreground/80">{nudge.body}</span></span>
             </p>
           ) : null}
 
           {next ? <HeroChore chore={next.chore} state={next.state} note={next.completion?.rejection_reason} token={token} copy={copy} onOpen={() => onOpenChore(next.chore.id)} /> : <AllDone token={token} copy={copy} />}
 
-          {rows.length > 0 ? <p className="flex items-center gap-3 rounded-[22px] bg-primary/10 px-4 py-3 font-display text-lg font-semibold text-primary"><span aria-hidden="true" className="text-2xl">{MASCOT}</span>{copy.cheer(firstName(profile))}</p> : null}
+          {rows.length > 0 ? <p className="flex items-center gap-3 rounded-[22px] bg-primary/10 px-4 py-3 font-display text-base font-medium text-primary"><span aria-hidden="true" className="text-2xl">{MASCOT}</span>{copy.cheer(firstName(profile))}</p> : null}
 
           {others.length > 0 ? (
             <section className="space-y-3">
-              <h2 className="font-display text-xl font-semibold">{copy.more}</h2>
+              <h2 className="font-display text-lg font-medium">{copy.more}</h2>
               <div className="grid gap-3 lg:grid-cols-2">{others.map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
@@ -98,7 +98,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
             <section className="flex flex-col gap-3 rounded-[22px] bg-card p-4 shadow-soft sm:flex-row sm:items-center">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-secondary"><HandHelping className="h-6 w-6" /></span>
               <span className="min-w-0 flex-1">
-                <span className="block font-display text-lg font-semibold">Want extra {token}?</span>
+                <span className="block font-display text-base font-medium">Want extra {token}?</span>
                 <span className="block text-sm text-muted-foreground">{mySwaps.length ? `${mySwaps.length} ${mySwaps.length === 1 ? "ask is" : "asks are"} waiting for a grown-up.` : "Offer to do a brother's or sister's chore for bonus points."}</span>
               </span>
               <Button variant="outline" onClick={() => setHelping(true)}>Help out</Button>
@@ -107,7 +107,7 @@ export function KidToday({ profile, profiles, chores, completions, balance, toke
 
           {later.filter((row) => row !== next).length > 0 ? (
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><CalendarDays className="h-5 w-5 text-primary" />{copy.later}</h2>
+              <h2 className="flex items-center gap-2 font-display text-lg font-medium"><CalendarDays className="h-5 w-5 text-primary" />{copy.later}</h2>
               <div className="grid gap-3 lg:grid-cols-2">{later.filter((row) => row !== next).map((row) => <ChoreRow key={row.chore.id} chore={row.chore} state={row.state} token={token} onOpen={() => onOpenChore(row.chore.id)} />)}</div>
             </section>
           ) : null}
@@ -159,7 +159,7 @@ function HeroChore({ chore, state, note, token, copy, onOpen }: { chore: ChoreRe
         <span className="absolute right-3 top-3 rounded-full bg-secondary px-3 py-1.5 font-display text-sm font-semibold uppercase tracking-wide text-secondary-foreground">{state === "sent_back" ? copy.tryAgain : state === "in_progress" ? copy.keepGoing : copy.upNext}</span>
       </button>
       <div className="p-5">
-        <h2 className="font-display text-3xl font-semibold">{chore.title}</h2>
+        <h2 className="font-display text-2xl font-medium">{chore.title}</h2>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-lg text-muted-foreground">
           {steps > 0 ? <span>{steps} {steps === 1 ? "step" : "steps"}</span> : null}
           {points > 0 ? <TokenPill amount={points} token={token} prefix="+" /> : null}
@@ -175,7 +175,7 @@ function AllDone({ token, copy }: { token: string; copy: ThemeCopy }) {
   return (
     <section className="flex flex-col items-center rounded-[26px] bg-card px-6 py-8 text-center shadow-soft">
       <span className="grid h-24 w-24 place-items-center rounded-full bg-accent/30"><Trophy className="h-12 w-12 text-accent-foreground" /></span>
-      <h2 className="mt-4 font-display text-3xl font-semibold">{copy.allDone}</h2>
+      <h2 className="mt-4 font-display text-2xl font-medium">{copy.allDone}</h2>
       <p className="mt-2 text-lg text-muted-foreground">{copy.allDoneSub} {token}</p>
     </section>
   )
@@ -192,7 +192,7 @@ function ChoreRow({ chore, state, token, onOpen }: { chore: ChoreRecord; state: 
     )}>
       <ChoreIconTile title={chore.title} size={56} />
       <span className="min-w-0 flex-1">
-        <span className={cn("block truncate font-display text-xl font-semibold", state === "done" && "line-through decoration-2")}>{chore.title}</span>
+        <span className={cn("block truncate font-display text-lg font-medium", state === "done" && "line-through decoration-2")}>{chore.title}</span>
         <span className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
           {state === "waiting" ? <span className="inline-flex items-center gap-1 rounded-full bg-accent/30 px-2.5 py-0.5 text-sm font-bold text-foreground"><Clock3 className="h-4 w-4" />Waiting</span>
             : state === "sent_back" ? <span className="inline-flex items-center gap-1 rounded-full bg-coral/15 px-2.5 py-0.5 text-sm font-bold text-coral"><RotateCcw className="h-4 w-4" />Try again</span>

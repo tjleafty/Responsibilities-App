@@ -59,7 +59,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex items-center justify-between gap-3">
-        <h1 className="font-display text-3xl font-semibold">{!teen ? "My prizes" : show === "goals" ? "Goals" : "Rewards"}</h1>
+        <h1 className="font-display text-2xl font-medium">{!teen ? "My prizes" : show === "goals" ? "Goals" : "Rewards"}</h1>
         <TokenPill amount={balance} token={theme.token} className="bg-card px-4 py-2 text-lg shadow-soft" />
       </header>
 
@@ -70,7 +70,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
           </Ring>
           <div className="min-w-0">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-muted-foreground">Saving up for</p>
-            <p className="mt-1 font-display text-2xl font-semibold">{savingFor.title}</p>
+            <p className="mt-1 font-display text-xl font-medium">{savingFor.title}</p>
             <p className="mt-1 text-lg font-bold text-primary">{(Number(savingFor.points_required) || 0) - balance} more {theme.tokenName}</p>
           </div>
         </section>
@@ -78,7 +78,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
 
       {showRewards && recent.length > 0 ? (
         <section className="space-y-3">
-          <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Hand className="h-5 w-5 text-primary" />{teen ? "Requests" : "Prizes I asked for"}</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg font-medium"><Hand className="h-5 w-5 text-primary" />{teen ? "Requests" : "Prizes I asked for"}</h2>
           <ul className="space-y-2">
             {recent.map((row) => {
               const state = requestState(row)
@@ -88,7 +88,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                     {state === "granted" ? <PartyPopper className="h-6 w-6" /> : state === "declined" ? <Gift className="h-6 w-6" /> : <Clock3 className="h-6 w-6" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-display text-lg font-semibold leading-tight">{titleOf(row)}</p>
+                    <p className="font-display text-base font-medium leading-tight">{titleOf(row)}</p>
                     <p className="text-sm font-bold text-muted-foreground">
                       {teen
                         ? state === "granted" ? "Approved" : state === "declined" ? `Not now · ${requestCost(row)} XP returned` : "Pending"
@@ -110,7 +110,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
 
       {showGoals && myGoals.length > 0 ? (
         <section className="space-y-3">
-          {teen ? null : <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Target className="h-5 w-5 text-primary" />My goals</h2>}
+          {teen ? null : <h2 className="flex items-center gap-2 font-display text-lg font-medium"><Target className="h-5 w-5 text-primary" />My goals</h2>}
           {myGoals.map((goal) => {
             const progress = Math.min(goal.progress, goal.target_count)
             const reached = progress >= goal.target_count
@@ -118,10 +118,10 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
               <article key={goal.id} className="rounded-[22px] bg-card p-4 shadow-soft">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-display text-xl font-semibold">{goal.title}</p>
+                    <p className="font-display text-lg font-medium">{goal.title}</p>
                     <p className="text-sm font-bold text-muted-foreground">{FREQUENCY_LABEL[goal.frequency] ?? ""}</p>
                   </div>
-                  <span className="shrink-0 font-display text-lg font-semibold tabular-nums">{progress}/{goal.target_count}</span>
+                  <span className="shrink-0 font-display text-base font-medium tabular-nums">{progress}/{goal.target_count}</span>
                 </div>
                 <ProgressBar value={progress} max={goal.target_count} thick className="mt-3" color={reached ? "hsl(var(--success))" : undefined} />
                 {goal.prize ? (
@@ -136,7 +136,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
       ) : null}
 
       {showRewards ? <section className="space-y-3">
-        <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Sparkles className="h-5 w-5 text-primary" />{teen ? "Available" : "Prize shelf"}</h2>
+        <h2 className="flex items-center gap-2 font-display text-lg font-medium"><Sparkles className="h-5 w-5 text-primary" />{teen ? "Available" : "Prize shelf"}</h2>
         <ErrorNote>{error}</ErrorNote>
         {shelf.length === 0 ? (
           teen ? <p className="rounded-2xl bg-card p-6 text-center text-muted-foreground ring-1 ring-border">No rewards yet. Ask a parent to add some.</p>
@@ -154,7 +154,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
                       ? <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary" aria-hidden="true"><Gift className="h-5 w-5" /></span>
                       : <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-3xl" aria-hidden="true">🎁</span>}
                     <div className="min-w-0">
-                      <p className="font-display text-lg font-semibold leading-tight">{reward.title}</p>
+                      <p className="font-display text-base font-medium leading-tight">{reward.title}</p>
                       {reward.description ? <p className="mt-1 text-sm text-muted-foreground">{reward.description}</p> : null}
                     </div>
                   </div>

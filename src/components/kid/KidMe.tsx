@@ -38,7 +38,7 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
     <div className="mx-auto max-w-3xl space-y-6">
       <header className="flex flex-col items-center text-center">
         <Avatar profile={profile} size={104} ring />
-        <h1 className="mt-3 font-display text-4xl font-semibold">{profile.display_name}</h1>
+        <h1 className="mt-3 font-display text-3xl font-medium">{profile.display_name}</h1>
         <p className="text-lg text-muted-foreground">{theme.name} explorer</p>
       </header>
 
@@ -46,14 +46,14 @@ export function KidMe({ profile, completions, onThemeChange, onSwitchProfile }: 
         {stats.map((stat) => (
           <li key={stat.label} className="rounded-[22px] bg-card p-4 text-center shadow-soft">
             <span className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-lg text-primary">{stat.icon}</span>
-            <p className="mt-2 font-display text-3xl font-semibold tabular-nums">{stat.value}</p>
+            <p className="mt-2 font-display text-2xl font-medium tabular-nums">{stat.value}</p>
             <p className="text-sm font-bold text-muted-foreground">{stat.label}</p>
           </li>
         ))}
       </ul>
 
       <section className="space-y-3">
-        <h2 className="font-display text-xl font-semibold">Pick your world</h2>
+        <h2 className="font-display text-lg font-medium">Pick your world</h2>
         <ErrorNote>{error}</ErrorNote>
         <ThemePicker value={theme.id} onChange={pick} kidName={profile.display_name} label={saving ? "Saving..." : "Change"} />
       </section>

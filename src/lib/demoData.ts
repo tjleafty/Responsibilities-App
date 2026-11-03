@@ -32,19 +32,19 @@ export function demoTables(): Record<string, Row[]> {
   ]
   const chore = (id: string, title: string, kids: string[], extra: Row = {}): Row => ({
     id, title, frequency: "daily", target_profile_id: kids[0], assigned_profile_ids: JSON.stringify(kids), subtasks: "[]",
-    reward: "", reward_points: 5, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false,
+    reward: "", reward_points: 1, difficulty: "easy", time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false,
     assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true, created_at: ago(60 * 24 * 60), ...extra,
   })
   const chores: Row[] = [
     chore("bed", "Make your bed", ["mia", "leo", "ava"], { subtasks: steps("Pillows off", "Pull the sheet up", "Smooth the blanket", "Pillows and stuffy back"), requires_verification: true }),
-    chore("teeth", "Brush teeth", ["mia", "leo", "ava"], { reward_points: 3, subtasks: steps("Toothpaste on", "Brush top and bottom", "Rinse") }),
-    chore("toys", "Put toys away", ["mia"], { reward_points: 4, requires_verification: true }),
+    chore("teeth", "Brush teeth", ["mia", "leo", "ava"], { subtasks: steps("Toothpaste on", "Brush top and bottom", "Rinse") }),
+    chore("toys", "Put toys away", ["mia"], { requires_verification: true }),
     chore("table", "Set the table", ["mia", "leo"], { requires_verification: true, subtasks: steps("Placemats", "Plates", "Forks on the left", "Cups") }),
     chore("fish", "Feed the fish", ["mia"], { subtasks: steps("One pinch of food", "Check the water") }),
-    chore("dishes", "Empty the dishwasher", ["leo", "ava"], { reward_points: 10, random_assignment_enabled: true, assignment_rotation_enabled: true, time_limit_minutes: 15, requires_verification: true, subtasks: steps("Silverware first", "Plates", "Cups") }),
-    chore("violin", "Practice violin", ["ava"], { reward_points: 10, subtasks: steps("Warm up", "Scales", "New song") }),
-    chore("trash", "Take out trash and recycling", ["ava"], { frequency: "weekly", reward_points: 10, requires_verification: true }),
-    chore("laundry", "Fold laundry", ["ava", "leo"], { frequency: "weekly", reward_points: 15 }),
+    chore("dishes", "Empty the dishwasher", ["leo", "ava"], { reward_points: 2, difficulty: "medium", random_assignment_enabled: true, assignment_rotation_enabled: true, time_limit_minutes: 15, requires_verification: true, subtasks: steps("Silverware first", "Plates", "Cups") }),
+    chore("violin", "Practice violin", ["ava"], { reward_points: 3, difficulty: "hard", subtasks: steps("Warm up", "Scales", "New song") }),
+    chore("trash", "Take out trash and recycling", ["ava"], { frequency: "weekly", reward_points: 2, difficulty: "medium", requires_verification: true }),
+    chore("laundry", "Fold laundry", ["ava", "leo"], { frequency: "weekly", reward_points: 3, difficulty: "hard" }),
     chore("sweep", "Sweep the porch", ["leo"], { is_active: false }),
   ]
   const done = (id: string, choreId: string, kid: string, minutes: number, points: number, extra: Row = {}): Row => ({

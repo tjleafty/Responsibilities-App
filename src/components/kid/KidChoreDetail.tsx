@@ -85,7 +85,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
     return (
       <div className="mx-auto flex min-h-[80dvh] max-w-md flex-col items-center justify-center text-center">
         <Ring value={1} max={1} size={120} stroke={10} color="hsl(var(--success))"><Check className="h-10 w-10 text-success" strokeWidth={3} /></Ring>
-        {points > 0 ? <p className="mt-6 font-display text-3xl font-bold text-primary">+{points} XP pending</p> : null}
+        {points > 0 ? <p className="mt-6 font-display text-2xl font-bold text-primary">+{points} XP pending</p> : null}
         <h1 className="mt-2 text-lg font-medium">Sent to {sentTo} for approval</h1>
         <Button size="lg" onClick={onBack} className="mt-8 w-full">Back to today</Button>
       </div>
@@ -96,7 +96,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
     return (
       <div className="mx-auto flex min-h-[80dvh] max-w-md flex-col items-center justify-center text-center">
         <span className="float-soft grid h-32 w-32 place-items-center rounded-full bg-accent/40 text-6xl" aria-hidden="true">{MASCOT}</span>
-        <h1 className="mt-6 font-display text-4xl font-semibold">Sent to {sentTo}!</h1>
+        <h1 className="mt-6 font-display text-3xl font-medium">Sent to {sentTo}!</h1>
         <p className="mt-2 text-lg text-muted-foreground">They'll take a look soon. Your {points > 0 ? `${points} ${theme.tokenName}` : "reward"} will show up once they say it's done.</p>
         <Button size="lg" onClick={onBack} className="mt-8 w-full">Back to my chores</Button>
       </div>
@@ -107,15 +107,15 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
     <div className="mx-auto max-w-2xl space-y-5 pb-28 md:pb-0">
       <header className="flex items-center gap-3">
         <button type="button" onClick={onBack} className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card shadow-soft" aria-label="Back"><ArrowLeft className="h-5 w-5" /></button>
-        <h1 className="min-w-0 flex-1 truncate font-display text-2xl font-semibold sm:text-3xl">{chore.title}</h1>
+        <h1 className="min-w-0 flex-1 truncate font-display text-xl font-medium sm:text-2xl">{chore.title}</h1>
         {points > 0 ? (teen
-          ? <span className="shrink-0 font-display text-lg font-semibold text-primary">+{points} XP</span>
+          ? <span className="shrink-0 font-display text-base font-medium text-primary">+{points} XP</span>
           : <TokenPill amount={points} token={theme.token} prefix="+" className="bg-card px-4 py-2 text-base shadow-soft" />) : null}
       </header>
 
       {state === "sent_back" ? (
         <section className="rounded-[22px] border-2 border-coral/40 bg-coral/10 p-4">
-          <p className="flex items-center gap-2 font-display text-xl font-semibold text-coral"><RotateCcw className="h-5 w-5" />{teen ? "Redo requested" : "Almost there!"}</p>
+          <p className="flex items-center gap-2 font-display text-lg font-medium text-coral"><RotateCcw className="h-5 w-5" />{teen ? "Redo requested" : "Almost there!"}</p>
           <p className="mt-1 font-semibold">{completion?.rejection_reason || (teen ? "Take another pass." : "Let's give it another try.")}</p>
           {completion?.parent_feedback ? <ParentNote name={firstName(grownUp)} profile={grownUp} text={completion.parent_feedback} /> : null}
         </section>
@@ -137,7 +137,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
         <section className="flex items-center gap-4 rounded-[22px] bg-card p-4 shadow-soft">
           <ChoreIconTile title={chore.title} size={64} />
           <div>
-            <p className="font-display text-lg font-semibold">How-to video coming soon</p>
+            <p className="font-display text-base font-medium">How-to video coming soon</p>
             <p className="text-sm text-muted-foreground">Follow the steps below for now.</p>
           </div>
         </section>
@@ -149,7 +149,7 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
       {steps.length > 0 ? (
         <section className="space-y-3" aria-label="Steps">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-xl font-semibold">Steps</h2>
+            <h2 className="font-display text-lg font-medium">Steps</h2>
             <span className="font-bold text-muted-foreground">{checked.filter((id) => steps.some((step) => step.id === id)).length} of {steps.length}</span>
           </div>
           <ProgressBar value={checked.filter((id) => steps.some((step) => step.id === id)).length} max={steps.length} thick />
@@ -168,10 +168,10 @@ export function KidChoreDetail({ profile, profiles, chores, completions, prizeRe
                       done && "bg-primary/10",
                     )}
                   >
-                    <span className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-xl font-semibold", done ? "bg-primary text-primary-foreground" : "border-4 border-muted text-muted-foreground")}>
+                    <span className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-full font-display text-lg font-medium", done ? "bg-primary text-primary-foreground" : "border-4 border-muted text-muted-foreground")}>
                       {done ? <Check className="h-6 w-6" strokeWidth={3} /> : index + 1}
                     </span>
-                    <span className={cn("font-display text-xl font-semibold", done && "text-muted-foreground line-through decoration-2")}>{step.title}</span>
+                    <span className={cn("font-display text-lg font-medium", done && "text-muted-foreground line-through decoration-2")}>{step.title}</span>
                   </button>
                 </li>
               )
@@ -227,7 +227,7 @@ function StatusCard({ icon, title, children, className }: { icon: ReactNode; tit
     <section className={cn("flex items-center gap-4 rounded-[22px] p-4", className)}>
       <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-card shadow-soft">{icon}</span>
       <div>
-        <p className="font-display text-xl font-semibold">{title}</p>
+        <p className="font-display text-lg font-medium">{title}</p>
         <p className="text-foreground/80">{children}</p>
       </div>
     </section>

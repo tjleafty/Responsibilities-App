@@ -204,8 +204,7 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
     : null
   const visible = useMemo(() => catalog
     .filter((preset) => (filter === "all" || preset.frequency === filter) && preset.title.toLowerCase().includes(query.trim().toLowerCase()))
-    .map((preset) => ({ preset, fits: goodFor(preset) }))
-    .sort((a, b) => (b.fits?.length ?? 0) - (a.fits?.length ?? 0)),
+    .map((preset) => ({ preset, fits: goodFor(preset) })),
   // eslint-disable-next-line react-hooks/exhaustive-deps
   [catalog, filter, query, settings, profiles])
 
@@ -222,7 +221,7 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
     const records = catalog.filter((preset) => picked.includes(key(preset))).flatMap((preset) => {
       const ids = kids.filter((id) => !chores.some((chore) => isActive(chore) && chore.frequency === preset.frequency && chore.title.toLowerCase() === preset.title.toLowerCase() && getAssignedProfileIds(chore).includes(id)))
       if (ids.length === 0) return []
-      return [{ title: preset.title, frequency: preset.frequency, target_profile_id: ids[0], assigned_profile_ids: JSON.stringify(ids), subtasks: JSON.stringify(preset.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_points: settings.points.defaultPoints, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true }]
+      return [{ title: preset.title, frequency: preset.frequency, target_profile_id: ids[0], assigned_profile_ids: JSON.stringify(ids), subtasks: JSON.stringify(preset.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_points: settings.points.difficultyPoints.easy, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true }]
     })
     if (records.length === 0) {
       setError("Those chores are already set up for the kids you picked.")

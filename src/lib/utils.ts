@@ -175,3 +175,8 @@ export function formatCurrency(amount?: number | null): string {
     maximumFractionDigits: 2
   }).format(amount);
 }
+
+/** A to Z by title, ignoring case ("brush teeth" sits next to "Bath time"). */
+export function byTitle<T extends { title?: string | null }>(items: T[]): T[] {
+  return [...items].sort((a, b) => String(a.title ?? "").localeCompare(String(b.title ?? ""), undefined, { sensitivity: "base", numeric: true }))
+}

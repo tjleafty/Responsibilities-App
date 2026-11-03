@@ -21,8 +21,6 @@ interface TeenTodayProps extends KidAppProps {
 interface Row { chore: ChoreRecord; completion: ChoreCompletionRecord | null; state: ChoreState }
 
 // Sent back first (needs action), then what's left, then what's finished.
-const ORDER: ChoreState[] = ["sent_back", "in_progress", "todo", "waiting", "done"]
-const byState = (a: Row, b: Row) => ORDER.indexOf(a.state) - ORDER.indexOf(b.state)
 const timeOf = (stamp?: string | null) => stamp ? new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(parseUTC(stamp)) : ""
 
 /** Teen "Today": an activity ring with streak and XP, then compact chore rows. */
@@ -34,8 +32,8 @@ export function TeenToday({ profile, profiles, chores, completions, balance, onO
     const completion = completionFor(chore, profile.id, completions)
     return { chore: { ...chore, subtasks: JSON.stringify(subtasksFor(chore, profile.id, profiles)) }, completion, state: choreState(completion) }
   })
-  const today = rows.filter((row) => isTodayFor(row.chore, profile.id)).sort(byState)
-  const week = rows.filter((row) => !isTodayFor(row.chore, profile.id)).sort(byState)
+  const today = rows.filter((row) => isTodayFor(row.chore, profile.id))
+  const week = rows.filter((row) => !isTodayFor(row.chore, profile.id))
   const finished = today.filter((row) => row.state === "done" || row.state === "waiting").length
   const left = today.length - finished
   const streak = currentStreak(profile.id, completions)

@@ -2,9 +2,9 @@ import type { ChoreRecord, Difficulty } from "@/lib/familyTypes"
 import { familySettings, type FamilySettings } from "@/lib/familySettings"
 
 /*
- * Chore difficulty (chores.difficulty, migration 20261029000000). A chore's
- * points are its base points times the family's multiplier for its difficulty.
- * Chores without a difficulty keep their base points.
+ * Chore difficulty (chores.difficulty, migration 20261029000000). A chore marked
+ * easy, medium or hard earns the family's points for that level (1, 2 and 3 by
+ * default). Chores without a difficulty earn their own custom points.
  */
 
 export const DIFFICULTIES: Array<{ value: Difficulty; label: string; emoji: string }> = [
@@ -16,13 +16,18 @@ export const DIFFICULTIES: Array<{ value: Difficulty; label: string; emoji: stri
 export const difficultyOf = (chore: Pick<ChoreRecord, "difficulty">): Difficulty | null =>
   chore.difficulty === "easy" || chore.difficulty === "medium" || chore.difficulty === "hard" ? chore.difficulty : null
 
-export function pointsFor(base: number, difficulty: Difficulty | null, settings: FamilySettings = familySettings()): number {
-  const multiplier = difficulty ? settings.points.multipliers[difficulty] ?? 1 : 1
-  return Math.max(0, Math.round((Number(base) || 0) * multiplier))
+/** Points for a level of difficulty, from the family's settings. */
+export const difficultyPoints = (difficulty: Difficulty, settings: FamilySettings = familySettings()): number =>
+  Math.max(0, Math.round(Number(settings.points.difficultyPoints[difficulty]) || 0))
+
+/** Points a chore earns: its difficulty's points when it has one, its custom points when it doesn't. */
+export function pointsFor(custom: number, difficulty: Difficulty | null, settings: FamilySettings = familySettings()): number {
+  return difficulty ? difficultyPoints(difficulty, settings) : Math.max(0, Math.round(Number(custom) || 0))
 }
 
 /** The points a kid earns for this chore right now. */
 export const chorePoints = (chore: Pick<ChoreRecord, "reward_points" | "difficulty">, settings?: FamilySettings) =>
   pointsFor(Number(chore.reward_points) || 0, difficultyOf(chore), settings)
 
-export const formatMultiplier = (value: number) => `×${Number.isInteger(value) ? value : value.toFixed(1).replace(/\.0$/, "")}`
+/** "1 point" / "3 points". */
+export const pointsLabel = (points: number) => `${points} ${points === 1 ? "point" : "points"}`

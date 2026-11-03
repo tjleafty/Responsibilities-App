@@ -3,12 +3,13 @@ import { Bell, BellRing, Check, Gift, Lightbulb, PartyPopper, Star } from "lucid
 import { DeviceReminders } from "@/components/DeviceReminders"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { Chip, ChoreIconTile, ErrorNote, Sheet, Stepper } from "@/components/kit"
-import type { ChoreRecord, FamilyProfile } from "@/lib/familyTypes"
+import { Chip, ChoreIconTile, ErrorNote, inputClass, Sheet, Stepper } from "@/components/kit"
+import type { ChoreRecord, Difficulty, FamilyProfile } from "@/lib/familyTypes"
 import { isActive, kidsOf } from "@/lib/family"
 import { db } from "@/lib/db"
 import { familySettings, familySettingsAvailable, saveFamilySettings, type FamilySettings } from "@/lib/familySettings"
-import { DIFFICULTIES } from "@/lib/difficulty"
+import { DIFFICULTIES, difficultyOf } from "@/lib/difficulty"
+import { cn } from "@/lib/utils"
 import { listMembers, type FamilyMember } from "@/lib/familySharing"
 
 const WEEKLY_LIMITS: Array<number | null> = [null, 1, 2, 3, 5]
@@ -35,6 +36,7 @@ interface FamilySettingsSheetProps {
 export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, onRefresh }: FamilySettingsSheetProps) {
   const [draft, setDraft] = useState<FamilySettings>(familySettings())
   const [points, setPoints] = useState<Record<string, number>>({})
+  const [levels, setLevels] = useState<Record<string, Difficulty | null>>({})
   const [members, setMembers] = useState<FamilyMember[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -46,6 +48,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
     if (!open) return
     setDraft(familySettings())
     setPoints(Object.fromEntries(chores.map((chore) => [chore.id, Number(chore.reward_points) || 0])))
+    setLevels(Object.fromEntries(chores.map((chore) => [chore.id, difficultyOf(chore)])))
     setError(null)
     listMembers().then(setMembers).catch(() => setMembers([]))
   }, [open, chores])
@@ -58,8 +61,17 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
     setError(null)
     try {
       await saveFamilySettings(draft)
-      const changed = activeChores.filter((chore) => points[chore.id] !== (Number(chore.reward_points) || 0))
-      await Promise.all(changed.map((chore) => db.chore.update(chore.id, { reward_points: Math.max(0, points[chore.id]) })))
+      const level = (chore: ChoreRecord) => levels[chore.id] ?? null
+      const earns = (chore: ChoreRecord) => {
+        const picked = level(chore)
+        return picked ? draft.points.difficultyPoints[picked] : Math.max(0, points[chore.id] ?? 0)
+      }
+      const changed = activeChores.filter((chore) => level(chore) !== difficultyOf(chore) || earns(chore) !== (Number(chore.reward_points) || 0))
+      await Promise.all(changed.map((chore) => db.chore.update(chore.id, {
+        reward_points: earns(chore),
+        // Only sent when used, so points still save on a database without the difficulty column.
+        ...(level(chore) || chore.difficulty ? { difficulty: level(chore) } : {}),
+      })))
       if (changed.length) await onRefresh()
       onOpenChange(false)
     } catch (caught) {
@@ -91,30 +103,38 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
     >
       <div className="space-y-5">
         <Group icon={<Star className="h-5 w-5" />} title="Points">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span><span className="block font-bold">New chores start at</span><span className="block text-sm text-muted-foreground">You can still change each chore.</span></span>
-            <Stepper value={draft.points.defaultPoints} onChange={(value) => set("points", { defaultPoints: value })} max={500} label="points" />
-          </div>
           <div className="space-y-2 rounded-2xl bg-muted/60 p-3">
-            <span><span className="block font-bold">Difficulty multipliers</span><span className="block text-sm text-muted-foreground">Chores marked easy, medium or hard earn their points times this.</span></span>
+            <span><span className="block font-bold">Points for each difficulty</span><span className="block text-sm text-muted-foreground">Chores marked easy, medium or hard earn this many points.</span></span>
             {DIFFICULTIES.map((option) => (
               <div key={option.value} className="flex items-center justify-between gap-3">
                 <span className="font-semibold"><span aria-hidden="true">{option.emoji} </span>{option.label}</span>
-                <Stepper value={draft.points.multipliers[option.value]} onChange={(value) => set("points", { multipliers: { ...draft.points.multipliers, [option.value]: Math.round(value * 10) / 10 } })} min={0.5} max={5} step={0.5} suffix="×" label={`${option.label} multiplier`} />
+                <Stepper value={draft.points.difficultyPoints[option.value]} onChange={(value) => set("points", { difficultyPoints: { ...draft.points.difficultyPoints, [option.value]: value } })} min={0} max={100} label={`${option.label} points`} />
               </div>
             ))}
           </div>
           {activeChores.length > 0 ? (
             <details className="rounded-2xl bg-muted/60 p-3">
-              <summary className="cursor-pointer font-bold">Points for each chore ({activeChores.length})</summary>
+              <summary className="cursor-pointer font-bold">Difficulty of each chore ({activeChores.length})</summary>
               <ul className="mt-3 space-y-2">
-                {activeChores.map((chore) => (
-                  <li key={chore.id} className="flex items-center gap-3">
-                    <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
-                    <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
-                    <Stepper value={points[chore.id] ?? 0} onChange={(value) => setPoints((current) => ({ ...current, [chore.id]: value }))} max={500} label={`points for ${chore.title}`} />
-                  </li>
-                ))}
+                {activeChores.map((chore) => {
+                  const level = levels[chore.id] ?? null
+                  return (
+                    <li key={chore.id} className="flex flex-wrap items-center gap-3">
+                      <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
+                      <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
+                      <select
+                        className={cn(inputClass, "w-auto min-w-36")}
+                        value={level ?? "custom"}
+                        onChange={(event) => setLevels((current) => ({ ...current, [chore.id]: event.target.value === "custom" ? null : event.target.value as Difficulty }))}
+                        aria-label={`Difficulty for ${chore.title}`}
+                      >
+                        {DIFFICULTIES.map((option) => <option key={option.value} value={option.value}>{option.label} ({draft.points.difficultyPoints[option.value]})</option>)}
+                        <option value="custom">Custom</option>
+                      </select>
+                      {!level ? <Stepper value={points[chore.id] ?? 0} onChange={(value) => setPoints((current) => ({ ...current, [chore.id]: value }))} max={500} label={`points for ${chore.title}`} /> : null}
+                    </li>
+                  )
+                })}
               </ul>
             </details>
           ) : null}
@@ -183,7 +203,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
         </Group>
 
         <Group icon={<Lightbulb className="h-5 w-5" />} title="Chore ideas">
-          <Toggle label="Age-appropriate ideas" hint="Chore ideas that fit each kid's age show first, marked with their name." checked={draft.suggestions.ageBased} onChange={(on) => set("suggestions", { ageBased: on })} />
+          <Toggle label="Age-appropriate ideas" hint="Chore ideas that fit each kid's age are marked with their name." checked={draft.suggestions.ageBased} onChange={(on) => set("suggestions", { ageBased: on })} />
           {draft.suggestions.ageBased && kidsWithoutAge.length > 0 ? (
             <p className="text-sm text-muted-foreground">Add a birth year for {kidsWithoutAge.map((kid) => kid.display_name).join(", ")} in their profile on the Family page.</p>
           ) : null}

@@ -1,3 +1,4 @@
+import { byTitle } from "@/lib/utils"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -77,7 +78,8 @@ export function FamilyWorkspace() {
       ])
       setAllProfiles(profiles)
       setGoals(nextGoals as unknown as GoalRecord[])
-      setChores(nextChores as unknown as ChoreRecord[])
+      // A to Z everywhere chores are listed.
+      setChores(byTitle(nextChores as unknown as ChoreRecord[]))
       const split = splitCompletions(nextCompletions as unknown as ChoreCompletionRecord[])
       setCompletions(split.completions)
       setPrizeRequests(split.prizeRequests)
