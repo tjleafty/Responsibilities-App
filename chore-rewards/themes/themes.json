@@ -435,11 +435,11 @@
       "vibe": "Comic-book city with bold outlines and POW bursts.",
       "mode": "light",
       "fonts": {
-        "display": "Bangers",
+        "display": "Comic Neue",
         "body": "Nunito",
-        "displayStack": "'Bangers', Impact, sans-serif",
+        "displayStack": "'Comic Neue', 'Comic Sans MS', ui-rounded, sans-serif",
         "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
-        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;700;800&display=swap"
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Nunito:wght@400;600;700;800&display=swap"
       },
       "colors": {
         "bg": "#EAF2FF",
@@ -558,11 +558,11 @@
       "vibe": "Hard hats, diggers and hazard stripes.",
       "mode": "light",
       "fonts": {
-        "display": "Bowlby One",
+        "display": "Baloo 2",
         "body": "Nunito",
-        "displayStack": "'Bowlby One', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
+        "displayStack": "'Baloo 2', ui-rounded, 'Arial Rounded MT Bold', sans-serif",
         "bodyStack": "'Nunito', ui-rounded, system-ui, sans-serif",
-        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@400;600;700;800&display=swap"
+        "googleFontsUrl": "https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
       },
       "colors": {
         "bg": "#FFF8E1",
