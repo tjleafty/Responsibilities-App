@@ -16,6 +16,8 @@ export interface FamilyProfile {
   owner_id?: string | null
   /** Kids only: for age-appropriate chore ideas. */
   birth_year?: number | null
+  /** A small square photo (a data URL) shown instead of the initial wherever the profile appears. */
+  photo_url?: string | null
 }
 
 export interface GoalRecord {
