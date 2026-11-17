@@ -46,6 +46,10 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<FrequencyFilter>("all")
   const [showPaused, setShowPaused] = useState(false)
+  // By chore: "all" or one kid's id. By kid: the kids whose chores are showing; everyone starts closed so the list stays short.
+  const [who, setWho] = useState<string>("all")
+  const [openKids, setOpenKids] = useState<string[]>([])
+  const toggleKid = (id: string) => setOpenKids((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
   const [editing, setEditing] = useState<ChoreRecord | null>(null)
   const [seed, setSeed] = useState<ChoreDraftSeed | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -56,9 +60,11 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
 
   const active = chores.filter(isActive)
   const paused = chores.filter((chore) => !isActive(chore))
-  const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
-  const shown = active.filter(matches).sort(byTitle)
   const kids = kidsOf(profiles)
+  const forWho = (chore: ChoreRecord) => who === "all" || !kids.some((kid) => kid.id === who) || getAssignedProfileIds(chore).includes(who)
+  const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && forWho(chore) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
+  const shown = active.filter(matches).sort(byTitle)
+  const allOpen = kids.length > 0 && kids.every((kid) => openKids.includes(kid.id))
 
   const edit = (chore: ChoreRecord) => { setEditing(chore); setSeed(null); setEditorOpen(true) }
   const create = (draft: ChoreDraftSeed | null = null) => { setEditing(null); setSeed(draft); setChooserOpen(false); setIdeasOpen(false); setEditorOpen(true) }
@@ -92,6 +98,17 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
             </div>
             <LayoutToggle value={layout} onChange={setLayout} />
           </div>
+          {kids.length > 1 ? (
+            <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Show chores for">
+              <span className="shrink-0 text-sm font-bold text-muted-foreground">For</span>
+              <Chip active={who === "all"} onClick={() => setWho("all")}>Everyone</Chip>
+              {kids.map((kid) => (
+                <Chip key={kid.id} active={who === kid.id} onClick={() => setWho(who === kid.id ? "all" : kid.id)}>
+                  <Avatar profile={kid} size={22} />{kid.display_name} <span className="opacity-70">{active.filter((chore) => getAssignedProfileIds(chore).includes(kid.id)).length}</span>
+                </Chip>
+              ))}
+            </div>
+          ) : null}
 
           {active.length === 0 ? (
             <EmptyState title="No chores yet" action={
@@ -113,31 +130,52 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
           )}
         </>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {kids.map((kid) => {
-            const theirs = active.filter((chore) => getAssignedProfileIds(chore).includes(kid.id))
-            return (
-              <section key={kid.id} className="rounded-[22px] bg-card p-4 shadow-soft">
-                <div className="flex items-center gap-3">
-                  <Avatar profile={kid} size={44} />
-                  <h2 className="flex-1 font-display text-xl font-semibold">{kid.display_name}</h2>
-                  <span className="text-sm font-bold text-muted-foreground">{theirs.length} chores</span>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {theirs.length === 0 ? <li className="text-sm text-muted-foreground">No chores yet.</li> : theirs.map((chore) => (
-                    <li key={chore.id}>
-                      <button type="button" onClick={() => edit(chore)} className="flex w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left hover:bg-muted">
-                        <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
-                        <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
-                        <span className="text-xs font-bold text-muted-foreground">{choreScheduleLabel(chore)}</span>
-                        {isRandomAssignmentEnabled(chore) ? <Repeat className="h-4 w-4 text-primary" aria-label="Takes turns" /> : null}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
+        <div className="space-y-3">
+          {kids.length > 1 ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">Tap a kid to see their chores.</p>
+              <button type="button" onClick={() => setOpenKids(allOpen ? [] : kids.map((kid) => kid.id))} className="shrink-0 rounded-full px-3 py-1.5 text-sm font-bold text-primary hover:bg-primary/10">{allOpen ? "Close all" : "Open all"}</button>
+            </div>
+          ) : null}
+          <div className="grid items-start gap-3 md:grid-cols-2">
+            {kids.map((kid) => {
+              const theirs = active.filter((chore) => getAssignedProfileIds(chore).includes(kid.id)).sort(byTitle)
+              // With one kid there is nothing to scroll past, so their chores just show.
+              const open = kids.length === 1 || openKids.includes(kid.id)
+              return (
+                <section key={kid.id} className={cn("rounded-[22px] bg-card shadow-soft transition-shadow", open && kids.length > 1 && "ring-2 ring-primary/30")}>
+                  <button type="button" onClick={() => toggleKid(kid.id)} disabled={kids.length === 1} aria-expanded={open} aria-controls={`kid-chores-${kid.id}`}
+                    className="flex w-full items-center gap-3 rounded-[22px] p-4 text-left enabled:hover:bg-muted/40">
+                    <Avatar profile={kid} size={44} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-display text-xl font-semibold">{kid.display_name}</span>
+                      <span className="text-sm font-bold text-muted-foreground">{theirs.length} {theirs.length === 1 ? "chore" : "chores"}</span>
+                    </span>
+                    {!open && theirs.length > 0 ? (
+                      <span className="hidden items-center -space-x-2 sm:flex" aria-hidden="true">
+                        {theirs.slice(0, 4).map((chore) => <ChoreIconTile key={chore.id} title={chore.title} size={30} className="rounded-lg ring-2 ring-card" />)}
+                      </span>
+                    ) : null}
+                    {kids.length > 1 ? <ChevronDown className={cn("h-5 w-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} /> : null}
+                  </button>
+                  {open ? (
+                    <ul id={`kid-chores-${kid.id}`} className="space-y-2 px-4 pb-4">
+                      {theirs.length === 0 ? <li className="text-sm text-muted-foreground">No chores yet.</li> : theirs.map((chore) => (
+                        <li key={chore.id}>
+                          <button type="button" onClick={() => edit(chore)} className="flex w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left hover:bg-muted">
+                            <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
+                            <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
+                            <span className="text-xs font-bold text-muted-foreground">{choreScheduleLabel(chore)}</span>
+                            {isRandomAssignmentEnabled(chore) ? <Repeat className="h-4 w-4 text-primary" aria-label="Takes turns" /> : null}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              )
+            })}
+          </div>
           {kids.length === 0 ? <EmptyState title="No kids yet">Add kids in Family to give them chores.</EmptyState> : null}
         </div>
       )}

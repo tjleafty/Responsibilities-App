@@ -8,7 +8,7 @@ import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMode, Difficulty } from "@/lib/familyTypes"
 import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
 import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
-import { choreVideo } from "@/lib/choreIcons"
+import { choreVideo, type ChoreVideo } from "@/lib/choreIcons"
 import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, sortDays, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
 import { db } from "@/lib/db"
 import { suggestFromChore } from "@/lib/catalog"
@@ -332,14 +332,14 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
                 </div>
                 <span className="h-11 w-11 shrink-0 rounded-full border-4 border-muted" aria-hidden="true" />
               </div>
-              {video ? <img src={video.poster} alt="" className="mt-3 hidden aspect-video w-full rounded-2xl object-cover lg:block" /> : null}
+              {video ? <VideoPreview key={video.src} title={title} video={video} /> : null}
               {cleanSteps.length ? (
                 <ol className="mt-3 hidden space-y-1.5 lg:block">
                   {cleanSteps.map((step, index) => <li key={step.id} className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-sm font-semibold"><span className="text-muted-foreground">{index + 1}</span>{step.title}</li>)}
                 </ol>
               ) : null}
             </div>
-            <p className="mt-2 hidden text-xs text-muted-foreground lg:block">{video ? "A how-to video plays with this chore." : "How-to videos are coming for more chores."}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{video ? "Kids see this how-to video when they open the chore. Tap it to watch." : "How-to videos are coming for more chores."}</p>
           </div>
         </aside>
       </div>
@@ -394,6 +394,42 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
         </>
       ) : null}
     </div>
+  )
+}
+
+/** The chore's how-to video: a poster with a play button that turns into the real player, so parents can watch what kids will see. */
+function VideoPreview({ title, video }: { title: string; video: ChoreVideo }) {
+  const [playing, setPlaying] = useState(false)
+  if (playing) {
+    return (
+      <div className="mt-3 overflow-hidden rounded-2xl bg-black">
+        <video src={video.src} poster={video.poster} controls autoPlay playsInline preload="metadata" className="aspect-video w-full" aria-label={`How-to video: ${title}`} />
+      </div>
+    )
+  }
+  const label = `Play the how-to video for ${title || "this chore"}`
+  return (
+    <>
+      {/* Phones: a small row so the editor stays short. */}
+      <button type="button" onClick={() => setPlaying(true)} className="mt-3 flex w-full items-center gap-3 rounded-2xl bg-muted/60 p-2 text-left hover:bg-muted lg:hidden" aria-label={label}>
+        <span className="relative shrink-0 overflow-hidden rounded-xl bg-black">
+          <img src={video.poster} alt="" className="h-12 w-20 object-cover" />
+          <span className="absolute inset-0 grid place-items-center"><Play className="h-5 w-5 fill-white text-white drop-shadow" /></span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">Preview the how-to video</span>
+          <span className="text-xs font-bold text-muted-foreground">{video.length} · {video.chapters.length} steps</span>
+        </span>
+      </button>
+      {/* Tablets and computers: the full poster with a play button. */}
+      <button type="button" onClick={() => setPlaying(true)} className="group relative mt-3 hidden w-full overflow-hidden rounded-2xl bg-black text-left lg:block" aria-label={label}>
+        <img src={video.poster} alt="" className="aspect-video w-full object-cover transition-opacity group-hover:opacity-90" />
+        <span className="absolute inset-0 grid place-items-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-white/95 text-primary shadow-lg transition-transform group-hover:scale-110"><Play className="ml-1 h-7 w-7 fill-current" /></span>
+        </span>
+        <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2.5 py-1 text-xs font-bold text-white">Preview video · {video.length}</span>
+      </button>
+    </>
   )
 }
 
