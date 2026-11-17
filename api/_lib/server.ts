@@ -32,7 +32,7 @@ export async function sendEmail(message: { to: string; subject: string; text: st
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from, to: message.to, subject: message.subject, text: message.text, reply_to: message.replyTo }),
   })
-  if (!response.ok) throw new Error(`The email service refused the message (${response.status}).`)
+  if (!response.ok) throw new Error(`The email service refused the message (${response.status}): ${await response.text().catch(() => "")}`)
 }
 
 export function payloadOf(req: ApiRequest): Record<string, unknown> {

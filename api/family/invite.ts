@@ -1,4 +1,4 @@
-import { getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server.js"
+import { appUrl as appUrlOf, getUser, payloadOf, sendEmail, type ApiRequest, type ApiResponse } from "../_lib/server.js"
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== "POST") return res.status(405).json({ success: false, error: "Method not allowed." })
@@ -11,7 +11,11 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const clean = [...new Set(emails.map((value) => (typeof value === "string" ? value.trim().toLowerCase() : "")).filter((value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)))]
   if (clean.length !== emails.length) return res.status(400).json({ success: false, error: "One or more email addresses are invalid or duplicated." })
   const message = typeof payload.message === "string" ? payload.message.trim().slice(0, 3000) : ""
-  const appUrl = process.env.APP_URL || "https://chorereward.vercel.app"
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    console.error("Invite email failed: RESEND_API_KEY and EMAIL_FROM are not set in Vercel.")
+    return res.status(503).json({ success: false, error: "Invitation emails aren't switched on yet. Please try again later." })
+  }
+  const appUrl = appUrlOf(req)
 
   const results = await Promise.all(clean.map(async (email) => {
     try {
