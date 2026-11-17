@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link } from "react-router-dom"
-import { Check, ChevronRight, CreditCard, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
+import { Check, ChevronRight, Copy, CreditCard, HeartHandshake, KeyRound, LifeBuoy, LogOut, Plus, Settings, Share2, ShieldCheck, SlidersHorizontal, UserRoundCog, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { AppearancePicker, Avatar, Chip, ErrorNote, Field, inputClass, Segmented, Sheet } from "@/components/kit"
@@ -355,7 +355,29 @@ function ShareSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
-  useEffect(() => { if (open) { setNotice(null); setError(null) } }, [open])
+  const [copied, setCopied] = useState(false)
+  const link = `${window.location.origin}/`
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function"
+
+  useEffect(() => { if (open) { setNotice(null); setError(null); setCopied(false) } }, [open])
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${message.trim()}\n\n${link}`.trim())
+      setCopied(true)
+      setError(null)
+    } catch {
+      setError("We couldn't copy the link. Press and hold the link above to copy it.")
+    }
+  }
+
+  const shareLink = async () => {
+    try {
+      await navigator.share({ title: "Responsibilities App", text: message.trim(), url: link })
+    } catch {
+      // The person closed the share menu.
+    }
+  }
 
   const send = async () => {
     const emails = addresses.split(/[\n,;]+/).map((email) => email.trim()).filter(Boolean)
@@ -380,6 +402,15 @@ function ShareSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open
         <Field label="Message"><Textarea value={message} onChange={(event) => setMessage(event.target.value)} rows={3} maxLength={500} /></Field>
         <ErrorNote>{error}</ErrorNote>
         {notice ? <p className="rounded-2xl bg-success/10 px-4 py-3 text-sm font-semibold text-success" role="status">{notice}</p> : null}
+        <div className="space-y-2 rounded-2xl border border-border p-4">
+          <p className="text-sm font-semibold">Or send the link yourself</p>
+          <p className="text-xs text-muted-foreground">Paste it in a text, email or chat. Your message above is copied with it.</p>
+          <input className={inputClass} value={link} readOnly onFocus={(event) => event.currentTarget.select()} aria-label="Link to the app" />
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => void copyLink()}>{copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}{copied ? "Copied" : "Copy link"}</Button>
+            {canShare ? <Button type="button" variant="outline" className="flex-1" onClick={() => void shareLink()}><Share2 className="h-5 w-5" />Share...</Button> : null}
+          </div>
+        </div>
       </div>
     </Sheet>
   )
