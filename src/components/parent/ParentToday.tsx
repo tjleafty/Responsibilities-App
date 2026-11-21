@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react"
-import { ArrowRight, BarChart3, Check, ChevronDown, Clock3, Gift, MessageSquareText, Plus, RotateCcw, Sun, X } from "lucide-react"
+import { ArrowRight, BarChart3, Check, ChevronDown, ChevronRight, Clock3, Gift, MessageSquareText, Plus, RotateCcw, Sun, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, Chip, ChoreIconTile, EmptyState, ErrorNote, Ring, Segmented, StateChip, TokenPill } from "@/components/kit"
 import { ParentInsights } from "@/components/parent/ParentInsights"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { useReview } from "@/components/parent/review"
+import { ChoreProgressSheet } from "@/components/parent/ChoreProgressSheet"
 import { familyRows, firstName, isLate, isTodayFor, kidsOf, pointsToday, relativeTime, type TodayRow } from "@/lib/family"
 import { scheduleFor, scheduleLabel } from "@/lib/choreSchedule"
 import { pendingRequests, requestedRewardId } from "@/lib/prizeRequests"
@@ -26,6 +27,7 @@ export function ParentToday(props: ParentScreenProps) {
   const [filter, setFilter] = useState<BoardFilter>("all")
   const [view, setView] = useState<"today" | "insights">("today")
   const review = useReview(props)
+  const [detailKey, setDetailKey] = useState<string | null>(null)
   const rows = familyRows(chores, completions, profiles)
   const kids = kidsOf(profiles)
   const daily = rows.filter((row) => isTodayFor(row.chore, row.profile.id))
@@ -49,6 +51,8 @@ export function ParentToday(props: ParentScreenProps) {
   const waitingNames = [...new Set(waiting.map((row) => firstName(row.profile)))]
   const prizeAsks = pendingRequests(prizeRequests).filter((row) => profiles.some((kid) => kid.id === row.profile_id))
   const firstAsk = prizeAsks[0]
+  // Looked up by key so the sheet shows fresh progress after a refresh.
+  const detailRow = detailKey ? rows.find((row) => rowKey(row) === detailKey) ?? null : null
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -96,7 +100,7 @@ export function ParentToday(props: ParentScreenProps) {
           {kidRows.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">No chores for {firstName(openKid)} right now.</p>
             : board.length === 0 ? <p className="rounded-[22px] bg-card p-5 text-muted-foreground shadow-soft">Nothing here right now.</p> : (
               <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
-                {board.map((row) => <ChoreTile key={`${row.chore.id}-${row.profile.id}`} row={row} profiles={profiles} review={review} />)}
+                {board.map((row) => <ChoreTile key={rowKey(row)} row={row} profiles={profiles} review={review} onOpen={() => setDetailKey(rowKey(row))} />)}
               </ul>
             )}
         </section>
@@ -131,10 +135,13 @@ export function ParentToday(props: ParentScreenProps) {
       </>}
 
       <button type="button" onClick={onAddChore} className="fixed bottom-24 right-5 z-30 grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 lg:hidden" aria-label="Add chore"><Plus className="h-8 w-8" /></button>
+      <ChoreProgressSheet row={detailRow} profiles={profiles} review={review} whenLabel={whenLabel} onClose={() => setDetailKey(null)} />
       {review.sheet}
     </div>
   )
 }
+
+const rowKey = (row: TodayRow) => `${row.chore.id}-${row.profile.id}`
 
 type BoardFilter = "all" | "waiting" | "todo" | "done"
 
@@ -145,23 +152,27 @@ const FILTERS: Array<{ value: BoardFilter; label: string; match: (state: TodayRo
   { value: "done", label: "Done", match: (state) => state === "done" },
 ]
 
-/** One chore for one kid, small enough to fit several in a row. */
-function ChoreTile({ row, profiles, review }: { row: TodayRow; profiles: FamilyProfile[]; review: ReturnType<typeof useReview> }) {
+/** One chore for one kid, small enough to fit several in a row. Tap it to see where the kid is on it. */
+function ChoreTile({ row, profiles, review, onOpen }: { row: TodayRow; profiles: FamilyProfile[]; review: ReturnType<typeof useReview>; onOpen: () => void }) {
   const points = chorePoints(row.chore)
   const late = row.state !== "done" && isLate(row.chore, row.profile.id)
   return (
-    <li className={cn("flex flex-col gap-2 rounded-[20px] bg-card p-3 shadow-soft", row.state === "done" && "opacity-75", row.state === "sent_back" && "ring-2 ring-coral/60", row.state === "waiting" && "ring-2 ring-accent")}>
-      <div className="flex items-start justify-between gap-2">
-        <ChoreIconTile title={row.chore.title} size={40} className="rounded-xl" />
-      </div>
-      <p className="line-clamp-2 min-h-[2.5rem] font-display font-semibold leading-tight">{row.chore.title}</p>
-      <p className="truncate text-xs font-bold text-muted-foreground">{whenLabel(row)}{late ? <span className="text-coral"> · Late</span> : null}</p>
-      <div className="mt-auto flex flex-wrap items-center gap-1.5">
-        <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : row.state === "waiting" ? "Ready" : undefined} />
-        {row.state === "waiting" ? <StepsDone row={row} profiles={profiles} /> : null}
-        {points > 0 && row.state !== "done" ? <TokenPill amount={points} token={getKidTheme(row.profile.theme_key).token} prefix="+" className="px-2 py-0.5 text-xs" /> : null}
-      </div>
-      {row.state === "done" ? <p className="text-xs text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</p> : null}
+    <li className={cn("flex flex-col gap-2 rounded-[20px] bg-card p-3 shadow-soft transition-shadow hover:outline hover:outline-2 hover:outline-primary/30", row.state === "done" && "opacity-75", row.state === "sent_back" && "ring-2 ring-coral/60", row.state === "waiting" && "ring-2 ring-accent")}>
+      <button type="button" onClick={onOpen} className="-m-1 flex flex-1 flex-col gap-2 rounded-2xl p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`See ${firstName(row.profile)}'s progress on ${row.chore.title}`}>
+        <div className="flex w-full items-start justify-between gap-2">
+          <ChoreIconTile title={row.chore.title} size={40} className="rounded-xl" />
+          <ChevronRight className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+        </div>
+        <p className="line-clamp-2 min-h-[2.5rem] font-display font-semibold leading-tight">{row.chore.title}</p>
+        <p className="w-full truncate text-xs font-bold text-muted-foreground">{whenLabel(row)}{late ? <span className="text-coral"> · Late</span> : null}</p>
+        <div className="mt-auto flex flex-wrap items-center gap-1.5">
+          <StateChip state={row.state} label={row.state === "todo" ? "Not started" : row.state === "sent_back" ? "Trying again" : row.state === "waiting" ? "Ready" : row.state === "in_progress" ? "Started" : undefined} />
+          {row.state === "waiting" || row.state === "in_progress" || row.state === "sent_back" ? <StepsDone row={row} profiles={profiles} /> : null}
+          {points > 0 && row.state !== "done" ? <TokenPill amount={points} token={getKidTheme(row.profile.theme_key).token} prefix="+" className="px-2 py-0.5 text-xs" /> : null}
+        </div>
+        {row.state === "done" ? <p className="text-xs text-muted-foreground">{relativeTime(row.completion?.verified_at ?? row.completion?.completed_at)}</p>
+          : row.state === "in_progress" && row.completion?.started_at ? <p className="text-xs text-muted-foreground">Started {relativeTime(row.completion.started_at)}</p> : null}
+      </button>
       {row.state === "waiting" ? (
         <div className="flex gap-2">
           <button type="button" onClick={() => row.completion && review.sendBack(row.completion)} className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-coral/10 text-coral hover:bg-coral/20" aria-label={`Send back ${row.chore.title}`}><RotateCcw className="h-4 w-4" /></button>
