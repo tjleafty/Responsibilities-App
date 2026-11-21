@@ -46,6 +46,9 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<FrequencyFilter>("all")
   const [showPaused, setShowPaused] = useState(false)
+  // By chore: "all" or one kid's id. By kid: the kid whose chores are open in a pop-up, so the page stays a short list of kids.
+  const [who, setWho] = useState<string>("all")
+  const [openKid, setOpenKid] = useState<string | null>(null)
   const [editing, setEditing] = useState<ChoreRecord | null>(null)
   const [seed, setSeed] = useState<ChoreDraftSeed | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
@@ -56,9 +59,12 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
 
   const active = chores.filter(isActive)
   const paused = chores.filter((chore) => !isActive(chore))
-  const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
-  const shown = active.filter(matches).sort(byTitle)
   const kids = kidsOf(profiles)
+  const forWho = (chore: ChoreRecord) => who === "all" || !kids.some((kid) => kid.id === who) || getAssignedProfileIds(chore).includes(who)
+  const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && forWho(chore) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
+  const shown = active.filter(matches).sort(byTitle)
+  const choresFor = (kidId: string) => active.filter((chore) => getAssignedProfileIds(chore).includes(kidId)).sort(byTitle)
+  const popupKid = kids.find((kid) => kid.id === openKid) ?? null
 
   const edit = (chore: ChoreRecord) => { setEditing(chore); setSeed(null); setEditorOpen(true) }
   const create = (draft: ChoreDraftSeed | null = null) => { setEditing(null); setSeed(draft); setChooserOpen(false); setIdeasOpen(false); setEditorOpen(true) }
@@ -92,6 +98,17 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
             </div>
             <LayoutToggle value={layout} onChange={setLayout} />
           </div>
+          {kids.length > 1 ? (
+            <div className="-mx-4 flex items-center gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0" role="group" aria-label="Show chores for">
+              <span className="shrink-0 text-sm font-bold text-muted-foreground">For</span>
+              <Chip active={who === "all"} onClick={() => setWho("all")}>Everyone</Chip>
+              {kids.map((kid) => (
+                <Chip key={kid.id} active={who === kid.id} onClick={() => setWho(who === kid.id ? "all" : kid.id)}>
+                  <Avatar profile={kid} size={22} />{kid.display_name} <span className="opacity-70">{active.filter((chore) => getAssignedProfileIds(chore).includes(kid.id)).length}</span>
+                </Chip>
+              ))}
+            </div>
+          ) : null}
 
           {active.length === 0 ? (
             <EmptyState title="No chores yet" action={
@@ -113,34 +130,57 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
           )}
         </>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {kids.map((kid) => {
-            const theirs = active.filter((chore) => getAssignedProfileIds(chore).includes(kid.id))
-            return (
-              <section key={kid.id} className="rounded-[22px] bg-card p-4 shadow-soft">
-                <div className="flex items-center gap-3">
-                  <Avatar profile={kid} size={44} />
-                  <h2 className="flex-1 font-display text-xl font-semibold">{kid.display_name}</h2>
-                  <span className="text-sm font-bold text-muted-foreground">{theirs.length} chores</span>
-                </div>
-                <ul className="mt-3 space-y-2">
-                  {theirs.length === 0 ? <li className="text-sm text-muted-foreground">No chores yet.</li> : theirs.map((chore) => (
-                    <li key={chore.id}>
-                      <button type="button" onClick={() => edit(chore)} className="flex w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left hover:bg-muted">
-                        <ChoreIconTile title={chore.title} size={36} className="rounded-xl" />
-                        <span className="min-w-0 flex-1 truncate font-semibold">{chore.title}</span>
-                        <span className="text-xs font-bold text-muted-foreground">{choreScheduleLabel(chore)}</span>
-                        {isRandomAssignmentEnabled(chore) ? <Repeat className="h-4 w-4 text-primary" aria-label="Takes turns" /> : null}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )
-          })}
+        <div className="space-y-3">
+          {kids.length > 0 ? <p className="text-sm text-muted-foreground">Tap a kid to see their chores.</p> : null}
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {kids.map((kid) => {
+              const theirs = choresFor(kid.id)
+              return (
+                <li key={kid.id}>
+                  <button type="button" onClick={() => setOpenKid(kid.id)} aria-haspopup="dialog"
+                    className="flex w-full items-center gap-3 rounded-[22px] bg-card p-4 text-left shadow-soft transition-transform hover:bg-muted/40 active:scale-[0.99]">
+                    <Avatar profile={kid} size={48} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-display text-xl font-semibold">{kid.display_name}</span>
+                      <span className="text-sm font-bold text-muted-foreground">{theirs.length} {theirs.length === 1 ? "chore" : "chores"}</span>
+                    </span>
+                    {theirs.length > 0 ? (
+                      <span className="flex items-center -space-x-2" aria-hidden="true">
+                        {theirs.slice(0, 3).map((chore) => <ChoreIconTile key={chore.id} title={chore.title} size={30} className="rounded-lg ring-2 ring-card" />)}
+                      </span>
+                    ) : null}
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
           {kids.length === 0 ? <EmptyState title="No kids yet">Add kids in Family to give them chores.</EmptyState> : null}
         </div>
       )}
+
+      <Sheet open={popupKid !== null} onOpenChange={(open) => { if (!open) setOpenKid(null) }}
+        title={popupKid ? <span className="flex items-center gap-3"><Avatar profile={popupKid} size={40} />{popupKid.display_name}'s chores</span> : ""}
+        description={popupKid ? `${choresFor(popupKid.id).length} active. Tap a chore to edit it.` : undefined}>
+        {popupKid ? (
+          <ul className="space-y-2">
+            {choresFor(popupKid.id).length === 0 ? <li className="rounded-2xl bg-muted/50 p-4 text-sm text-muted-foreground">No chores yet. Add one from the Chores page.</li> : choresFor(popupKid.id).map((chore) => (
+              <li key={chore.id}>
+                <button type="button" onClick={() => { setOpenKid(null); edit(chore) }} className="flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-soft hover:bg-muted">
+                  <ChoreIconTile title={chore.title} size={40} className="rounded-xl" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold">{chore.title}</span>
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">{choreScheduleLabel(chore)}<ChoreFlags chore={chore} /></span>
+                  </span>
+                  {isRandomAssignmentEnabled(chore) ? <Repeat className="h-4 w-4 shrink-0 text-primary" aria-label="Takes turns" /> : null}
+                  {chorePoints(chore) > 0 ? <TokenPill amount={chorePoints(chore)} prefix="+" className="px-2 py-0.5 text-xs" /> : null}
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </Sheet>
 
       {paused.length > 0 ? (
         <section className="rounded-[22px] bg-muted/70">
