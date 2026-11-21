@@ -8,6 +8,7 @@ import { ApprovalHistory, reviewedRows } from "@/components/parent/ApprovalHisto
 import { PrizeRequests } from "@/components/parent/PrizeRequests"
 import { SwapRequests } from "@/components/parent/SwapRequests"
 import { pendingSwaps, useSwaps } from "@/lib/swaps"
+import { pendingJars, usePledges } from "@/lib/prizeJars"
 import { pendingRequests } from "@/lib/prizeRequests"
 import { awaitingReview, kidsOf, relativeTime } from "@/lib/family"
 import { parseCompletedTaskIds, subtasksFor } from "@/lib/choreUtils"
@@ -30,7 +31,7 @@ export function ParentApprove(props: ParentScreenProps) {
   const visible = kidFilter ? queue.filter((row) => row.profile_id === kidFilter) : queue
   const history = reviewedRows(completions, chores)
   const weekAgo = Date.now() - 7 * 86_400_000
-  const prizeAsks = pendingRequests(prizeRequests).length + pendingSwaps(useSwaps()).length
+  const prizeAsks = pendingRequests(prizeRequests).length + pendingSwaps(useSwaps()).length + pendingJars(props.rewards, usePledges()).length
   const thisWeek = history.filter((row) => parseUTC(row.verified_at ?? "").getTime() >= weekAgo).length
 
   if (showHistory) return <ApprovalHistory profiles={profiles} chores={chores} completions={completions} onBack={() => setShowHistory(false)} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { CalendarDays, Check, Gift, PencilLine, Plus, Target, Trash2 } from "lucide-react"
+import { CalendarDays, Check, Gift, History, PencilLine, Plus, Target, Trash2, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -7,11 +7,12 @@ import { Avatar, Chip, EmptyState, ErrorNote, Field, inputClass, ProgressBar, Se
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { FamilyProfile, GoalFrequency, GoalRecord } from "@/lib/familyTypes"
-import { firstName, isActive, kidsOf } from "@/lib/family"
-import { pointsBalance } from "@/lib/prizeRequests"
+import { firstName, isActive, kidsOf, relativeTime } from "@/lib/family"
+import { pointsBalance, requestCost, requestedRewardId, requestState } from "@/lib/prizeRequests"
+import { emptyJar, isTeamPrize, jarFor, jarResults, teamOf, teamPrizesAvailable, usePledges } from "@/lib/prizeJars"
 import { prepareCelebration } from "@/lib/celebration"
 import { db } from "@/lib/db"
-import { cn } from "@/lib/utils"
+import { cn, parseUTC } from "@/lib/utils"
 
 type View = "prizes" | "goals"
 const FREQUENCIES: Array<{ value: GoalFrequency; label: string; hint: string }> = [
@@ -28,6 +29,7 @@ export function ParentRewards({ profiles, completions, prizeRequests, rewards, g
   const [busyId, setBusyId] = useState<string | null>(null)
   const kids = kidsOf(profiles)
   const liveGoals = goals.filter(isActive)
+  const pledges = usePledges()
 
   const act = async (id: string, action: () => Promise<unknown>, failure: string) => {
     setBusyId(id)
@@ -71,21 +73,30 @@ export function ParentRewards({ profiles, completions, prizeRequests, rewards, g
         rewards.length === 0 ? (
           <EmptyState emoji="🎁" title="No prizes yet" action={<Button onClick={() => setPrizeSheet({ reward: null })}><Plus className="h-5 w-5" />Add a prize</Button>}>Movie night, a trip for ice cream, extra screen time... Kids see these on their Prizes tab.</EmptyState>
         ) : (
+          <>
           <ul className="grid gap-3 md:grid-cols-2">
             {rewards.map((reward) => {
               const cost = Number(reward.points_required) || 0
+              const team = isTeamPrize(reward) ? kids.filter((kid) => teamOf(reward).includes(kid.id)) : null
+              const jar = team ? jarFor(reward, pledges) : null
               const forKids = reward.target_profile_id ? kids.filter((kid) => kid.id === reward.target_profile_id) : kids
-              const ready = forKids.filter((kid) => pointsBalance(kid.id, completions, prizeRequests) >= cost)
+              const ready = team ? [] : forKids.filter((kid) => pointsBalance(kid.id, completions, prizeRequests) >= cost)
               return (
                 <li key={reward.id} className={cn("rounded-[22px] bg-card p-4 shadow-soft", !isActive(reward) && "opacity-60")}>
                   <div className="flex items-start gap-3">
-                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-2xl" aria-hidden="true">🎁</span>
+                    <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-secondary/15 text-2xl" aria-hidden="true">{team ? "🫙" : "🎁"}</span>
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg font-semibold leading-tight">{reward.title}</p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{reward.target_profile_id ? `Just for ${forKids[0]?.display_name ?? "one kid"}` : "For everyone"}</p>
+                      <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">{team ? <><Users className="h-4 w-4" />Team prize: {team.map(firstName).join(", ")}</> : reward.target_profile_id ? `Just for ${forKids[0]?.display_name ?? "one kid"}` : "For everyone"}</p>
                     </div>
                     <Switch checked={isActive(reward)} disabled={busyId === reward.id} onCheckedChange={(on) => void act(reward.id, () => db.family_reward.update(reward.id, { is_active: on }), "We couldn't update that prize.")} aria-label={`${reward.title} is ${isActive(reward) ? "on" : "off"}`} />
                   </div>
+                  {jar ? (
+                    <div className="mt-3">
+                      <div className="mb-1 flex justify-between text-xs font-bold text-muted-foreground"><span>In the jar: {jar.total} of {cost}</span><span>{jar.state === "full" ? "Full, waiting for your OK" : jar.shares.map((share) => `${firstName(kids.find((kid) => kid.id === share.profileId))} ${share.points}`).join(" · ")}</span></div>
+                      <ProgressBar value={jar.total} max={cost} color={jar.state === "full" ? "hsl(var(--success))" : undefined} />
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <TokenPill amount={cost} />
                     {ready.length > 0 && isActive(reward) ? <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-bold text-success"><Check className="h-3.5 w-3.5" />Ready for {ready.map(firstName).join(", ")}</span> : null}
@@ -95,6 +106,8 @@ export function ParentRewards({ profiles, completions, prizeRequests, rewards, g
               )
             })}
           </ul>
+          <GivenHistory profiles={profiles} prizeRequests={prizeRequests} rewards={rewards} pledges={pledges} />
+          </>
         )
       ) : liveGoals.length === 0 ? (
         <EmptyState emoji="🎯" title="No goals yet" action={<Button onClick={() => setGoalSheet({ goal: null })}><Plus className="h-5 w-5" />Add a goal</Button>}>Goals count up to a prize, like "Read 10 books this month".</EmptyState>
@@ -176,8 +189,11 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
   const [description, setDescription] = useState("")
   const [cost, setCost] = useState(50)
   const [kidId, setKidId] = useState("")
+  const [teamIds, setTeamIds] = useState<string[]>([])
   const [confirmDelete, setConfirmDelete] = useState(false)
   const { saving, error, setError, run } = useSave(onRefresh, onClose)
+  const canTeam = teamPrizesAvailable() && kids.length >= 2
+  const isTeam = teamIds.length > 0
 
   useEffect(() => {
     if (!state) return
@@ -185,14 +201,24 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
     setDescription(reward?.description ?? "")
     setCost(reward ? Number(reward.points_required) || 0 : 50)
     setKidId(reward?.target_profile_id ?? "")
+    setTeamIds(isTeamPrize(reward) ? teamOf(reward) : [])
     setConfirmDelete(false)
     setError(null)
   }, [state, reward, setError])
 
   const save = () => {
     if (!title.trim()) return setError("Give the prize a name.")
-    const data = { title: title.trim(), description: description.trim(), points_required: cost, target_profile_id: kidId, reward_type: reward?.reward_type ?? "participation", is_active: reward ? isActive(reward) : true }
-    void run(() => reward ? db.family_reward.update(reward.id, data) : db.family_reward.create(data), "We couldn't save that prize.")
+    if (isTeam && teamIds.length < 2) return setError("Pick at least two kids to share a team prize.")
+    const data = {
+      title: title.trim(), description: description.trim(), points_required: cost, target_profile_id: isTeam ? "" : kidId, reward_type: reward?.reward_type ?? "participation", is_active: reward ? isActive(reward) : true,
+      // Only sent once the team prizes table is on the database, so saving still works before that.
+      ...(teamPrizesAvailable() ? { team_profile_ids: isTeam ? JSON.stringify(teamIds) : null } : {}),
+    }
+    void run(async () => {
+      // Turning a team prize back into a regular one gives the kids their jar points back.
+      if (reward && isTeamPrize(reward) && !isTeam) await emptyJar(reward)
+      return reward ? db.family_reward.update(reward.id, data) : db.family_reward.create(data)
+    }, "We couldn't save that prize.")
   }
 
   return (
@@ -201,7 +227,7 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
         <ErrorNote>{error}</ErrorNote>
         <div className="flex gap-3">
           {reward ? (confirmDelete
-            ? <Button variant="ghost" disabled={saving} onClick={() => void run(() => db.family_reward.delete(reward.id), "We couldn't delete that prize.")} className="bg-coral/10 text-coral hover:bg-coral/20 hover:text-coral">Yes, delete</Button>
+            ? <Button variant="ghost" disabled={saving} onClick={() => void run(async () => { if (isTeamPrize(reward)) await emptyJar(reward); await db.family_reward.delete(reward.id) }, "We couldn't delete that prize.")} className="bg-coral/10 text-coral hover:bg-coral/20 hover:text-coral">Yes, delete</Button>
             : <Button variant="ghost" onClick={() => setConfirmDelete(true)} className="text-coral hover:bg-coral/10 hover:text-coral" aria-label="Delete prize"><Trash2 className="h-5 w-5" /></Button>) : null}
           <Button onClick={save} disabled={saving} className="flex-1"><Gift className="h-5 w-5" />{saving ? "Saving..." : "Save prize"}</Button>
         </div>
@@ -220,7 +246,24 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
             {[5, 10, 25, 50].map((amount) => <Chip key={amount} onClick={() => setCost((value) => Math.min(5000, value + amount))}>+{amount}</Chip>)}
           </div>
         </div>
-        <ForWhom kids={kids} value={kidId} onChange={setKidId} allowEveryone />
+        {canTeam ? (
+          <div className="space-y-3 rounded-2xl bg-muted/60 p-4">
+            <label className="flex items-start justify-between gap-3">
+              <span><span className="block font-bold">Team prize</span><span className="block text-sm text-muted-foreground">Kids pool their points in a shared jar. When it's full, it comes to you to approve.</span></span>
+              <Switch checked={isTeam} onCheckedChange={(on) => setTeamIds(on ? kids.map((kid) => kid.id) : [])} aria-label="Team prize" />
+            </label>
+            {isTeam ? (
+              <div className="space-y-1.5">
+                <span className="block text-sm font-bold">Saving together</span>
+                <div className="flex flex-wrap gap-2">
+                  {kids.map((kid) => <Chip key={kid.id} active={teamIds.includes(kid.id)} onClick={() => setTeamIds((ids) => ids.includes(kid.id) ? ids.filter((id) => id !== kid.id) : [...ids, kid.id])}>{kid.display_name}</Chip>)}
+                </div>
+                {reward && isTeamPrize(reward) && jarFor(reward).total > 0 ? <p className="text-xs text-muted-foreground">{jarFor(reward).total} points are in the jar now. Turning this off gives them back.</p> : null}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {isTeam ? null : <ForWhom kids={kids} value={kidId} onChange={setKidId} allowEveryone />}
       </div>
     </Sheet>
   )
@@ -283,5 +326,43 @@ function GoalSheet({ state, onClose, kids, onRefresh }: { state: { goal: GoalRec
         <Field label="Prize when reached (optional)"><input className={inputClass} value={prize} onChange={(event) => setPrize(event.target.value)} placeholder="Ice cream trip" maxLength={80} /></Field>
       </div>
     </Sheet>
+  )
+}
+
+/** Prizes handed out in the last 30 days, single asks and team jars together. */
+function GivenHistory({ profiles, prizeRequests, rewards, pledges }: Pick<ParentScreenProps, "profiles" | "prizeRequests" | "rewards"> & { pledges: ReturnType<typeof usePledges> }) {
+  const [showAll, setShowAll] = useState(false)
+  const since = Date.now() - 30 * 86_400_000
+  const titleOf = (id: string) => rewards.find((reward) => reward.id === id)?.title ?? "A prize that was removed"
+  const rows = [
+    ...prizeRequests.filter((row) => requestState(row) === "granted").map((row) => ({
+      key: row.id, title: titleOf(requestedRewardId(row)), when: row.verified_at || row.completed_at || "", points: requestCost(row), kidIds: [row.profile_id], note: row.parent_feedback || "", team: false,
+    })),
+    ...jarResults(pledges).filter((result) => result.state === "granted").map((result) => ({
+      key: result.key, title: titleOf(result.rewardId), when: result.decidedAt, points: result.total, kidIds: result.shares.map((share) => share.profileId), note: result.note ?? "", team: true,
+    })),
+  ].filter((row) => parseUTC(row.when).getTime() >= since).sort((a, b) => parseUTC(b.when).getTime() - parseUTC(a.when).getTime())
+  if (rows.length === 0) return null
+  const shown = showAll ? rows : rows.slice(0, 5)
+  return (
+    <section className="space-y-3 rounded-[22px] bg-card p-4 shadow-soft">
+      <h2 className="flex items-center gap-2 font-display text-lg font-semibold"><History className="h-5 w-5 text-primary" />Given in the last 30 days <span className="text-sm font-normal text-muted-foreground">({rows.length})</span></h2>
+      <ul className="divide-y divide-border">
+        {shown.map((row) => {
+          const kids = row.kidIds.map((id) => profiles.find((profile) => profile.id === id)).filter((kid): kid is FamilyProfile => Boolean(kid))
+          return (
+            <li key={row.key} className="flex items-center gap-3 py-2.5">
+              <span className="flex -space-x-2">{kids.slice(0, 3).map((kid) => <Avatar key={kid.id} profile={kid} size={32} ring />)}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-bold">{row.title}{row.team ? <span className="ml-1.5 text-xs font-bold text-muted-foreground">· team</span> : null}</p>
+                <p className="truncate text-sm text-muted-foreground">{kids.map(firstName).join(", ")} · {relativeTime(row.when)}{row.note ? ` · “${row.note}”` : ""}</p>
+              </div>
+              <TokenPill amount={row.points} />
+            </li>
+          )
+        })}
+      </ul>
+      {rows.length > 5 ? <button type="button" onClick={() => setShowAll((value) => !value)} className="text-sm font-bold text-primary">{showAll ? "Show less" : `Show all ${rows.length}`}</button> : null}
+    </section>
   )
 }

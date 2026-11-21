@@ -98,6 +98,8 @@ export function demoTables(): Record<string, Row[]> {
     { id: "r2", title: "Ice cream trip", description: "Double scoop at the corner shop.", reward_type: "goal", target_profile_id: "ava", points_required: 75, is_active: true, created_at: ago(3990) },
     { id: "r3", title: "Extra 30 min screen time", description: "Weekend video games or tablet time.", reward_type: "participation", target_profile_id: "", points_required: 30, is_active: true, created_at: ago(3980) },
     { id: "r4", title: "New skate helmet", description: "Long-term goal prize.", reward_type: "goal", target_profile_id: "leo", points_required: 200, is_active: true, created_at: ago(3970) },
+    { id: "r6", title: "Trampoline park trip", description: "A Saturday at the trampoline park for everyone.", reward_type: "participation", target_profile_id: "", team_profile_ids: JSON.stringify(["ava", "leo", "mia"]), points_required: 300, is_active: true, created_at: ago(3965) },
+    { id: "r7", title: "Family pizza night", description: "The kids pick the toppings.", reward_type: "participation", target_profile_id: "", team_profile_ids: JSON.stringify(["ava", "leo"]), points_required: 120, is_active: true, created_at: ago(3964) },
     { id: "r5", title: "Small stuffed animal", description: "Under $10 at the toy store.", reward_type: "chore", target_profile_id: "mia", points_required: 100, is_active: false, created_at: ago(3960) },
   ]
   const goals: Row[] = [
@@ -106,5 +108,15 @@ export function demoTables(): Record<string, Row[]> {
     { id: "g3", title: "Practice violin every day", description: "", frequency: "weekly", target_profile_id: "ava", target_count: 7, progress: 5, prize: "Pick the restaurant", is_active: true, created_at: ago(2980) },
     { id: "g4", title: "Zero sent-back chores", description: "", frequency: "weekly", target_profile_id: "leo", target_count: 7, progress: 2, prize: "Extra 30 min screen time", is_active: true, created_at: ago(2970) },
   ]
-  return { family_profiles: profiles, chores, chore_completions: completions, family_rewards, goals }
+  // Team prize jars: one filling up, one full and waiting, one given last week.
+  const prize_pledges: Row[] = [
+    { id: "pl1", reward_id: "r6", profile_id: "ava", points: 80, status: "held", parent_note: null, decided_at: null, created_at: ago(2000) },
+    { id: "pl2", reward_id: "r6", profile_id: "leo", points: 45, status: "held", parent_note: null, decided_at: null, created_at: ago(1500) },
+    { id: "pl3", reward_id: "r6", profile_id: "mia", points: 20, status: "held", parent_note: null, decided_at: null, created_at: ago(900) },
+    { id: "pl4", reward_id: "r7", profile_id: "ava", points: 70, status: "pending", parent_note: null, decided_at: null, created_at: ago(300) },
+    { id: "pl5", reward_id: "r7", profile_id: "leo", points: 50, status: "pending", parent_note: null, decided_at: null, created_at: ago(60) },
+    { id: "pl6", reward_id: "r7", profile_id: "ava", points: 15, status: "granted", parent_note: "Great teamwork!", decided_at: daysAgo(5).toISOString(), created_at: ago(8000) },
+    { id: "pl7", reward_id: "r7", profile_id: "leo", points: 15, status: "granted", parent_note: "Great teamwork!", decided_at: daysAgo(5).toISOString(), created_at: ago(8000) },
+  ]
+  return { family_profiles: profiles, chores, chore_completions: completions, family_rewards, goals, prize_pledges }
 }

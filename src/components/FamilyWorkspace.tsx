@@ -16,6 +16,7 @@ import { ensureFamily, pendingInvite } from "@/lib/familySharing"
 import { loadFamilySettings } from "@/lib/familySettings"
 import { loadBilling, useBilling } from "@/lib/billing"
 import { loadSwaps } from "@/lib/swaps"
+import { loadPledges } from "@/lib/prizeJars"
 import { BillingWall } from "@/components/parent/Billing"
 import { SetupWizard, needsSetupWizard } from "@/components/parent/SetupWizard"
 
@@ -69,6 +70,7 @@ export function FamilyWorkspace() {
       await loadFamilySettings()
       await loadBilling().catch((error) => console.error("Loading billing failed:", error))
       await loadSwaps()
+      await loadPledges()
       const profiles = (await db.family_profile.list({ orderBy: "created_at", all: true })) as unknown as FamilyProfile[]
       const [nextGoals, nextChores, nextCompletions, nextRewards] = await Promise.all([
         db.goal.list({ orderBy: "-created_at", all: true }),

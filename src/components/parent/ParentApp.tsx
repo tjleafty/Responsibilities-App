@@ -6,6 +6,7 @@ import { Avatar, BrandMark } from "@/components/kit"
 import { awaitingReview } from "@/lib/family"
 import { pendingRequests, type PrizeRequest } from "@/lib/prizeRequests"
 import { pendingSwaps, useSwaps } from "@/lib/swaps"
+import { pendingJars, usePledges } from "@/lib/prizeJars"
 import { cn } from "@/lib/utils"
 import { ParentToday } from "@/components/parent/ParentToday"
 import { ParentApprove } from "@/components/parent/ParentApprove"
@@ -45,7 +46,7 @@ export function ParentApp(props: ParentAppProps) {
   const [newChore, setNewChore] = useState(0)
   const [billing, setBilling] = useState(false)
   const choreIds = new Set(props.chores.map((chore) => chore.id))
-  const waiting = awaitingReview(props.completions).filter((row) => choreIds.has(row.chore_id)).length + pendingRequests(props.prizeRequests).length + pendingSwaps(useSwaps()).length
+  const waiting = awaitingReview(props.completions).filter((row) => choreIds.has(row.chore_id)).length + pendingRequests(props.prizeRequests).length + pendingSwaps(useSwaps()).length + pendingJars(props.rewards, usePledges()).length
 
   useEffect(() => { window.scrollTo({ top: 0 }) }, [tab])
 

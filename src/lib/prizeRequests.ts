@@ -5,6 +5,7 @@ import type { ChoreCompletionRecord, FamilyProfile, FamilyReward } from "@/lib/f
 import { parseUTC } from "@/lib/utils"
 import { familySettings } from "@/lib/familySettings"
 import { notifyGrownUps } from "@/lib/notify"
+import { pledgedPoints } from "@/lib/prizeJars"
 
 /*
  * A kid asking for a prize is stored as a chore_completions row whose chore_id is
@@ -39,12 +40,12 @@ export function pendingRequests(requests: PrizeRequest[]) {
     .sort((a, b) => parseUTC(b.completed_at ?? "").getTime() - parseUTC(a.completed_at ?? "").getTime())
 }
 
-/** What a kid can still spend: earned points minus prizes granted or waiting for an answer. */
+/** What a kid can still spend: earned points minus prizes granted or waiting, and points in team prize jars. */
 export function pointsBalance(profileId: string, completions: ChoreCompletionRecord[], requests: PrizeRequest[]) {
   const held = requests
     .filter((row) => row.profile_id === profileId && requestState(row) !== "declined")
     .reduce((sum, row) => sum + requestCost(row), 0)
-  return pointsEarned(profileId, completions) + swapPoints(profileId) - held - pointsOnHold(profileId)
+  return pointsEarned(profileId, completions) + swapPoints(profileId) - held - pointsOnHold(profileId) - pledgedPoints(profileId)
 }
 
 /** Prize asks a kid made in the last 7 days, for the family's weekly limit. */
