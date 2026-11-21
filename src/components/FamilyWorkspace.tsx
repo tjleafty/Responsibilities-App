@@ -55,6 +55,8 @@ export function FamilyWorkspace() {
   const [sharingAvailable, setSharingAvailable] = useState(false)
   // The setup wizard stays open once it starts, even after its first step adds kids.
   const [wizard, setWizard] = useState<"unknown" | "open" | "closed">("unknown")
+  // The parent tab to open on, e.g. Chores after the setup wizard so the new chores can be set up.
+  const [parentStart, setParentStart] = useState<"today" | "chores">("today")
 
   const loadData = useCallback(async () => {
     if (!userId) return
@@ -193,13 +195,15 @@ export function FamilyWorkspace() {
   if (showWizard) {
     return (
       <SetupWizard profile={active} profiles={profiles} chores={chores} rewards={rewards} onRefresh={loadData}
-        onFinish={(next) => { setWizard("closed"); if (next === "kids") open(null) }} />
+        onFinish={(next) => { setWizard("closed"); if (next === "chores") setParentStart("chores"); if (next === "kids") open(null) }} />
     )
   }
 
   if (active.profile_type === "parent") {
     return (
       <ParentApp
+        key={parentStart}
+        initialTab={parentStart}
         profile={active}
         profiles={profiles}
         inactiveProfiles={inactiveProfiles}

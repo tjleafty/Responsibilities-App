@@ -14,6 +14,14 @@ export function getAssignedProfileIds(chore: ChoreRecord): string[] {
   return chore.target_profile_id ? [chore.target_profile_id] : []
 }
 
+/**
+ * A chore with nobody on it yet. Chores picked from the ideas list start this way, so the parent
+ * picks the kids, how often and the days after adding it. Kids never see these chores.
+ */
+export function needsSetup(chore: ChoreRecord): boolean {
+  return getAssignedProfileIds(chore).length === 0
+}
+
 export function isRandomAssignmentEnabled(chore: ChoreRecord): boolean {
   return chore.random_assignment_enabled === true || chore.random_assignment_enabled === 1
 }
