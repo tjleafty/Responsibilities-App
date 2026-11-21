@@ -187,4 +187,6 @@ export interface FamilyReward {
   target_profile_id?: string | null
   points_required?: number
   is_active?: boolean
+  /** JSON array of the kids who share a team prize (migration 20261121000000). Empty means a regular prize. */
+  team_profile_ids?: string | null
 }

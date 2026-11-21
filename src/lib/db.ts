@@ -107,4 +107,5 @@ export const db = {
   chore_completion: table("chore_completions"),
   family_reward: table("family_rewards"),
   chore_swap: table("chore_swaps"),
+  prize_pledge: table("prize_pledges"),
 }

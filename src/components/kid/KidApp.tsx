@@ -13,6 +13,7 @@ import { KidMe } from "@/components/kid/KidMe"
 import { TeenToday } from "@/components/kid/TeenToday"
 import { TeenProfile } from "@/components/kid/TeenProfile"
 import { isTeenKey } from "@/lib/teen"
+import { usePledges } from "@/lib/prizeJars"
 
 export interface KidAppProps {
   profile: FamilyProfile
@@ -71,6 +72,7 @@ export function KidApp(props: KidAppProps) {
 
   const shared = { ...props, completions, prizeRequests }
   const openChore = props.chores.find((chore) => chore.id === openChoreId) ?? null
+  usePledges() // the balance changes when points go into a team jar
   const balance = pointsBalance(profile.id, completions, prizeRequests)
 
   return (

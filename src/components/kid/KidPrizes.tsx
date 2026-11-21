@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Clock3, Gift, Hand, PartyPopper, Sparkles, Target } from "lucide-react"
+import { Clock3, Gift, Hand, PartyPopper, Sparkles, Target, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState, ErrorNote, ProgressBar, Ring, TokenPill } from "@/components/kit"
 import type { KidAppProps } from "@/components/kid/KidApp"
@@ -9,6 +9,8 @@ import { getKidTheme } from "@/lib/themes"
 import { isTeenKey } from "@/lib/teen"
 import { useFamilySettings } from "@/lib/familySettings"
 import { cn, parseUTC } from "@/lib/utils"
+import { isTeamPrize, jarResults, teamOf, usePledges } from "@/lib/prizeJars"
+import { TeamJar } from "@/components/kid/TeamJar"
 
 interface KidPrizesProps extends KidAppProps {
   balance: number
@@ -19,7 +21,7 @@ interface KidPrizesProps extends KidAppProps {
 
 const FREQUENCY_LABEL = { daily: "Today", weekly: "This week", monthly: "This month" } as const
 
-export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onRequested, show = "all" }: KidPrizesProps) {
+export function KidPrizes({ profile, profiles, goals, rewards, prizeRequests, balance, onRequested, onRefresh, show = "all" }: KidPrizesProps) {
   const theme = getKidTheme(profile.theme_key)
   const teen = isTeenKey(profile.theme_key)
   const showGoals = show !== "rewards"
@@ -36,6 +38,15 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
     .filter((row) => requestState(row) === "pending" || parseUTC(row.verified_at ?? "").getTime() >= weekAgo)
     .sort((a, b) => parseUTC(b.completed_at ?? "").getTime() - parseUTC(a.completed_at ?? "").getTime())
   const titleOf = (row: PrizeRequest) => rewards.find((reward) => reward.id === requestedRewardId(row))?.title ?? "A prize"
+  const pledges = usePledges()
+  // Team prizes this kid shares, plus any jar they still have points in.
+  const teamJars = rewards
+    .filter((reward) => isTeamPrize(reward) && ((isActive(reward) && teamOf(reward).includes(profile.id))
+      || pledges.some((row) => row.reward_id === reward.id && row.profile_id === profile.id && (row.status === "held" || row.status === "pending"))))
+    .sort((a, b) => (Number(a.points_required) || 0) - (Number(b.points_required) || 0))
+  // A grown-up's answers on team jars this kid put points in, from the last week.
+  const teamResults = jarResults(pledges)
+    .filter((result) => result.shares.some((share) => share.profileId === profile.id) && parseUTC(result.decidedAt).getTime() >= weekAgo)
 
   const ask = async (reward: (typeof rewards)[number]) => {
     setAsking(reward.id)
@@ -51,7 +62,7 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
   }
   const myGoals = goals.filter((goal) => goal.target_profile_id === profile.id && isActive(goal))
   const shelf = rewards
-    .filter((reward) => isActive(reward) && (!reward.target_profile_id || reward.target_profile_id === profile.id))
+    .filter((reward) => isActive(reward) && !isTeamPrize(reward) && (!reward.target_profile_id || reward.target_profile_id === profile.id))
     .sort((a, b) => (Number(a.points_required) || 0) - (Number(b.points_required) || 0))
   // The cheapest prize still out of reach is the one to save up for.
   const savingFor = shelf.find((reward) => (Number(reward.points_required) || 0) > balance && !waitingFor.has(reward.id)) ?? null
@@ -76,10 +87,31 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
         </section>
       ) : null}
 
-      {showRewards && recent.length > 0 ? (
+      {showRewards && recent.length + teamResults.length > 0 ? (
         <section className="space-y-3">
           <h2 className="flex items-center gap-2 font-display text-lg font-medium"><Hand className="h-5 w-5 text-primary" />{teen ? "Requests" : "Prizes I asked for"}</h2>
           <ul className="space-y-2">
+            {teamResults.map((result) => {
+              const granted = result.state === "granted"
+              const share = result.shares.find((item) => item.profileId === profile.id)?.points ?? 0
+              return (
+                <li key={result.key} className={cn("flex items-center gap-3 rounded-[22px] bg-card p-4 shadow-soft", granted && "ring-4 ring-success/40")}>
+                  <span className={cn("grid h-12 w-12 shrink-0 place-items-center rounded-full", granted ? "bg-success text-white" : "bg-muted text-muted-foreground")}>
+                    {granted ? <PartyPopper className="h-6 w-6" /> : <Users className="h-6 w-6" />}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-display text-base font-medium leading-tight">{rewards.find((reward) => reward.id === result.rewardId)?.title ?? "A team prize"}</p>
+                    <p className="text-sm font-bold text-muted-foreground">
+                      {teen
+                        ? granted ? "Team reward approved" : `Not now · ${share} XP returned`
+                        : granted ? "Your team got it! Enjoy!" : `Not this time. Your ${share} ${theme.tokenName} are back.`}
+                    </p>
+                    {result.note ? <p className="mt-1 text-sm">“{result.note}”</p> : null}
+                  </div>
+                  <TokenPill amount={share} token={theme.token} />
+                </li>
+              )
+            })}
             {recent.map((row) => {
               const state = requestState(row)
               return (
@@ -132,6 +164,18 @@ export function KidPrizes({ profile, goals, rewards, prizeRequests, balance, onR
               </article>
             )
           })}
+        </section>
+      ) : null}
+
+      {showRewards && teamJars.length > 0 ? (
+        <section className="space-y-3">
+          <h2 className="flex items-center gap-2 font-display text-lg font-medium"><Users className="h-5 w-5 text-primary" />{teen ? "Team rewards" : "Team prizes"}</h2>
+          <p className="text-sm text-muted-foreground">{teen ? "Pool XP with siblings. When it's full, a parent approves it." : "Save up together! When the jar is full, a grown-up says yes."}</p>
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {teamJars.map((reward) => (
+              <TeamJar key={reward.id} reward={reward} profile={profile} profiles={profiles} pledges={pledges} balance={balance} theme={theme} teen={teen} onChanged={() => void onRefresh()} />
+            ))}
+          </ul>
         </section>
       ) : null}
 
