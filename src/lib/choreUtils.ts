@@ -37,12 +37,66 @@ function periodOrdinal(frequency: GoalFrequency, date: Date): number {
   return date.getFullYear() * 12 + date.getMonth()
 }
 
+/** A set turn order: kids take turns in this order, starting from the first kid in the period containing `start`. */
+export interface TurnOrder {
+  ids: string[]
+  /** YYYY-MM-DD: the first kid in `ids` is up in the period containing this day. */
+  start: string
+}
+
+/** The chore's set turn order, or null when turns are picked at random. */
+export function turnOrderOf(chore: ChoreRecord): TurnOrder | null {
+  if (!chore.turn_order) return null
+  try {
+    const parsed = JSON.parse(chore.turn_order) as Partial<TurnOrder>
+    if (!Array.isArray(parsed.ids) || typeof parsed.start !== "string") return null
+    return { ids: parsed.ids.filter((id): id is string => typeof id === "string"), start: parsed.start }
+  } catch {
+    return null
+  }
+}
+
+function pickedKidIds(chore: ChoreRecord, profiles: FamilyProfile[]): string[] {
+  const selectedIds = new Set(getAssignedProfileIds(chore))
+  return profiles
+    .filter((profile) => profile.profile_type === "child" && profile.is_active !== false && selectedIds.has(profile.id))
+    .map((profile) => profile.id)
+}
+
+/** The picked kids in the set order; kids added later without a place go at the end. */
+function orderedKidIds(chore: ChoreRecord, profiles: FamilyProfile[], order: TurnOrder): string[] {
+  const picked = pickedKidIds(chore, profiles)
+  const inOrder = order.ids.filter((id) => picked.includes(id))
+  return [...inOrder, ...picked.filter((id) => !inOrder.includes(id))]
+}
+
+function parseDay(value: string): Date {
+  const [year, month, day] = value.split("-").map(Number)
+  return year && month && day ? new Date(year, month - 1, day) : new Date()
+}
+
+/** How many turns have passed since the order started: 0 in the first period, then 1, 2... */
+function turnsSinceStart(chore: ChoreRecord, order: TurnOrder, date: Date): number {
+  const cadence = chore.assignment_change_frequency ?? "weekly"
+  return Math.max(0, periodOrdinal(cadence, date) - periodOrdinal(cadence, parseDay(order.start)))
+}
+
+/** The ordered kids, starting with whoever is first up for the period containing `date`. */
+function rotatedOrder(chore: ChoreRecord, profiles: FamilyProfile[], order: TurnOrder, date: Date, step: number): string[] {
+  const kids = orderedKidIds(chore, profiles, order)
+  if (kids.length === 0) return kids
+  const first = (turnsSinceStart(chore, order, date) * step) % kids.length
+  return [...kids.slice(first), ...kids.slice(0, first)]
+}
+
 export function getRandomlyAssignedProfileId(
   chore: ChoreRecord,
   profiles: FamilyProfile[],
   date = new Date(),
 ): string | null {
   if (!isRandomAssignmentEnabled(chore)) return null
+  const order = turnOrderOf(chore)
+  if (order) return rotatedOrder(chore, profiles, order, date, 1)[0] ?? null
   const selectedIds = new Set(getAssignedProfileIds(chore))
   const childIds = profiles
     .filter((profile) => profile.profile_type === "child" && profile.is_active !== false && selectedIds.has(profile.id))
@@ -83,6 +137,13 @@ function rotationSeed(chore: ChoreRecord, date: Date): string {
  * ("subtasks"), or a random group of random_group_size kids ("chore_and_subtasks").
  */
 function splitGroup(chore: ChoreRecord, profiles: FamilyProfile[], date: Date): string[] {
+  const order = turnOrderOf(chore)
+  if (order) {
+    // In a set order the next group starts where the last one stopped (Ava+Ben, then Cal+Ava...).
+    const size = randomModeOf(chore) === "subtasks" ? 1 : Math.max(1, Number(chore.random_group_size) || 2)
+    const rotated = rotatedOrder(chore, profiles, order, date, size)
+    return randomModeOf(chore) === "subtasks" ? rotated : rotated.slice(0, Math.min(rotated.length, size))
+  }
   const selectedIds = new Set(getAssignedProfileIds(chore))
   const childIds = profiles
     .filter((profile) => profile.profile_type === "child" && profile.is_active !== false && selectedIds.has(profile.id))
@@ -113,7 +174,8 @@ export function subtasksFor(chore: ChoreRecord, profileId: string, profiles: Fam
   if (!isRandomAssignmentEnabled(chore) || randomModeOf(chore) === "chore") return steps
   const group = getRandomGroup(chore, profiles, date)
   if (group.length <= 1) return group.includes(profileId) ? steps : []
-  const dealt = seededOrder(steps, (step) => step.id, rotationSeed(chore, date))
+  // In a set order the steps are dealt in order, so whoever is first up gets step 1.
+  const dealt = turnOrderOf(chore) ? steps : seededOrder(steps, (step) => step.id, rotationSeed(chore, date))
   const mine = new Set(dealt.filter((_, index) => group[index % group.length] === profileId).map((step) => step.id))
   return steps.filter((step) => mine.has(step.id))
 }

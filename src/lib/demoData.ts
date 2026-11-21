@@ -26,9 +26,9 @@ export function demoTables(): Record<string, Row[]> {
   const profiles: Row[] = [
     { id: "mom", display_name: "Sarah", profile_type: "parent", parent_role: "mom", theme_key: "sunny-room", pin_hash: PIN_1234, is_active: true, owner_id: "demo-user", created_at: ago(9000) },
     { id: "dad", display_name: "David", profile_type: "parent", parent_role: "dad", theme_key: "sunny-room", pin_hash: PIN_1234, is_active: true, created_at: ago(8990) },
-    { id: "ava", display_name: "Ava", profile_type: "child", theme_key: "ocean-explorer", pin_hash: PIN_1234, is_active: true, created_at: ago(8980) },
-    { id: "leo", display_name: "Leo", profile_type: "child", theme_key: "space-mission", pin_hash: PIN_1234, is_active: true, created_at: ago(8970) },
-    { id: "mia", display_name: "Mia", profile_type: "child", theme_key: "sunny-room", pin_hash: "", is_active: true, created_at: ago(8960) },
+    { id: "ava", display_name: "Ava", profile_type: "child", birth_year: 2016, theme_key: "ocean-explorer", pin_hash: PIN_1234, is_active: true, created_at: ago(8980) },
+    { id: "leo", display_name: "Leo", profile_type: "child", birth_year: 2019, theme_key: "space-mission", pin_hash: PIN_1234, is_active: true, created_at: ago(8970) },
+    { id: "mia", display_name: "Mia", profile_type: "child", birth_year: 2014, theme_key: "sunny-room", pin_hash: "", is_active: true, created_at: ago(8960) },
   ]
   const chore = (id: string, title: string, kids: string[], extra: Row = {}): Row => ({
     id, title, frequency: "daily", target_profile_id: kids[0], assigned_profile_ids: JSON.stringify(kids), subtasks: "[]",

@@ -1,12 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react"
-import { Check, Pause, Play, Plus, ShieldCheck, Timer, Trash2, X } from "lucide-react"
+import { Check, ChevronDown, ChevronUp, Pause, Play, Plus, ShieldCheck, Timer, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { DIFFICULTIES, difficultyOf, difficultyPoints, pointsLabel } from "@/lib/difficulty"
 import { Avatar, Chip, ChoreIconTile, ErrorNote, Field, inputClass, Segmented, Sheet, Stepper, TokenPill } from "@/components/kit"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMode, Difficulty } from "@/lib/familyTypes"
-import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
+import { getAssignedProfileIds, getRandomGroup, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf, turnOrderOf } from "@/lib/choreUtils"
 import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
 import { choreVideo } from "@/lib/choreIcons"
 import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, sortDays, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
@@ -30,6 +30,16 @@ const RANDOM_MODE_HINT: Record<RandomMode, string> = {
   chore_and_subtasks: "A random group of kids is picked, and the steps are split between them.",
   subtasks: "Every kid you picked does the chore, and the steps are split between them.",
 }
+const ORDER_MODE_HINT: Record<RandomMode, string> = {
+  chore: "One kid at a time does the whole chore, going down the list.",
+  chore_and_subtasks: "The next few kids on the list share it, and the steps are split between them.",
+  subtasks: "Every kid you picked does the chore. Who gets which step moves down the list each time.",
+}
+type TurnStyle = "random" | "order"
+const TURN_STYLES: Array<{ value: TurnStyle; label: string }> = [
+  { value: "random", label: "Random" },
+  { value: "order", label: "In order" },
+]
 const TIME_LIMITS = [0, 5, 10, 15, 30, 60]
 
 export interface ChoreDraftSeed {
@@ -57,6 +67,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   const [turnEvery, setTurnEvery] = useState<GoalFrequency>("weekly")
   const [randomMode, setRandomMode] = useState<RandomMode>("chore")
   const [groupSize, setGroupSize] = useState(2)
+  const [turnStyle, setTurnStyle] = useState<TurnStyle>("random")
+  const [orderIds, setOrderIds] = useState<string[]>([])
   const [steps, setSteps] = useState<ChoreSubtask[]>([])
   const [points, setPoints] = useState(5)
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null)
@@ -79,6 +91,9 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
     setTurnEvery(chore?.assignment_change_frequency ?? "weekly")
     setRandomMode(chore ? randomModeOf(chore) : "chore")
     setGroupSize(Number(chore?.random_group_size) || 2)
+    const order = chore ? turnOrderOf(chore) : null
+    setTurnStyle(order ? "order" : "random")
+    setOrderIds(order?.ids ?? [])
     setSteps(chore ? parseChoreSubtasks(chore.subtasks) : seed?.steps?.map((step) => ({ ...step, id: makeTaskId() })) ?? [])
     setPoints(chore ? Number(chore.reward_points) || 0 : familySettings().points.defaultPoints)
     // New chores start as easy; existing ones keep what they have (no difficulty = custom points).
@@ -94,6 +109,30 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   const kidsPicked = assigned.filter((id) => kidsOf(profiles).some((kid) => kid.id === id))
   const cleanSteps = steps.map((step) => ({ ...step, title: step.title.trim() })).filter((step) => step.title)
   const kidsForSchedules = kidsPicked.length > 1 && !takeTurns ? kidsPicked : []
+  // Kids in the set turn order; anyone picked later goes to the end of the line.
+  const orderedKids = [...orderIds.filter((id) => kidsPicked.includes(id)), ...kidsPicked.filter((id) => !orderIds.includes(id))]
+  const inOrder = takeTurns && turnStyle === "order"
+  const savedOrder = chore ? turnOrderOf(chore) : null
+  // A changed line (or a new one) starts over with the first kid now; an unchanged one keeps its place.
+  const orderUnchanged = !!savedOrder && savedOrder.ids.join() === orderedKids.join() && (chore?.assignment_change_frequency ?? "weekly") === turnEvery
+  const turnOrderJson = inOrder ? JSON.stringify({ ids: orderedKids, start: orderUnchanged && savedOrder ? savedOrder.start : isoDate(new Date()) }) : null
+  const upNow = inOrder
+    ? getRandomGroup({ id: chore?.id ?? "draft", title, frequency: schedule.frequency, target_profile_id: assigned[0] ?? "", assigned_profile_ids: JSON.stringify(assigned), subtasks: JSON.stringify(cleanSteps), random_assignment_enabled: true, assignment_rotation_enabled: true, assignment_change_frequency: turnEvery, random_mode: randomMode, random_group_size: groupSize, turn_order: turnOrderJson }, profiles)
+    : []
+  const hasAges = kidsPicked.some((id) => profiles.find((kid) => kid.id === id)?.birth_year)
+  const sortByAge = (oldestFirst: boolean) => setOrderIds([...orderedKids].sort((left, right) => {
+    const leftYear = profiles.find((kid) => kid.id === left)?.birth_year
+    const rightYear = profiles.find((kid) => kid.id === right)?.birth_year
+    // Kids without a birth year go last either way.
+    if (!leftYear || !rightYear) return (leftYear ? -1 : 0) + (rightYear ? 1 : 0)
+    return oldestFirst ? leftYear - rightYear : rightYear - leftYear
+  }))
+  const moveKid = (index: number, by: number) => {
+    const next = [...orderedKids]
+    const [kid] = next.splice(index, 1)
+    next.splice(index + by, 0, kid)
+    setOrderIds(next)
+  }
   const canSave = title.trim().length > 0 && assigned.length > 0 && (!takeTurns || kidsPicked.length > 0)
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
@@ -143,6 +182,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       // Only sent when used, so chores still save on a database without these columns.
       ...(takeTurns && randomMode !== "chore" ? { random_mode: randomMode, random_group_size: randomMode === "chore_and_subtasks" ? Math.min(groupSize, kidsPicked.length) : null } : {}),
       ...(chore?.random_mode && (!takeTurns || randomMode === "chore") ? { random_mode: "chore", random_group_size: null } : {}),
+      ...(turnOrderJson || chore?.turn_order ? { turn_order: turnOrderJson } : {}),
       is_active: chore ? isActive(chore) : true,
     }
     void run(async () => {
@@ -231,15 +271,51 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             ) : null}
             <div className="rounded-2xl bg-muted/60 p-4">
               <label className="flex items-center justify-between gap-3">
-                <span><span className="block font-bold">Randomly assign</span><span className="block text-sm text-muted-foreground">Pick kids at random from the ones you chose, and change who's up over time.</span></span>
+                <span><span className="block font-bold">Take turns</span><span className="block text-sm text-muted-foreground">The kids you chose take turns, at random or in an order you set, and who's up changes over time.</span></span>
                 <Switch checked={takeTurns} onCheckedChange={setTakeTurns} />
               </label>
               {takeTurns ? (
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <span className="block text-sm font-bold">What's random</span>
+                    <span className="block text-sm font-bold">How turns go</span>
+                    <Segmented value={turnStyle} onChange={setTurnStyle} options={TURN_STYLES} />
+                  </div>
+                  {inOrder && kidsPicked.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-sm font-bold">Turn order</span>
+                        {hasAges && kidsPicked.length > 1 ? (
+                          <span className="flex gap-2">
+                            <Chip onClick={() => sortByAge(true)}>Oldest first</Chip>
+                            <Chip onClick={() => sortByAge(false)}>Youngest first</Chip>
+                          </span>
+                        ) : null}
+                      </div>
+                      <ol className="space-y-1.5" aria-label="Turn order">
+                        {orderedKids.map((id, index) => {
+                          const kid = profiles.find((item) => item.id === id)
+                          if (!kid) return null
+                          return (
+                            <li key={id} className="flex items-center gap-2 rounded-2xl bg-card p-2 pl-3">
+                              <span className="w-5 text-sm font-extrabold text-muted-foreground">{index + 1}</span>
+                              <Avatar profile={kid} size={32} />
+                              <span className="min-w-0 flex-1 truncate font-bold">{kid.display_name}</span>
+                              {upNow.includes(id) ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-extrabold text-primary">Up now</span> : null}
+                              <button type="button" disabled={index === 0} onClick={() => moveKid(index, -1)} className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30" aria-label={`Move ${kid.display_name} up`}><ChevronUp className="h-5 w-5" /></button>
+                              <button type="button" disabled={index === orderedKids.length - 1} onClick={() => moveKid(index, 1)} className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-30" aria-label={`Move ${kid.display_name} down`}><ChevronDown className="h-5 w-5" /></button>
+                            </li>
+                          )
+                        })}
+                      </ol>
+                      <p className="text-xs text-muted-foreground">{orderUnchanged
+                        ? "Turns go down the list, then start again from the top."
+                        : "Number 1 is up first, starting now. Turns go down the list, then start again from the top."}</p>
+                    </div>
+                  ) : null}
+                  <div className="space-y-1.5">
+                    <span className="block text-sm font-bold">{inOrder ? "Who does what" : "What's random"}</span>
                     <Segmented value={randomMode} onChange={setRandomMode} options={RANDOM_MODES} />
-                    <p className="text-xs text-muted-foreground">{RANDOM_MODE_HINT[randomMode]}</p>
+                    <p className="text-xs text-muted-foreground">{(inOrder ? ORDER_MODE_HINT : RANDOM_MODE_HINT)[randomMode]}</p>
                   </div>
                   {randomMode === "chore_and_subtasks" ? (
                     <div className="flex flex-wrap items-center justify-between gap-3">
