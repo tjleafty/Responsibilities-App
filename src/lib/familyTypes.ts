@@ -58,6 +58,8 @@ export interface ChoreRecord {
   schedule?: string | null
   /** With random assignment on: "chore" (one kid), "chore_and_subtasks" (a random group splits the steps) or "subtasks" (every kid, steps split). */
   random_mode?: RandomMode | null
+  /** JSON {ids, start}: kids take turns in this set order instead of at random (see turnOrderOf). Null = random. */
+  turn_order?: string | null
   /** "chore_and_subtasks" only: how many kids are picked each time. */
   random_group_size?: number | null
   /** Easy, medium or hard: scales the points with the family's multipliers (lib/difficulty). */
