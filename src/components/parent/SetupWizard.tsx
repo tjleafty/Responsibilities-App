@@ -13,6 +13,8 @@ import { ageFromBirthYear, familySettings, saveFamilySettings } from "@/lib/fami
 import { getKidTheme, ensureThemeFonts } from "@/lib/themes"
 import { isTeenKey, teenKey } from "@/lib/teen"
 import { cn } from "@/lib/utils"
+import { InfoTip, LabelWithTip } from "@/components/InfoTip"
+import type { HelpTopic } from "@/lib/helpText"
 
 /*
  * First-run setup for a new family (Stitch 3.4): add kids, pick starter chores,
@@ -158,11 +160,11 @@ export function SetupWizard({ profile, profiles, chores, rewards, onRefresh, onF
 
 type Run = (action: () => Promise<unknown>, failure: string) => Promise<boolean>
 
-function StepHeader({ step, title, children }: { step: number; title: string; children: ReactNode }) {
+function StepHeader({ step, title, help, children }: { step: number; title: string; help?: HelpTopic; children: ReactNode }) {
   return (
     <header className="mt-6 space-y-1 lg:mt-0">
       <p className="text-sm font-extrabold uppercase tracking-[0.14em] text-primary">Step {step} of 4</p>
-      <h1 className="font-display text-3xl font-semibold">{title}</h1>
+      <h1 className="flex items-center gap-2 font-display text-3xl font-semibold">{title}{help ? <InfoTip topic={help} className="h-6 w-6" /> : null}</h1>
       <p className="text-muted-foreground">{children}</p>
     </header>
   )
@@ -242,7 +244,7 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
           <p className="rounded-2xl bg-muted/60 p-3 text-sm">Kids 13 and up start in <b>Teen mode</b>: a clean dark look with XP instead of stars. You can switch it in Family later.</p>
         ) : (
           <div className="space-y-1.5">
-            <span className="block text-sm font-bold">Pick a world</span>
+            <LabelWithTip topic="setupWorld" className="text-sm font-bold">Pick a world</LabelWithTip>
             <div className="grid grid-cols-4 gap-2">
               {WORLDS.map((id) => {
                 const theme = getKidTheme(id)
@@ -345,7 +347,7 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
 
   return (
     <>
-      <StepHeader step={2} title="Pick starter chores">Tap the ones that fit. You can change points, steps and schedules any time.</StepHeader>
+      <StepHeader step={2} title="Pick starter chores" help="setupStarterChores">Tap the ones that fit. You can change points, steps and schedules any time.</StepHeader>
       {catalog === null ? <p className="mt-6 text-muted-foreground">Loading chore ideas...</p> : null}
       <div className="mt-5 space-y-5">
         {groups.map((group) => (
@@ -414,7 +416,7 @@ function RewardStep({ rewards, busy, error, run, onRefresh, onNext }: { rewards:
 
   return (
     <>
-      <StepHeader step={3} title="Set a first reward">Give your kids something to save their points for. Every kid can earn these.</StepHeader>
+      <StepHeader step={3} title="Set a first reward" help="setupFirstReward">Give your kids something to save their points for. Every kid can earn these.</StepHeader>
       <ul className="mt-5 grid gap-2 md:grid-cols-2">
         {REWARD_IDEAS.map((idea) => {
           const on = picked.includes(idea.title)

@@ -21,6 +21,7 @@ import { db } from "@/lib/db"
 import { PhotoPicker } from "@/components/PhotoPicker"
 import { PhotoSaveError, saveProfilePhoto } from "@/lib/profilePhoto"
 import { cn } from "@/lib/utils"
+import { InfoTip, LabelWithTip } from "@/components/InfoTip"
 
 export function ParentFamily({ profile, profiles, inactiveProfiles, chores, completions, prizeRequests, sharingAvailable, onRefresh, onSwitchProfile, onSignOut }: ParentScreenProps) {
   const [editing, setEditing] = useState<{ profile: FamilyProfile | null; type: ProfileType } | null>(null)
@@ -269,7 +270,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
         ) : null}
         {type === "child" ? (
           <div className="space-y-1.5">
-            <span className="block text-sm font-bold">Mode</span>
+            <LabelWithTip topic="kidMode" className="text-sm font-bold">Mode</LabelWithTip>
             <Segmented value={isTeenKey(themeKey) ? "teen" : "kid"} onChange={(mode) => setThemeKey(mode === "teen" ? teenKey() : lastKidTheme.current)}
               options={[{ value: "kid", label: "Kid (4–11)" }, { value: "teen", label: "Teen (12+)" }]} className="max-w-sm" />
             <p className="text-sm text-muted-foreground">{isTeenKey(themeKey)
@@ -289,7 +290,7 @@ function ProfileSheet({ state, onClose, profiles, onRefresh }: { state: { profil
           </div>
         ) : null}
         <div className="space-y-2 rounded-2xl bg-muted/60 p-4">
-          <p className="flex items-center gap-2 font-bold"><UserRoundCog className="h-4 w-4 text-primary" />PIN</p>
+          <p className="flex items-center gap-2 font-bold"><UserRoundCog className="h-4 w-4 text-primary" />PIN<InfoTip topic="kidPin" /></p>
           <p className="text-sm text-muted-foreground">{profile?.pin_hash && !clearPin ? "This profile has a PIN. Type a new one to change it." : type === "child" ? "Kids can pick their own the first time, or you can set one here." : "Add a PIN so kids can't open parent mode."}</p>
           <input className={cn(inputClass, "max-w-40 text-center font-display text-xl tracking-[0.5em]")} value={pin} onChange={(event) => setPin(event.target.value.replace(/\D/g, "").slice(0, 4))} inputMode="numeric" autoComplete="off" placeholder="••••" aria-label="New PIN" />
           {profile?.pin_hash ? <Chip active={clearPin} onClick={() => { setClearPin((on) => !on); setPin("") }}>{clearPin ? <Check className="h-4 w-4" /> : null}Remove PIN</Chip> : null}

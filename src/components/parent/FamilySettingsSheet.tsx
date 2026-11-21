@@ -10,6 +10,8 @@ import { db } from "@/lib/db"
 import { familySettings, familySettingsAvailable, saveFamilySettings, type FamilySettings } from "@/lib/familySettings"
 import { DIFFICULTIES, difficultyOf } from "@/lib/difficulty"
 import { cn } from "@/lib/utils"
+import { InfoTip, LabelWithTip } from "@/components/InfoTip"
+import type { HelpTopic } from "@/lib/helpText"
 import { listMembers, type FamilyMember } from "@/lib/familySharing"
 
 const WEEKLY_LIMITS: Array<number | null> = [null, 1, 2, 3, 5]
@@ -104,7 +106,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
       <div className="space-y-5">
         <Group icon={<Star className="h-5 w-5" />} title="Points">
           <div className="space-y-2 rounded-2xl bg-muted/60 p-3">
-            <span><span className="block font-bold">Points for each difficulty</span><span className="block text-sm text-muted-foreground">Chores marked easy, medium or hard earn this many points.</span></span>
+            <span><LabelWithTip topic="settingsDifficultyPoints" className="font-bold">Points for each difficulty</LabelWithTip><span className="block text-sm text-muted-foreground">Chores marked easy, medium or hard earn this many points.</span></span>
             {DIFFICULTIES.map((option) => (
               <div key={option.value} className="flex items-center justify-between gap-3">
                 <span className="font-semibold"><span aria-hidden="true">{option.emoji} </span>{option.label}</span>
@@ -141,7 +143,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
         </Group>
 
         <Group icon={<Gift className="h-5 w-5" />} title="Prizes">
-          <Toggle label="Kids can ask for prizes" hint="When off, kids see what they can afford and tell a grown-up." checked={draft.prizes.kidsCanAsk} onChange={(on) => set("prizes", { kidsCanAsk: on })} />
+          <Toggle help="settingsKidsAsk" label="Kids can ask for prizes" hint="When off, kids see what they can afford and tell a grown-up." checked={draft.prizes.kidsCanAsk} onChange={(on) => set("prizes", { kidsCanAsk: on })} />
           {draft.prizes.kidsCanAsk ? (
             <>
               <div className="space-y-1.5">
@@ -150,7 +152,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
                   {WEEKLY_LIMITS.map((limit) => <Chip key={String(limit)} active={draft.prizes.maxAsksPerWeek === limit} onClick={() => set("prizes", { maxAsksPerWeek: limit })}>{limit === null ? "No limit" : limit}</Chip>)}
                 </div>
               </div>
-              <Toggle label="Grant small prizes automatically" hint="Cheap prizes are given right away, without waiting for you." checked={draft.prizes.autoGrantUpTo !== null} onChange={(on) => set("prizes", { autoGrantUpTo: on ? 10 : null })} />
+              <Toggle help="settingsAutoGrant" label="Grant small prizes automatically" hint="Cheap prizes are given right away, without waiting for you." checked={draft.prizes.autoGrantUpTo !== null} onChange={(on) => set("prizes", { autoGrantUpTo: on ? 10 : null })} />
               {draft.prizes.autoGrantUpTo !== null ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 pl-1">
                   <span className="text-sm font-bold">Prizes costing up to</span>
@@ -177,7 +179,7 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
           ) : null}
         </Group>
 
-        <Group icon={<BellRing className="h-5 w-5" />} title="Reminders">
+        <Group icon={<BellRing className="h-5 w-5" />} title="Reminders" help="settingsReminders">
           <Toggle label="Nudges in the app" hint="Kids see a friendly reminder on their Today page after the first reminder time, or when a chore is late." checked={draft.reminders.inApp} onChange={(on) => set("reminders", { inApp: on })} />
           <div className="space-y-1.5">
             <span className="block font-bold">Push reminders to kids at</span>
@@ -219,19 +221,19 @@ export function FamilySettingsSheet({ open, onOpenChange, me, profiles, chores, 
   )
 }
 
-function Group({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+function Group({ icon, title, help, children }: { icon: ReactNode; title: string; help?: HelpTopic; children: ReactNode }) {
   return (
     <section className="space-y-3 rounded-[22px] bg-card p-4 shadow-soft sm:p-5">
-      <h3 className="flex items-center gap-2 font-display text-lg font-semibold"><span className="text-primary">{icon}</span>{title}</h3>
+      <h3 className="flex items-center gap-2 font-display text-lg font-semibold"><span className="text-primary">{icon}</span>{title}{help ? <InfoTip topic={help} /> : null}</h3>
       {children}
     </section>
   )
 }
 
-function Toggle({ label, hint, checked, onChange }: { label: string; hint?: string; checked: boolean; onChange: (on: boolean) => void }) {
+function Toggle({ label, hint, help, checked, onChange }: { label: string; hint?: string; help?: HelpTopic; checked: boolean; onChange: (on: boolean) => void }) {
   return (
     <label className="flex items-center justify-between gap-3">
-      <span><span className="block font-bold">{label}</span>{hint ? <span className="block text-sm text-muted-foreground">{hint}</span> : null}</span>
+      <span>{help ? <LabelWithTip topic={help} className="font-bold">{label}</LabelWithTip> : <span className="block font-bold">{label}</span>}{hint ? <span className="block text-sm text-muted-foreground">{hint}</span> : null}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   )
