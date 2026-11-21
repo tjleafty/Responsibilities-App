@@ -7,8 +7,8 @@ import { saveProfilePhoto } from "@/lib/profilePhoto"
 import type { ChoreRecord, FamilyProfile, FamilyReward } from "@/lib/familyTypes"
 import { firstName, isActive, kidsOf } from "@/lib/family"
 import { db } from "@/lib/db"
-import { fitsAge, loadCatalog, type CatalogChore } from "@/lib/catalog"
-import { makeTaskId } from "@/lib/choreUtils"
+import { blankChoreFromCatalog, fitsAge, loadCatalog, type CatalogChore } from "@/lib/catalog"
+import { needsSetup } from "@/lib/choreUtils"
 import { ageFromBirthYear, familySettings, saveFamilySettings } from "@/lib/familySettings"
 import { getKidTheme, ensureThemeFonts } from "@/lib/themes"
 import { isTeenKey, teenKey } from "@/lib/teen"
@@ -26,7 +26,7 @@ interface SetupWizardProps {
   chores: ChoreRecord[]
   rewards: FamilyReward[]
   onRefresh: () => Promise<void>
-  onFinish: (next: "kids" | "parent") => void
+  onFinish: (next: "kids" | "parent" | "chores") => void
 }
 
 const STEP_NAMES = ["Kids", "Chores", "Rewards", "Ready"]
@@ -296,47 +296,31 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
 
 function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kids: FamilyProfile[]; chores: ChoreRecord[]; busy: boolean; error: string | null; run: Run; onRefresh: () => Promise<void>; onNext: () => void }) {
   const [catalog, setCatalog] = useState<CatalogChore[] | null>(null)
-  // Chore title -> the kids it goes to.
-  const [picked, setPicked] = useState<Record<string, string[]>>({})
+  // Titles of the chores picked. They're added with no kids or schedule; the parent sets those up after.
+  const [picked, setPicked] = useState<string[]>([])
   const points = familySettings().points.difficultyPoints.easy
-  const kidsFor = (item: CatalogChore) => kids.filter((kid) => fitsAge(item, ageFromBirthYear(kid.birth_year))).map((kid) => kid.id)
 
   useEffect(() => {
     void loadCatalog().then((items) => {
       const fitting = items.filter((item) => kids.some((kid) => fitsAge(item, ageFromBirthYear(kid.birth_year))))
       setCatalog(fitting)
-      setPicked(Object.fromEntries(fitting.filter((item) => STARTERS.includes(item.title)).map((item) => [item.title, kidsFor(item)])))
+      setPicked(fitting.filter((item) => STARTERS.includes(item.title)).map((item) => item.title))
     })
     // Loaded once when the step opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const groups = useMemo(() => GROUPS.map((name) => ({ name, items: (catalog ?? []).filter((item) => groupOf(item.title) === name) })).filter((group) => group.items.length > 0), [catalog])
-  const count = Object.values(picked).filter((ids) => ids.length > 0).length
+  const count = picked.length
 
-  const toggle = (item: CatalogChore) => setPicked((current) => {
-    const next = { ...current }
-    if (next[item.title]?.length) delete next[item.title]
-    else next[item.title] = kidsFor(item)
-    return next
-  })
-  const toggleKid = (title: string, kidId: string) => setPicked((current) => {
-    const ids = current[title] ?? []
-    return { ...current, [title]: ids.includes(kidId) ? ids.filter((id) => id !== kidId) : [...ids, kidId] }
-  })
+  const toggle = (item: CatalogChore) => setPicked((current) => current.includes(item.title) ? current.filter((title) => title !== item.title) : [...current, item.title])
 
   const save = async () => {
     const have = new Set(chores.filter(isActive).map((chore) => chore.title.toLowerCase()))
     const ok = await run(async () => {
       for (const item of catalog ?? []) {
-        const assigned = picked[item.title] ?? []
-        if (assigned.length === 0 || have.has(item.title.toLowerCase())) continue
-        await db.chore.create({
-          title: item.title, frequency: item.frequency, target_profile_id: assigned[0], assigned_profile_ids: JSON.stringify(assigned),
-          subtasks: JSON.stringify(item.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_id: "", reward_points: points,
-          time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false,
-          assignment_change_frequency: "weekly", is_active: true,
-        })
+        if (!picked.includes(item.title) || have.has(item.title.toLowerCase())) continue
+        await db.chore.create(blankChoreFromCatalog(item, points))
       }
       await onRefresh()
     }, "We couldn't add those chores. Try again.")
@@ -345,16 +329,15 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
 
   return (
     <>
-      <StepHeader step={2} title="Pick starter chores">Tap the ones that fit. You can change points, steps and schedules any time.</StepHeader>
+      <StepHeader step={2} title="Pick starter chores">Tap the ones that fit. Next, in Chores, you'll pick who does each one, how often and which days.</StepHeader>
       {catalog === null ? <p className="mt-6 text-muted-foreground">Loading chore ideas...</p> : null}
       <div className="mt-5 space-y-5">
         {groups.map((group) => (
           <section key={group.name} className="space-y-2">
-            <h2 className="flex items-center justify-between font-display text-xl font-semibold">{group.name}<span className="text-sm font-bold text-muted-foreground">{group.items.filter((item) => picked[item.title]?.length).length || ""}{group.items.some((item) => picked[item.title]?.length) ? " picked" : ""}</span></h2>
+            <h2 className="flex items-center justify-between font-display text-xl font-semibold">{group.name}<span className="text-sm font-bold text-muted-foreground">{group.items.filter((item) => picked.includes(item.title)).length || ""}{group.items.some((item) => picked.includes(item.title)) ? " picked" : ""}</span></h2>
             <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {group.items.map((item) => {
-                const on = (picked[item.title]?.length ?? 0) > 0
-                const fits = kidsFor(item)
+                const on = picked.includes(item.title)
                 return (
                   <li key={item.id} className={cn("rounded-[22px] bg-card p-3 shadow-soft", on && "ring-2 ring-primary")}>
                     <button type="button" onClick={() => toggle(item)} aria-pressed={on} className="flex w-full items-center gap-3 text-left">
@@ -365,16 +348,6 @@ function ChoresStep({ kids, chores, busy, error, run, onRefresh, onNext }: { kid
                       </span>
                       <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-full", on ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{on ? <Check className="h-5 w-5" strokeWidth={3} /> : <Plus className="h-5 w-5" />}</span>
                     </button>
-                    {on && kids.length > 1 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5 pl-[56px]">
-                        {kids.filter((kid) => fits.includes(kid.id)).map((kid) => (
-                          <button key={kid.id} type="button" onClick={() => toggleKid(item.title, kid.id)} aria-pressed={picked[item.title]?.includes(kid.id)}
-                            className={cn("rounded-full px-2.5 py-0.5 text-sm font-bold", picked[item.title]?.includes(kid.id) ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground line-through")}>
-                            {firstName(kid)}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
                   </li>
                 )
               })}
@@ -451,23 +424,24 @@ function RewardStep({ rewards, busy, error, run, onRefresh, onNext }: { rewards:
   )
 }
 
-function ReadyStep({ profile, kids, chores, rewards, busy, onFinish }: { profile: FamilyProfile; kids: FamilyProfile[]; chores: ChoreRecord[]; rewards: FamilyReward[]; busy: boolean; onFinish: (next: "kids" | "parent") => void }) {
+function ReadyStep({ profile, kids, chores, rewards, busy, onFinish }: { profile: FamilyProfile; kids: FamilyProfile[]; chores: ChoreRecord[]; rewards: FamilyReward[]; busy: boolean; onFinish: (next: "kids" | "parent" | "chores") => void }) {
   const active = chores.filter(isActive)
+  const unset = active.filter(needsSetup).length
   const prizes = rewards.filter(isActive)
   const names = kids.map(firstName)
   const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "your kids"
   return (
     <div className="mt-6 text-center lg:mt-0">
       <span className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-accent/40"><Sparkles className="h-11 w-11 text-accent-foreground" /></span>
-      <h1 className="mt-4 font-display text-3xl font-semibold">Your family is ready!</h1>
-      <p className="mt-1 text-muted-foreground">Everything is set up for {list} to start.</p>
+      <h1 className="mt-4 font-display text-3xl font-semibold">{unset ? "Almost ready!" : "Your family is ready!"}</h1>
+      <p className="mt-1 text-muted-foreground">{unset ? `Last step: pick who does each chore, how often and which days. ${list} will see them once you do.` : `Everything is set up for ${list} to start.`}</p>
 
       <section className="mt-6 grid gap-4 rounded-[26px] bg-card p-5 text-left shadow-soft md:grid-cols-2 md:gap-6 md:p-6">
         <SummaryRow icon={<Users className="h-5 w-5" />} title={`${kids.length} ${kids.length === 1 ? "kid" : "kids"}`}>
           <div className="flex flex-wrap gap-2">{kids.map((kid) => <span key={kid.id} className="inline-flex items-center gap-2 rounded-full bg-muted/70 py-1 pl-1 pr-3 text-sm font-bold"><Avatar profile={kid} size={28} />{kid.display_name}<span className="font-normal text-muted-foreground">{isTeenKey(kid.theme_key) ? "Teen" : getKidTheme(kid.theme_key).name}</span></span>)}</div>
         </SummaryRow>
         <SummaryRow icon={<Home className="h-5 w-5" />} title={`${active.length} ${active.length === 1 ? "chore" : "chores"}`}>
-          {active.length ? <div className="flex flex-wrap gap-2">{active.slice(0, 8).map((chore) => <span key={chore.id} className="rounded-full bg-muted/70 px-3 py-1 text-sm font-bold">{chore.title}</span>)}{active.length > 8 ? <span className="px-1 py-1 text-sm text-muted-foreground">+{active.length - 8} more</span> : null}</div> : <p className="text-sm text-muted-foreground">Add chores from the Chores tab.</p>}
+          {active.length ? <div className="flex flex-wrap gap-2">{active.slice(0, 8).map((chore) => <span key={chore.id} className="rounded-full bg-muted/70 px-3 py-1 text-sm font-bold">{chore.title}</span>)}{active.length > 8 ? <span className="px-1 py-1 text-sm text-muted-foreground">+{active.length - 8} more</span> : null}{unset ? <p className="w-full text-sm font-semibold text-coral">{unset} still need kids and a schedule.</p> : null}</div> : <p className="text-sm text-muted-foreground">Add chores from the Chores tab.</p>}
         </SummaryRow>
         <SummaryRow icon={<Gift className="h-5 w-5" />} title={`${prizes.length} ${prizes.length === 1 ? "reward" : "rewards"}`}>
           {prizes.length ? <div className="flex flex-wrap gap-2">{prizes.map((reward) => <span key={reward.id} className="rounded-full bg-accent/25 px-3 py-1 text-sm font-bold">{reward.title} · ⭐ {Number(reward.points_required) || 0}</span>)}</div> : <p className="text-sm text-muted-foreground">Add rewards from the Rewards tab.</p>}
@@ -478,8 +452,15 @@ function ReadyStep({ profile, kids, chores, rewards, busy, onFinish }: { profile
       </section>
 
       <div className="mt-6 md:flex md:flex-row-reverse md:justify-center md:gap-3">
+        {unset ? (
+          <>
+            <Button size="lg" onClick={() => onFinish("chores")} disabled={busy} className="w-full md:w-auto">Set up chores<ArrowRight className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="lg" onClick={() => onFinish("kids")} disabled={busy} className="mt-2 w-full md:mt-0 md:w-auto">Switch to kid mode</Button>
+          </>
+        ) : <>
         <Button size="lg" onClick={() => onFinish("kids")} disabled={busy} className="w-full md:w-auto"><Users className="h-5 w-5" />Switch to kid mode<ArrowRight className="h-5 w-5" /></Button>
         <Button variant="ghost" size="lg" onClick={() => onFinish("parent")} disabled={busy} className="mt-2 w-full md:mt-0 md:w-auto">Open the parent dashboard instead</Button>
+        </>}
       </div>
       <p className="mt-3 text-sm text-muted-foreground">On a shared tablet or computer, kids pick their profile on the Who's here screen.</p>
     </div>

@@ -194,3 +194,17 @@ export function fitsAge(item: Pick<CatalogChore, "min_age" | "max_age">, age: nu
   if (age === null) return true
   return (item.min_age === null || age >= item.min_age) && (item.max_age === null || age <= item.max_age)
 }
+
+/**
+ * A new chore from an idea on the starter list, with nothing picked yet: no kids, and the parent
+ * chooses how often and which days when they set it up (see needsSetup). The database needs a
+ * frequency, so the idea's one is stored, but the editor asks for it again before the chore is used.
+ */
+export function blankChoreFromCatalog(preset: Pick<CatalogChore, "title" | "frequency" | "subtasks">, points: number) {
+  return {
+    title: preset.title, frequency: preset.frequency, target_profile_id: "", assigned_profile_ids: "[]",
+    subtasks: JSON.stringify(preset.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_id: "", reward_points: points,
+    time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false,
+    assignment_change_frequency: "weekly", is_active: true,
+  }
+}

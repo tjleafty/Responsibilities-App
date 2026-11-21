@@ -28,6 +28,8 @@ export interface ParentAppProps {
   onRefresh: () => Promise<void>
   onSwitchProfile: () => void
   onSignOut: () => void
+  /** The tab to open on; Today unless a flow like the setup wizard sends the parent elsewhere. */
+  initialTab?: ParentTab
 }
 
 export type ParentTab = "today" | "approve" | "chores" | "rewards" | "family"
@@ -41,7 +43,7 @@ const TABS: Array<{ id: ParentTab; label: string; icon: typeof Sun }> = [
 ]
 
 export function ParentApp(props: ParentAppProps) {
-  const [tab, setTab] = useState<ParentTab>("today")
+  const [tab, setTab] = useState<ParentTab>(props.initialTab ?? "today")
   const [newChore, setNewChore] = useState(0)
   const [billing, setBilling] = useState(false)
   const choreIds = new Set(props.chores.map((chore) => chore.id))

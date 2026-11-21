@@ -6,7 +6,7 @@ import { DIFFICULTIES, difficultyOf, difficultyPoints, pointsLabel } from "@/lib
 import { Avatar, Chip, ChoreIconTile, ErrorNote, Field, inputClass, Segmented, Sheet, Stepper, TokenPill } from "@/components/kit"
 import type { FamilyReward } from "@/lib/familyTypes"
 import type { ChoreRecord, ChoreSubtask, FamilyProfile, GoalFrequency, RandomMode, Difficulty } from "@/lib/familyTypes"
-import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
+import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId, needsSetup, parseChoreSubtasks, randomModeOf } from "@/lib/choreUtils"
 import { isActive, kidsOf, grownUpsOf, requiresApproval } from "@/lib/family"
 import { choreVideo } from "@/lib/choreIcons"
 import { baseSchedule, kidSchedules, serializeSchedule, startOfWeek, isoDate, isOnWeek, sortDays, WEEKDAYS, type ChoreSchedule } from "@/lib/choreSchedule"
@@ -51,6 +51,8 @@ interface ChoreEditorSheetProps {
 export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, rewards, onRefresh }: ChoreEditorSheetProps) {
   const [title, setTitle] = useState("")
   const [schedule, setSchedule] = useState<ChoreSchedule>(DEFAULT_SCHEDULE)
+  // Chores from the ideas list start with no "how often" picked; the parent has to choose one.
+  const [noFrequency, setNoFrequency] = useState(false)
   const [perKid, setPerKid] = useState<Record<string, ChoreSchedule> | null>(null)
   const [assigned, setAssigned] = useState<string[]>([])
   const [takeTurns, setTakeTurns] = useState(false)
@@ -71,7 +73,9 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   useEffect(() => {
     if (!open) return
     setTitle(chore?.title ?? seed?.title ?? "")
-    setSchedule(chore ? baseSchedule(chore) : { ...DEFAULT_SCHEDULE, frequency: seed?.frequency ?? "daily" })
+    const blank = chore ? needsSetup(chore) : Boolean(seed)
+    setSchedule(chore && !blank ? baseSchedule(chore) : { ...DEFAULT_SCHEDULE, frequency: chore?.frequency ?? seed?.frequency ?? "daily" })
+    setNoFrequency(blank)
     const own = chore ? kidSchedules(chore) : {}
     setPerKid(Object.keys(own).length > 0 ? own : null)
     setAssigned(chore ? getAssignedProfileIds(chore) : [])
@@ -94,7 +98,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
   const kidsPicked = assigned.filter((id) => kidsOf(profiles).some((kid) => kid.id === id))
   const cleanSteps = steps.map((step) => ({ ...step, title: step.title.trim() })).filter((step) => step.title)
   const kidsForSchedules = kidsPicked.length > 1 && !takeTurns ? kidsPicked : []
-  const canSave = title.trim().length > 0 && assigned.length > 0 && (!takeTurns || kidsPicked.length > 0)
+  const canSave = title.trim().length > 0 && assigned.length > 0 && !noFrequency && (!takeTurns || kidsPicked.length > 0)
+  const settingUp = chore ? needsSetup(chore) : false
 
   const run = async (action: () => Promise<unknown>, failure: string) => {
     setSaving(true)
@@ -113,7 +118,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
 
   const save = () => {
     if (!canSave) {
-      setError(!title.trim() ? "Give the chore a name." : "Pick who does this chore.")
+      setError(!title.trim() ? "Give the chore a name." : assigned.length === 0 ? "Pick who does this chore." : noFrequency ? "Pick how often this chore repeats." : "Pick who does this chore.")
       return
     }
     const reward = rewards.find((item) => item.id === rewardId)
@@ -160,7 +165,8 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
       open={open}
       onOpenChange={onOpenChange}
       wide
-      title={chore ? "Edit chore" : "New chore"}
+      title={settingUp ? "Set up chore" : chore ? "Edit chore" : "New chore"}
+      description={settingUp ? "Pick who does it, how often and which days. Kids see it once you save." : undefined}
       footer={
         <div className="space-y-3">
           <ErrorNote>{error}</ErrorNote>
@@ -188,7 +194,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             <Field label="Chore name">
               <input className={inputClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Put away clean dishes" maxLength={80} autoFocus={!chore} />
             </Field>
-            <ScheduleFields value={schedule} onChange={setSchedule} />
+            <ScheduleFields value={schedule} blank={noFrequency} onChange={(next) => { setNoFrequency(false); setSchedule(next) }} />
           </Section>
 
           <Section number={2} title="Who does it">
@@ -350,7 +356,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
 const DEFAULT_SCHEDULE: ChoreSchedule = { frequency: "daily", days: [], every: 1, anchor: null }
 
 /** How often a chore repeats; weekly chores can have a due day and repeat every week or every other week. */
-function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (next: ChoreSchedule) => void }) {
+function ScheduleFields({ value, blank = false, onChange }: { value: ChoreSchedule; blank?: boolean; onChange: (next: ChoreSchedule) => void }) {
   const thisWeek = isoDate(startOfWeek(new Date()))
   const nextWeek = new Date()
   nextWeek.setDate(nextWeek.getDate() + 7)
@@ -359,9 +365,10 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
     <div className="space-y-3">
       <div className="space-y-1.5">
         <span className="block text-sm font-bold">How often</span>
-        <Segmented value={value.frequency} onChange={(frequency) => onChange({ ...value, frequency })} options={FREQUENCIES} />
+        <Segmented value={blank ? "" as GoalFrequency : value.frequency} onChange={(frequency) => onChange({ ...value, frequency })} options={FREQUENCIES} />
+        {blank ? <p className="text-xs font-semibold text-coral">Pick daily, weekly or monthly.</p> : null}
       </div>
-      {value.frequency === "weekly" ? (
+      {!blank && value.frequency === "weekly" ? (
         <>
           <div className="space-y-1.5">
             <span className="block text-sm font-bold">Due days</span>

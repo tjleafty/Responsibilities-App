@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
-import { ChevronDown, ChevronRight, LayoutGrid, Lightbulb, List, PencilLine, Plus, Repeat, Search, ShieldCheck, Timer, Video } from "lucide-react"
+import { ChevronDown, ChevronRight, LayoutGrid, Lightbulb, List, PencilLine, Plus, Repeat, Search, ShieldCheck, Sparkles, Timer, Video } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Avatar, Chip, FitText, ChoreIconTile, EmptyState, ErrorNote, Segmented, Sheet, TokenPill } from "@/components/kit"
 import type { ParentScreenProps } from "@/components/parent/ParentApp"
 import { ChoreEditorSheet, type ChoreDraftSeed } from "@/components/parent/ChoreEditorSheet"
 import type { ChoreRecord, FamilyProfile, GoalFrequency } from "@/lib/familyTypes"
 import { assigneesOf, isActive, kidsOf, requiresApproval } from "@/lib/family"
-import { getAssignedProfileIds, isRandomAssignmentEnabled, makeTaskId } from "@/lib/choreUtils"
-import { fitsAge, loadCatalog, type CatalogChore } from "@/lib/catalog"
+import { getAssignedProfileIds, isRandomAssignmentEnabled, needsSetup } from "@/lib/choreUtils"
+import { blankChoreFromCatalog, fitsAge, loadCatalog, type CatalogChore } from "@/lib/catalog"
 import { ageFromBirthYear, useFamilySettings } from "@/lib/familySettings"
 import { choreScheduleLabel } from "@/lib/choreSchedule"
 import { choreVideo } from "@/lib/choreIcons"
@@ -55,9 +55,11 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
   useEffect(() => { if (openNew > 0) setChooserOpen(true) }, [openNew])
 
   const active = chores.filter(isActive)
+  // Added from ideas and still waiting for kids and a schedule; shown on their own at the top.
+  const unset = active.filter(needsSetup).sort(byTitle)
   const paused = chores.filter((chore) => !isActive(chore))
   const matches = (chore: ChoreRecord) => (filter === "all" || chore.frequency === filter) && chore.title.toLowerCase().includes(query.trim().toLowerCase())
-  const shown = active.filter(matches).sort(byTitle)
+  const shown = active.filter((chore) => !needsSetup(chore) && matches(chore)).sort(byTitle)
   const kids = kidsOf(profiles)
 
   const edit = (chore: ChoreRecord) => { setEditing(chore); setSeed(null); setEditorOpen(true) }
@@ -67,13 +69,34 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
     <div className="mx-auto max-w-5xl space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-3 font-display text-3xl font-semibold sm:text-4xl">Chores <span className="rounded-full bg-primary/10 px-3 py-1 text-base text-primary">{active.length} active</span></h1>
+          <h1 className="flex items-center gap-3 font-display text-3xl font-semibold sm:text-4xl">Chores <span className="rounded-full bg-primary/10 px-3 py-1 text-base text-primary">{active.length - unset.length} active</span></h1>
           <p className="text-muted-foreground">Tap a chore to edit it.</p>
         </div>
         <Button onClick={() => setChooserOpen(true)}><Plus className="h-5 w-5" />Add chore</Button>
       </header>
 
-      <Segmented value={view} onChange={setView} size="lg" options={[{ value: "chore", label: `By chore (${active.length})` }, { value: "kid", label: `By kid (${kids.length})` }]} className="max-w-md" />
+      {unset.length > 0 ? (
+        <section className="rounded-[22px] bg-accent/25 p-4 sm:p-5">
+          <h2 className="flex items-center gap-2 font-display text-xl font-semibold"><Sparkles className="h-5 w-5 text-accent-foreground" />Finish setting up<span className="rounded-full bg-card px-2.5 text-base">{unset.length}</span></h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">Tap each chore to pick who does it, how often and which days. Kids won't see it until then.</p>
+          <ul className="mt-3 grid gap-2 md:grid-cols-2">
+            {unset.map((chore) => (
+              <li key={chore.id}>
+                <button type="button" onClick={() => edit(chore)} className="flex w-full items-center gap-3 rounded-2xl bg-card p-3 text-left shadow-soft transition-transform active:scale-[0.99]">
+                  <ChoreIconTile title={chore.title} size={44} className="rounded-xl" />
+                  <span className="min-w-0 flex-1">
+                    <FitText max={17} min={12} className="font-display font-semibold">{chore.title}</FitText>
+                    <span className="block text-xs font-bold text-coral">Pick kids and schedule</span>
+                  </span>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <Segmented value={view} onChange={setView} size="lg" options={[{ value: "chore", label: `By chore (${active.length - unset.length})` }, { value: "kid", label: `By kid (${kids.length})` }]} className="max-w-md" />
 
       {view === "chore" ? (
         <>
@@ -86,7 +109,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 scrollbar-none sm:mx-0 sm:px-0">
               {(["all", "daily", "weekly", "monthly"] as FrequencyFilter[]).map((value) => (
                 <Chip key={value} active={filter === value} onClick={() => setFilter(value)}>
-                  {value === "all" ? "All" : FREQUENCY_LABEL[value]} <span className="opacity-70">{value === "all" ? active.length : active.filter((chore) => chore.frequency === value).length}</span>
+                  {value === "all" ? "All" : FREQUENCY_LABEL[value]} <span className="opacity-70">{active.filter((chore) => !needsSetup(chore) && (value === "all" || chore.frequency === value)).length}</span>
                 </Chip>
               ))}
             </div>
@@ -102,7 +125,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
             }>
               Start your family's routine. Most families start with two easy morning chores, like making the bed and brushing teeth.
             </EmptyState>
-          ) : shown.length === 0 ? (
+          ) : shown.length === 0 ? (active.length === unset.length && !query.trim() && filter === "all" ? null :
             <p className="rounded-[22px] bg-card p-6 text-center text-muted-foreground shadow-soft">No chores match that search.</p>
           ) : layout === "list" ? (
             <ChoreList chores={shown} profiles={profiles} onOpen={edit} />
@@ -155,7 +178,7 @@ export function ParentChores(props: ParentScreenProps & { openNew: number }) {
 
       <Sheet open={chooserOpen} onOpenChange={setChooserOpen} title="Add a chore">
         <div className="grid gap-3 sm:grid-cols-2">
-          <ChoiceCard icon={<Lightbulb className="h-7 w-7" />} title="Pick from ideas" text="Common chores you can add in one tap." onClick={() => { setChooserOpen(false); setIdeasOpen(true) }} />
+          <ChoiceCard icon={<Lightbulb className="h-7 w-7" />} title="Pick from ideas" text="Common chores you can add in one tap, then pick kids and a schedule." onClick={() => { setChooserOpen(false); setIdeasOpen(true) }} />
           <ChoiceCard icon={<PencilLine className="h-7 w-7" />} title="Create my own" text="Name it, add steps, set points and rules." onClick={() => create()} />
         </div>
       </Sheet>
@@ -304,7 +327,6 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<FrequencyFilter>("all")
   const [picked, setPicked] = useState<string[]>([])
-  const [kids, setKids] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [catalog, setCatalog] = useState<CatalogChore[]>([])
@@ -326,19 +348,17 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
     if (!open) return
     void loadCatalog().then(setCatalog)
     setPicked([])
-    setKids(allKids.map((kid) => kid.id))
     setError(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
+  // Ideas already waiting to be set up aren't added twice.
+  const waiting = (preset: CatalogChore) => chores.some((chore) => isActive(chore) && needsSetup(chore) && chore.title.toLowerCase() === preset.title.toLowerCase())
+
   const add = async () => {
-    const records = catalog.filter((preset) => picked.includes(key(preset))).flatMap((preset) => {
-      const ids = kids.filter((id) => !chores.some((chore) => isActive(chore) && chore.frequency === preset.frequency && chore.title.toLowerCase() === preset.title.toLowerCase() && getAssignedProfileIds(chore).includes(id)))
-      if (ids.length === 0) return []
-      return [{ title: preset.title, frequency: preset.frequency, target_profile_id: ids[0], assigned_profile_ids: JSON.stringify(ids), subtasks: JSON.stringify(preset.subtasks.map((step) => ({ ...step, id: makeTaskId() }))), reward: "", reward_points: settings.points.difficultyPoints.easy, time_limit_minutes: null, requires_verification: false, random_assignment_enabled: false, assignment_rotation_enabled: false, assignment_change_frequency: "weekly", is_active: true }]
-    })
+    // Added blank: the parent picks kids, how often and days for each one afterwards.
+    const records = catalog.filter((preset) => picked.includes(key(preset)) && !waiting(preset)).map((preset) => blankChoreFromCatalog(preset, settings.points.difficultyPoints.easy))
     if (records.length === 0) {
-      setError("Those chores are already set up for the kids you picked.")
+      setError("Those chores are already on your list, waiting to be set up.")
       return
     }
     setSaving(true)
@@ -361,17 +381,11 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
       onOpenChange={onOpenChange}
       wide
       title="Chore ideas"
-      description="Pick a few to start. You can add steps and change points later."
+      description="Pick a few to add. Then tap each one on your list to choose who does it, how often and which days."
       footer={
         <div className="space-y-3">
-          {allKids.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-bold">For</span>
-              {allKids.map((kid) => <Chip key={kid.id} active={kids.includes(kid.id)} onClick={() => setKids((current) => current.includes(kid.id) ? current.filter((id) => id !== kid.id) : [...current, kid.id])}>{kid.display_name}</Chip>)}
-            </div>
-          ) : null}
           <ErrorNote>{error}</ErrorNote>
-          <Button onClick={() => void add()} disabled={saving || picked.length === 0 || kids.length === 0} className="w-full">
+          <Button onClick={() => void add()} disabled={saving || picked.length === 0} className="w-full">
             <Plus className="h-5 w-5" />{saving ? "Adding..." : picked.length ? `Add ${picked.length} ${picked.length === 1 ? "chore" : "chores"}` : "Pick some chores"}
           </Button>
         </div>
@@ -397,7 +411,7 @@ function IdeasSheet({ open, onOpenChange, profiles, chores, onRefresh, onCustomi
                     <span className="block truncate font-semibold">{preset.title}</span>
                     <span className="text-xs font-bold text-muted-foreground">
                       {FREQUENCY_LABEL[preset.frequency]}{preset.subtasks.length ? ` · ${preset.subtasks.length} steps` : ""}
-                      {fits?.length ? <span className="text-success"> · Good for {fits.map((kid) => kid.display_name).join(", ")}</span> : null}
+                      {waiting(preset) ? <span className="text-coral"> · Already added</span> : fits?.length ? <span className="text-success"> · Good for {fits.map((kid) => kid.display_name).join(", ")}</span> : null}
                     </span>
                   </span>
                 </button>
