@@ -12,6 +12,7 @@ import { pointsBalance } from "@/lib/prizeRequests"
 import { prepareCelebration } from "@/lib/celebration"
 import { db } from "@/lib/db"
 import { cn } from "@/lib/utils"
+import { InfoTip, LabelWithTip } from "@/components/InfoTip"
 
 type View = "prizes" | "goals"
 const FREQUENCIES: Array<{ value: GoalFrequency; label: string; hint: string }> = [
@@ -64,7 +65,7 @@ export function ParentRewards({ profiles, completions, prizeRequests, rewards, g
         <Button onClick={() => view === "prizes" ? setPrizeSheet({ reward: null }) : setGoalSheet({ goal: null })}><Plus className="h-5 w-5" />{view === "prizes" ? "Add prize" : "Add goal"}</Button>
       </header>
 
-      <Segmented value={view} onChange={setView} size="lg" className="max-w-md" options={[{ value: "prizes", label: `Prizes (${rewards.filter(isActive).length})` }, { value: "goals", label: `Goals (${liveGoals.length})` }]} />
+      <div className="flex items-center gap-2"><Segmented value={view} onChange={setView} size="lg" className="max-w-md flex-1" options={[{ value: "prizes", label: `Prizes (${rewards.filter(isActive).length})` }, { value: "goals", label: `Goals (${liveGoals.length})` }]} /><InfoTip topic="prizesVsGoals" /></div>
       <ErrorNote>{error}</ErrorNote>
 
       {view === "prizes" ? (
@@ -161,7 +162,7 @@ function useSave(onRefresh: () => Promise<void>, onClose: () => void) {
 function ForWhom({ kids, value, onChange, allowEveryone }: { kids: FamilyProfile[]; value: string; onChange: (id: string) => void; allowEveryone: boolean }) {
   return (
     <div className="space-y-1.5">
-      <span className="block text-sm font-bold">For</span>
+      <LabelWithTip topic="prizeFor" className="text-sm font-bold">For</LabelWithTip>
       <div className="flex flex-wrap gap-2">
         {allowEveryone ? <Chip active={!value} onClick={() => onChange("")}>Everyone</Chip> : null}
         {kids.map((kid) => <Chip key={kid.id} active={value === kid.id} onClick={() => onChange(kid.id)}>{kid.display_name}</Chip>)}
@@ -212,7 +213,7 @@ function PrizeSheet({ state, onClose, kids, onRefresh }: { state: { reward: Fami
         <Field label="Details (optional)"><Textarea value={description} onChange={(event) => setDescription(event.target.value)} rows={2} maxLength={200} placeholder="Choose Friday's movie and the popcorn." /></Field>
         <div className="space-y-2 rounded-2xl bg-muted/60 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <span><span className="block font-bold">Points needed</span><span className="block text-sm text-muted-foreground">Kids see it in their own token.</span></span>
+            <span><LabelWithTip topic="prizeCost" className="font-bold">Points needed</LabelWithTip><span className="block text-sm text-muted-foreground">Kids see it in their own token.</span></span>
             <Stepper value={cost} onChange={setCost} step={5} max={5000} label="points" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -267,7 +268,7 @@ function GoalSheet({ state, onClose, kids, onRefresh }: { state: { goal: GoalRec
         <Field label="Goal"><input className={inputClass} value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Read 10 books" maxLength={80} /></Field>
         <ForWhom kids={kids} value={kidId} onChange={setKidId} allowEveryone={false} />
         <div className="space-y-1.5">
-          <span className="block text-sm font-bold">Starts over</span>
+          <LabelWithTip topic="goalStartsOver" className="text-sm font-bold">Starts over</LabelWithTip>
           <div className="grid grid-cols-3 gap-2">
             {FREQUENCIES.map((option) => (
               <button key={option.value} type="button" onClick={() => setFrequency(option.value)} aria-pressed={frequency === option.value}
@@ -279,7 +280,7 @@ function GoalSheet({ state, onClose, kids, onRefresh }: { state: { goal: GoalRec
             ))}
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3"><span className="font-bold">Times to reach it</span><Stepper value={target} onChange={setTarget} min={1} max={100} label="times" /></div>
+        <div className="flex flex-wrap items-center justify-between gap-3"><LabelWithTip topic="goalTarget" className="font-bold">Times to reach it</LabelWithTip><Stepper value={target} onChange={setTarget} min={1} max={100} label="times" /></div>
         <Field label="Prize when reached (optional)"><input className={inputClass} value={prize} onChange={(event) => setPrize(event.target.value)} placeholder="Ice cream trip" maxLength={80} /></Field>
       </div>
     </Sheet>

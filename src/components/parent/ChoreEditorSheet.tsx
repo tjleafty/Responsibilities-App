@@ -14,6 +14,8 @@ import { db } from "@/lib/db"
 import { suggestFromChore } from "@/lib/catalog"
 import { familySettings } from "@/lib/familySettings"
 import { cn } from "@/lib/utils"
+import { InfoTip, LabelWithTip } from "@/components/InfoTip"
+import type { HelpTopic } from "@/lib/helpText"
 
 const FREQUENCIES: Array<{ value: GoalFrequency; label: string }> = [
   { value: "daily", label: "Daily" },
@@ -191,7 +193,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             <ScheduleFields value={schedule} onChange={setSchedule} />
           </Section>
 
-          <Section number={2} title="Who does it">
+          <Section number={2} title="Who does it" help="choreWho">
             {people.length === 0 ? <p className="text-sm text-muted-foreground">Add a kid in Family first.</p> : (
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {people.map((person) => {
@@ -210,7 +212,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             {kidsForSchedules.length > 0 ? (
               <div className="rounded-2xl bg-muted/60 p-4">
                 <label className="flex items-center justify-between gap-3">
-                  <span><span className="block font-bold">Different schedule for each kid</span><span className="block text-sm text-muted-foreground">For example, one kid daily and another every Tuesday.</span></span>
+                  <span><LabelWithTip topic="chorePerKidSchedule" className="font-bold">Different schedule for each kid</LabelWithTip><span className="block text-sm text-muted-foreground">For example, one kid daily and another every Tuesday.</span></span>
                   <Switch checked={!!perKid} onCheckedChange={(on) => setPerKid(on ? Object.fromEntries(kidsForSchedules.map((id) => [id, schedule])) : null)} />
                 </label>
                 {perKid ? (
@@ -231,13 +233,13 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             ) : null}
             <div className="rounded-2xl bg-muted/60 p-4">
               <label className="flex items-center justify-between gap-3">
-                <span><span className="block font-bold">Randomly assign</span><span className="block text-sm text-muted-foreground">Pick kids at random from the ones you chose, and change who's up over time.</span></span>
+                <span><LabelWithTip topic="choreRandom" className="font-bold">Randomly assign</LabelWithTip><span className="block text-sm text-muted-foreground">Pick kids at random from the ones you chose, and change who's up over time.</span></span>
                 <Switch checked={takeTurns} onCheckedChange={setTakeTurns} />
               </label>
               {takeTurns ? (
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <span className="block text-sm font-bold">What's random</span>
+                    <LabelWithTip topic="choreRandomMode" className="text-sm font-bold">What's random</LabelWithTip>
                     <Segmented value={randomMode} onChange={setRandomMode} options={RANDOM_MODES} />
                     <p className="text-xs text-muted-foreground">{RANDOM_MODE_HINT[randomMode]}</p>
                   </div>
@@ -249,7 +251,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
                   ) : null}
                   {randomMode !== "chore" && cleanSteps.length < 2 ? <p className="text-sm font-semibold text-coral">Add at least two steps so they can be split.</p> : null}
                   <div className="space-y-1.5">
-                    <span className="block text-sm font-bold">Change who's up</span>
+                    <LabelWithTip topic="choreTurnEvery" className="text-sm font-bold">Change who's up</LabelWithTip>
                     <Segmented value={turnEvery} onChange={setTurnEvery} options={FREQUENCIES} />
                   </div>
                   {kidsPicked.length === 0 ? <p className="text-sm font-semibold text-coral">Pick at least one kid to take turns.</p> : null}
@@ -258,7 +260,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
             </div>
           </Section>
 
-          <Section number={3} title="Steps" aside={steps.length ? `${steps.length} total` : undefined}>
+          <Section number={3} title="Steps" help="choreSteps" aside={steps.length ? `${steps.length} total` : undefined}>
             <p className="text-sm text-muted-foreground">Short steps in the order your kid should do them. Kids check each one off.</p>
             <ol className="space-y-2">
               {steps.map((step, index) => (
@@ -274,7 +276,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
 
           <Section number={4} title="Reward">
             <div className="space-y-1.5">
-              <span className="block text-sm font-bold">How hard is it?</span>
+              <LabelWithTip topic="choreDifficulty" className="text-sm font-bold">How hard is it?</LabelWithTip>
               <div className="flex flex-wrap gap-2">
                 {DIFFICULTIES.map((option) => (
                   <Chip key={option.value} active={difficulty === option.value} onClick={() => setDifficulty(option.value)}>
@@ -294,7 +296,7 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
               </div>
             ) : null}
             {rewards.length > 0 ? (
-              <Field label="Linked prize (optional)">
+              <Field label={<LabelWithTip topic="choreLinkedPrize">Linked prize (optional)</LabelWithTip>}>
                 <select className={inputClass} value={rewardId} onChange={(event) => setRewardId(event.target.value)}>
                   <option value="">None</option>
                   {rewards.filter((reward) => isActive(reward) || reward.id === rewardId).map((reward) => <option key={reward.id} value={reward.id}>{reward.title}</option>)}
@@ -305,11 +307,11 @@ export function ChoreEditorSheet({ open, onOpenChange, chore, seed, profiles, re
 
           <Section number={5} title="Rules">
             <label className="flex items-center justify-between gap-3 rounded-2xl bg-muted/60 p-4">
-              <span><span className="flex items-center gap-1.5 font-bold"><ShieldCheck className="h-4 w-4 text-primary" />Needs my approval</span><span className="block text-sm text-muted-foreground">Finished chores wait for you before points count.</span></span>
+              <span><span className="flex items-center gap-1.5 font-bold"><ShieldCheck className="h-4 w-4 text-primary" />Needs my approval<InfoTip topic="choreApproval" /></span><span className="block text-sm text-muted-foreground">Finished chores wait for you before points count.</span></span>
               <Switch checked={approval} onCheckedChange={setApproval} />
             </label>
             <div className="space-y-1.5">
-              <span className="flex items-center gap-1.5 text-sm font-bold"><Timer className="h-4 w-4" />Time limit</span>
+              <span className="flex items-center gap-1.5 text-sm font-bold"><Timer className="h-4 w-4" />Time limit<InfoTip topic="choreTimeLimit" /></span>
               <div className="flex flex-wrap gap-2">
                 {TIME_LIMITS.map((minutes) => <Chip key={minutes} active={timeLimit === minutes} onClick={() => setTimeLimit(minutes)}>{minutes ? `${minutes} min` : "No limit"}</Chip>)}
               </div>
@@ -358,13 +360,13 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
   return (
     <div className="space-y-3">
       <div className="space-y-1.5">
-        <span className="block text-sm font-bold">How often</span>
+        <LabelWithTip topic="choreFrequency" className="text-sm font-bold">How often</LabelWithTip>
         <Segmented value={value.frequency} onChange={(frequency) => onChange({ ...value, frequency })} options={FREQUENCIES} />
       </div>
       {value.frequency === "weekly" ? (
         <>
           <div className="space-y-1.5">
-            <span className="block text-sm font-bold">Due days</span>
+            <LabelWithTip topic="choreDueDays" className="text-sm font-bold">Due days</LabelWithTip>
             <div className="flex flex-wrap gap-2">
               <Chip active={value.days.length === 0} onClick={() => onChange({ ...value, days: [] })}>Any day</Chip>
               {WEEKDAYS.map((day) => {
@@ -379,7 +381,7 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
                 : `Done ${value.days.length} times a week, once on each day. If one isn't done, it stays on the list as late until the next one.`}</p>
           </div>
           <div className="space-y-1.5">
-            <span className="block text-sm font-bold">Repeats</span>
+            <LabelWithTip topic="choreRepeats" className="text-sm font-bold">Repeats</LabelWithTip>
             <Segmented value={String(value.every)} onChange={(every) => onChange({ ...value, every: every === "2" ? 2 : 1, anchor: every === "2" ? value.anchor ?? thisWeek : null })} options={[{ value: "1", label: "Every week" }, { value: "2", label: "Every other week" }]} />
           </div>
           {value.every === 2 ? (
@@ -397,11 +399,12 @@ function ScheduleFields({ value, onChange }: { value: ChoreSchedule; onChange: (
   )
 }
 
-function Section({ number, title, aside, children }: { number: number; title: string; aside?: string; children: ReactNode }) {
+function Section({ number, title, aside, help, children }: { number: number; title: string; aside?: string; help?: HelpTopic; children: ReactNode }) {
   return (
     <section className="space-y-3 rounded-[22px] bg-card p-4 shadow-soft sm:p-5">
       <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
         <span className="grid h-7 w-7 place-items-center rounded-full bg-primary/10 text-sm text-primary">{number}</span>{title}
+        {help ? <InfoTip topic={help} /> : null}
         {aside ? <span className="ml-auto text-sm font-bold text-muted-foreground">{aside}</span> : null}
       </h3>
       {children}
