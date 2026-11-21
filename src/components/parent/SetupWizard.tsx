@@ -269,7 +269,7 @@ function KidsStep({ kids, busy, error, run, onRefresh, onNext }: { kids: FamilyP
               const age = ageFromBirthYear(kid.birth_year)
               return (
                 <li key={kid.id} className="flex items-center gap-3 rounded-[22px] bg-card p-3 shadow-soft">
-                  <PhotoPicker compact profile={kid} size={48} busy={busy || photoBusy === kid.id} onChange={(next) => void changePhoto(kid, next)} />
+                  <PhotoPicker compact profile={kid} size={48} busy={busy || photoBusy === kid.id} onChange={(next) => void changePhoto(kid, next)} onError={setPhotoError} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-display text-lg font-semibold">{kid.display_name}</span>
                     <span className="block text-sm text-muted-foreground">{getKidTheme(kid.theme_key).name}{age !== null ? ` · about ${age}` : ""}{kid.photo_url ? "" : " · Tap to add a photo"}</span>

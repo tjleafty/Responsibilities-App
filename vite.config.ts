@@ -33,7 +33,8 @@ export default defineConfig(({ mode }) => ({
         globPatterns: ["**/*.{js,css,svg,png,ico}"],
         // Push reminders (public/push-sw.js).
         importScripts: ["push-sw.js"],
-        globIgnores: ["**/*.html"],
+        // The iPhone (HEIC) photo converter is 3 MB and only loads when someone picks a HEIC photo.
+        globIgnores: ["**/*.html", "**/heic-to-*.js"],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.mode === "navigate",
